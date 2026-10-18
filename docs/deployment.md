@@ -11,11 +11,11 @@ This guide describes the intended local Docker Compose deployment for developmen
 
 ## 2. Expected services and ports
 
-| Service | Container port | Host port | Purpose |
-|---|---:|---:|---|
-| `frontend` | 3000 | 3000 | Next.js web UI |
-| `backend` | 3001 | 3001 | NestJS REST API |
-| `db` | 5432 | 5432 (optional host exposure) | PostgreSQL |
+| Service    | Container port |                     Host port | Purpose         |
+| ---------- | -------------: | ----------------------------: | --------------- |
+| `frontend` |           3000 |                          3000 | Next.js web UI  |
+| `backend`  |           3001 |                          3001 | NestJS REST API |
+| `db`       |           5432 | 5432 (optional host exposure) | PostgreSQL      |
 
 Inside Compose, backend connects to host `db`, not `localhost`. Browser requests use the host-visible API URL; configure it separately from the backend's internal database URL.
 
@@ -29,13 +29,14 @@ Inside Compose, backend connects to host `db`, not `localhost`. Browser requests
 POSTGRES_DB=brewlite
 POSTGRES_USER=brewlite
 POSTGRES_PASSWORD=change-me-local
-DATABASE_URL=postgresql://brewlite:change-me-local@db:5432/brewlite?schema=public
+DATABASE_URL=postgresql://brewlite:change-me-local@db:5432/brewlite
 JWT_SECRET=replace-with-local-random-secret
 API_PORT=3001
+CORS_ORIGIN=http://localhost:3000
 NEXT_PUBLIC_API_URL=http://localhost:3001
 ```
 
-Use URL-encoded credentials in `DATABASE_URL` if password contains URL-reserved characters. Production secrets must come from the deployment environment or secret store.
+`DATABASE_URL` is deliberately ORM-neutral; add any ORM-specific query parameters only after the ORM decision is recorded. `CORS_ORIGIN` must match the URL the browser uses for the frontend, because the browser calls the API directly. Use URL-encoded credentials in `DATABASE_URL` if password contains URL-reserved characters. Production secrets must come from the deployment environment or secret store.
 
 ## 4. Start the stack
 
@@ -52,7 +53,7 @@ docker compose ps
 docker compose logs -f backend
 ```
 
-Apply migrations and sample menu seed using project-defined commands. Suggested convention (confirm when implementation is added):
+Apply migrations and sample menu seed using project-defined commands. Keep the script names below ORM-neutral and map them to the chosen ORM's tooling (Prisma Migrate or TypeORM migrations) once decided:
 
 ```powershell
 docker compose exec backend npm run db:migrate
@@ -107,6 +108,7 @@ docker compose up --build -d
 - **Backend cannot reach DB:** use `db` as hostname inside Compose; confirm DB health and credentials.
 - **Schema/table missing:** run migrations and seed data using implementation-defined commands.
 - **Browser cannot reach API:** publish backend host port and set `NEXT_PUBLIC_API_URL` to `localhost`, not the Compose-only service name.
+- **Browser reports a CORS error:** set `CORS_ORIGIN` to the exact frontend origin (scheme, host, and port), then restart the backend.
 - **Frontend shows empty menu:** check backend logs, seed products, and verify API URL.
 
 ## 9. Production note

@@ -77,6 +77,7 @@ flowchart TB
 - Use database transactions for order creation, stock updates, and payment state changes where they must commit atomically.
 - Optimistic locking/version check guards stock writes; on conflict, retry safely or return an insufficient-stock/conflict response.
 - Store unique idempotency key scoped appropriately (recommended: user plus key) and enforce uniqueness in the database.
+- **Stock lifecycle (decided baseline):** stock is held (decremented) when the order is created in `PENDING`. It stays held through `PAYMENT_FAILED` so the customer can retry, and through `PAID`, `PREPARING`, `READY`, and `COMPLETED`. It is released (incremented back) exactly once when the order enters `CANCELLED`, in the same database transaction as the state change, so a repeated cancel cannot restore stock twice. A retry-expiry job, if adopted, cancels the order through the normal `CANCELLED` transition and therefore releases stock the same way.
 
 ## 4. Key flows
 
@@ -86,7 +87,7 @@ flowchart TB
 2. Customer configures item and manages cart locally.
 3. Customer signs in/registers; frontend sends JWT on protected requests.
 4. Frontend submits item identifiers/options/quantities to `POST /orders`.
-5. Backend validates DTO and ownership, reloads current product prices, calculates totals, checks stock, then persists order/items and stock changes transactionally in `PENDING`.
+5. Backend validates DTO and ownership, reloads current product prices, calculates totals, checks stock, then persists order/items and holds (decrements) stock transactionally in `PENDING`. See the stock lifecycle in section 3.3.
 6. Backend returns order identifier and current status.
 
 ### 4.2 Payment
@@ -110,15 +111,14 @@ stateDiagram-v2
     PENDING --> CANCELLED: cancel
     PAYMENT_FAILED --> CANCELLED: cancel
     PAID --> PREPARING: barista accepts (future/manual transition)
-    PAID --> CANCELLED: cancel if policy permits
+    PAID --> CANCELLED: cancel
     PREPARING --> READY: preparation complete
-    PREPARING --> CANCELLED: cancel if policy permits
     READY --> COMPLETED: customer receives drink
     COMPLETED --> [*]
     CANCELLED --> [*]
 ```
 
-The brief requires the happy-path transitions and rejects transitions without an allowed edge. Cancellation edges and retry semantics should match the final policy and tests. Barista-driven transitions are outside customer MVP and can be invoked through seed/demo or an internal operation for Task 10.
+The brief requires the happy-path transitions and rejects transitions without an allowed edge. Per the Assignment 1 state diagram, `CANCELLED` is reachable only from `PENDING`, `PAYMENT_FAILED`, and `PAID`; there is no cancel edge from `PREPARING` or `READY`. Who may trigger a cancel, refund handling for a `PAID` cancel (simulated), and retry expiry remain open product decisions, but they must not add edges beyond this diagram. Barista-driven transitions are outside customer MVP and can be invoked through seed/demo or an internal operation for Task 10.
 
 ## 6. Security and reliability
 
@@ -129,30 +129,31 @@ The brief requires the happy-path transitions and rejects transitions without an
 - Make payment and loyalty effects idempotent.
 - Never trust frontend prices, totals, user ID, or payment outcome.
 - Keep secrets in environment configuration; provide `.env.example` with placeholders only.
+- The browser calls the backend directly, so the backend enables CORS for the configured frontend origin only (`CORS_ORIGIN`), not a wildcard.
 
 ## 7. Deployment view
 
 ```mermaid
 flowchart LR
     Browser[Browser] -->|port 3000| Frontend[frontend container\nNext.js]
-    Frontend -->|internal REST / port 3001| Backend[backend container\nNestJS]
+    Browser -->|REST / port 3001 + CORS| Backend[backend container\nNestJS]
     Backend -->|DATABASE_URL| Database[(PostgreSQL container\nport 5432 internal)]
     Backend --> Mock[Mock payment logic\nin backend]
 ```
 
-Docker Compose runs frontend, backend, and PostgreSQL, with persistent database volume and health/dependency checks. See [Deployment](deployment.md) for the runbook.
+Docker Compose runs frontend, backend, and PostgreSQL, with persistent database volume and health/dependency checks. The frontend container serves the UI; API calls are made by the browser directly to the backend's published port using `NEXT_PUBLIC_API_URL`, which requires CORS on the backend. If any Next.js server-side rendering needs to call the API from inside the frontend container, it must use the Compose-internal hostname (for example `http://backend:3001`) through a separate server-only variable. See [Deployment](deployment.md) for the runbook.
 
 ## 8. Technology decisions
 
-| Concern | Baseline | Status |
-|---|---|---|
-| Frontend | Next.js, React, TypeScript, TailwindCSS | Required/baseline |
-| Cart state | Zustand or Context | Choose one during implementation |
-| Backend | NestJS, TypeScript, REST, class-validator, Passport JWT | Required/baseline |
-| Database | PostgreSQL | Assignment recommendation |
-| ORM | Prisma or TypeORM | Team decision pending |
-| Payments | Mock payment service | Required for assignment scope |
-| Local deployment | Docker Compose | Required for handover |
+| Concern          | Baseline                                                | Status                           |
+| ---------------- | ------------------------------------------------------- | -------------------------------- |
+| Frontend         | Next.js, React, TypeScript, TailwindCSS                 | Required/baseline                |
+| Cart state       | Zustand or Context                                      | Choose one during implementation |
+| Backend          | NestJS, TypeScript, REST, class-validator, Passport JWT | Required/baseline                |
+| Database         | PostgreSQL                                              | Assignment recommendation        |
+| ORM              | Prisma or TypeORM                                       | Team decision pending            |
+| Payments         | Mock payment service                                    | Required for assignment scope    |
+| Local deployment | Docker Compose                                          | Required for handover            |
 
 ## 9. Quality attributes
 
@@ -167,4 +168,4 @@ Docker Compose runs frontend, backend, and PostgreSQL, with persistent database 
 - Price model for sizes/toppings and promotion/loyalty policies.
 - Atomic boundary between mock gateway and database; use idempotency and recorded payment attempts to recover from partial failure.
 - Meaning of stock (finished drinks versus ingredients); brief's minimum model supports product stock, while Task 10 says ingredients/products.
-- Cancellation policy and whether a paid order may be cancelled.
+- Cancellation policy details: who may cancel, refund handling for a cancelled `PAID` order (the cancel edge itself exists in the assignment diagram), and the retry-expiry window for `PAYMENT_FAILED` orders.

@@ -25,20 +25,20 @@ Barista order management is outside the MVP, although order states include prepa
 
 ## 4. Functional requirements
 
-| ID | Requirement | Acceptance criteria / observable result | Priority |
-|---|---|---|---|
-| FR-01 | Browse drinks | `GET /products` returns menu items with id, name, price, and image URL; the menu UI displays them and handles loading and empty states. | Must |
-| FR-02 | View and customize a drink | Customer can view product details, choose size S/M/L and available toppings, and see the resulting price. | Must |
-| FR-03 | Manage cart | Customer can add items, change quantities, and remove items; cart shows item count and recalculates totals. | Must |
-| FR-04 | Register and sign in | `POST /auth/register` and `POST /auth/login` support account creation and sign-in; passwords are hashed and login returns a JWT. | Must |
-| FR-05 | Create order | Authenticated customer submits cart to `POST /orders`; input is validated, order is persisted as `PENDING`, and response includes an order identifier. | Must |
-| FR-06 | Pay without cash | Customer chooses Wallet or Card and submits payment through `POST /payments`; successful payment moves the order to `PAID`; failed payment moves it to `PAYMENT_FAILED` and leaves cart contents available for retry. | Must |
-| FR-07 | Confirm order | After successful payment, UI displays order identifier and `PAID` status. | Must |
-| FR-08 | View order history | `GET /orders/me` returns the authenticated customer's orders only. | Must |
-| FR-09 | Enforce order state machine | Valid flow includes `PENDING -> PAID -> PREPARING -> READY -> COMPLETED`; failure/retry and cancellation transitions follow the state diagram. Invalid transitions are rejected; `COMPLETED` and `CANCELLED` are terminal. | Must (Task 10) |
-| FR-10 | Make payment idempotent | Repeated payment requests with the same `Idempotency-Key` do not charge or create duplicate payment/order effects; retries return the recorded outcome. | Must (Task 10) |
-| FR-11 | Protect stock under concurrency | Concurrent orders cannot consume more stock than available; inventory changes use a database transaction and optimistic concurrency control. | Must (Task 10) |
-| FR-12 | Apply promotion and loyalty | A valid promotion is applied to the order; loyalty points are credited once after successful payment. | Must (Task 10; policy details are assumptions) |
+| ID    | Requirement                     | Acceptance criteria / observable result                                                                                                                                                                                                                                                              | Priority                                       |
+| ----- | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| FR-01 | Browse drinks                   | `GET /products` returns menu items with id, name, price, and image URL; the menu UI displays them and handles loading and empty states.                                                                                                                                                              | Must                                           |
+| FR-02 | View and customize a drink      | Customer can view product details, choose size S/M/L and available toppings, and see the resulting price.                                                                                                                                                                                            | Must                                           |
+| FR-03 | Manage cart                     | Customer can add items, change quantities, and remove items; cart shows item count and recalculates totals.                                                                                                                                                                                          | Must                                           |
+| FR-04 | Register and sign in            | `POST /auth/register` and `POST /auth/login` support account creation and sign-in; passwords are hashed and login returns a JWT.                                                                                                                                                                     | Must                                           |
+| FR-05 | Create order                    | Authenticated customer submits cart to `POST /orders`; input is validated, order is persisted as `PENDING`, and response includes an order identifier.                                                                                                                                               | Must                                           |
+| FR-06 | Pay without cash                | Customer chooses Wallet or Card and submits payment through `POST /payments`; successful payment moves the order to `PAID`; failed payment moves it to `PAYMENT_FAILED` and leaves cart contents available for retry.                                                                                | Must                                           |
+| FR-07 | Confirm order                   | After successful payment, UI displays order identifier and `PAID` status.                                                                                                                                                                                                                            | Must                                           |
+| FR-08 | View order history              | `GET /orders/me` returns the authenticated customer's orders only.                                                                                                                                                                                                                                   | Must                                           |
+| FR-09 | Enforce order state machine     | Valid flow includes `PENDING -> PAID -> PREPARING -> READY -> COMPLETED`; failure/retry and cancellation transitions follow the state diagram. `CANCELLED` is allowed only from `PENDING`, `PAYMENT_FAILED`, and `PAID`. Invalid transitions are rejected; `COMPLETED` and `CANCELLED` are terminal. | Must (Task 10)                                 |
+| FR-10 | Make payment idempotent         | Repeated payment requests with the same `Idempotency-Key` do not charge or create duplicate payment/order effects; retries return the recorded outcome.                                                                                                                                              | Must (Task 10)                                 |
+| FR-11 | Protect stock under concurrency | Concurrent orders cannot consume more stock than available; inventory changes use a database transaction and optimistic concurrency control. Stock is held at order creation and released once if the order is cancelled.                                                                            | Must (Task 10)                                 |
+| FR-12 | Apply promotion and loyalty     | A valid promotion is applied to the order; loyalty points are credited once after successful payment.                                                                                                                                                                                                | Must (Task 10; policy details are assumptions) |
 
 ### 4.1 Payment acceptance scenario (US-05)
 
@@ -49,15 +49,15 @@ Barista order management is outside the MVP, although order states include prepa
 
 ## 5. Non-functional requirements
 
-| ID | Requirement | Acceptance measure |
-|---|---|---|
-| NFR-01 | API performance | API response time is under 500 ms with sample data (assignment target; load profile is not specified). |
-| NFR-02 | Credential security | Passwords are stored as bcrypt hashes, never plaintext. |
-| NFR-03 | API authentication | JWT protects order-creation and user-specific order-history endpoints; users cannot read another user's history. |
-| NFR-04 | Input validation | API inputs are validated; invalid data is rejected with an appropriate client error. |
-| NFR-05 | Browser support | Web interface works on current mainstream browsers. Exact browser/version matrix is a team assumption. |
-| NFR-06 | Run and handover | Docker Compose can run frontend, backend, and database; README explains setup and demo. |
-| NFR-07 | Basic UI resilience | Loading, empty, and basic error states are handled where data is fetched. |
+| ID     | Requirement         | Acceptance measure                                                                                               |
+| ------ | ------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| NFR-01 | API performance     | API response time is under 500 ms with sample data (assignment target; load profile is not specified).           |
+| NFR-02 | Credential security | Passwords are stored as bcrypt hashes, never plaintext.                                                          |
+| NFR-03 | API authentication  | JWT protects order-creation and user-specific order-history endpoints; users cannot read another user's history. |
+| NFR-04 | Input validation    | API inputs are validated; invalid data is rejected with an appropriate client error.                             |
+| NFR-05 | Browser support     | Web interface works on current mainstream browsers. Exact browser/version matrix is a team assumption.           |
+| NFR-06 | Run and handover    | Docker Compose can run frontend, backend, and database; README explains setup and demo.                          |
+| NFR-07 | Basic UI resilience | Loading, empty, and basic error states are handled where data is fetched.                                        |
 
 ## 6. Business rules and data
 
@@ -66,21 +66,23 @@ Barista order management is outside the MVP, although order states include prepa
 - Order transitions not represented in the state diagram are rejected.
 - The same idempotency key must not cause duplicate payment effects.
 - Stock must never become negative due to concurrent ordering.
+- Stock is held (decremented) when an order is created in `PENDING` and stays held while the order is `PAYMENT_FAILED` or progresses. It is released exactly once, in the same transaction, when the order becomes `CANCELLED`.
+- An order can be cancelled only from `PENDING`, `PAYMENT_FAILED`, or `PAID`, as in the Assignment 1 state diagram.
 - Loyalty points are awarded after an order is paid, at most once per paid order.
 - Minimum entities: `Product(id, name, price, imageUrl, stock)`, `User(id, email, passwordHash, loyaltyPoints)`, `Order(id, userId, status, total, createdAt)`, `OrderItem(id, orderId, productId, size, qty, lineTotal)`, and `Payment(id, orderId, idempotencyKey, amount, method)`.
 - **Assumptions to confirm:** promotion rules, loyalty conversion rate, size/topping price adjustments, currency/rounding, stock unit definition, and cancellation policy are not fully specified in the assignment.
 
 ## 7. API baseline
 
-| Method | Path | Purpose | Access |
-|---|---|---|---|
-| GET | `/products` | List menu products | Public |
-| GET | `/products/:id` | Get product details | Public |
-| POST | `/auth/register` | Register user | Public |
-| POST | `/auth/login` | Login and issue JWT | Public |
-| POST | `/orders` | Create `PENDING` order from cart | JWT |
-| POST | `/payments` | Make/retry payment; send `Idempotency-Key` | JWT, owner of order |
-| GET | `/orders/me` | List current user's orders | JWT |
+| Method | Path             | Purpose                                    | Access              |
+| ------ | ---------------- | ------------------------------------------ | ------------------- |
+| GET    | `/products`      | List menu products                         | Public              |
+| GET    | `/products/:id`  | Get product details                        | Public              |
+| POST   | `/auth/register` | Register user                              | Public              |
+| POST   | `/auth/login`    | Login and issue JWT                        | Public              |
+| POST   | `/orders`        | Create `PENDING` order from cart           | JWT                 |
+| POST   | `/payments`      | Make/retry payment; send `Idempotency-Key` | JWT, owner of order |
+| GET    | `/orders/me`     | List current user's orders                 | JWT                 |
 
 ## 8. Verification and Definition of Done
 
@@ -102,6 +104,6 @@ The final increment is demonstrated end to end: select product, add to cart, aut
 
 1. Confirm promotion eligibility/discount and loyalty-point calculation.
 2. Decide exact size/topping price rules and inventory granularity.
-3. Decide whether user can cancel before payment/after payment and define retry expiry.
+3. Define cancellation details: who may trigger a cancel (customer or staff), refund handling when a `PAID` order is cancelled (simulated), and the retry-expiry window for `PAYMENT_FAILED` orders. The allowed cancel edges themselves are fixed by the assignment diagram.
 4. Choose Prisma or TypeORM and database migration/seeding approach.
 5. Define the performance test sample size and browser support baseline.

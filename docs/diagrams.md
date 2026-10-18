@@ -34,7 +34,7 @@ sequenceDiagram
     participant P as Mock payment
     C->>W: Configure products and cart
     W->>A: POST /orders (JWT)
-    A->>D: Validate stock; create order/items transactionally
+    A->>D: Validate stock; create order/items and hold stock transactionally
     D-->>A: PENDING order + identifier
     A-->>W: Order summary
     W->>A: POST /payments + Idempotency-Key
@@ -63,6 +63,7 @@ stateDiagram-v2
     PAYMENT_FAILED --> PENDING: retry
     PENDING --> CANCELLED: cancel
     PAYMENT_FAILED --> CANCELLED: cancel
+    PAID --> CANCELLED: cancel
     PAID --> PREPARING: accepted for preparation
     PREPARING --> READY: preparation complete
     READY --> COMPLETED: handed to customer
@@ -70,7 +71,7 @@ stateDiagram-v2
     CANCELLED --> [*]
 ```
 
-Any transition not represented here must be rejected. Cancellation policy and post-payment cancellation, if needed, are open product decisions.
+Any transition not represented here must be rejected. This matches the Assignment 1 state diagram: `CANCELLED` is reachable only from `PENDING`, `PAYMENT_FAILED`, and `PAID`. Entering `CANCELLED` releases held stock exactly once. Who may cancel, refund handling for a `PAID` cancel, and retry expiry are open product decisions.
 
 ## 5. Deployment topology
 
