@@ -12,7 +12,7 @@ Covers code in `apps/api` (NestJS) and `apps/web` (Next.js). Column meanings are
 | ID | Task | Output | Phase | Needs | Priority | Owner | Status |
 |---|---|---|---|---|---|---|---|
 | C-01 | Scaffold the API: NestJS, configuration, global ValidationPipe, "Hello" (A1-T1) | Runnable `apps/api` | P1 | S-01 | Must | | Todo |
-| C-03 | Database layer: ORM setup, schema for all entities (including toppings on order items, `Promotion`, `LoyaltyTransaction`), migrations, seed data | Migrations and seed commands | P2 | D-01, D-09 (draft) | Must | | Todo |
+| C-03 | Database layer: ORM setup, schema for all entities (including toppings on order items, `Promotion`, `LoyaltyTransaction`), migrations, seed data | `apps/api/prisma/` (schema, migrations, seed); `db:*` scripts | P2 | D-01, D-09 (draft) | Must | | Review |
 | C-04 | Products module: `GET /products`, `GET /products/:id`; `GET /health`; request logging (A1-T2) | Endpoints | P3 | C-03 | Must | | Todo |
 | C-09 | Order state machine with `assertTransition`; internal operation to move an order through `PREPARING`, `READY`, `COMPLETED` for demo (A1-T10) | Domain service and internal endpoint | P3 | D-01 (cancel policy) | Must | | Todo |
 | C-05 | Auth module: `POST /auth/register`, `POST /auth/login`, bcrypt hashing, JWT, Passport guard (A1-T7) | Endpoints and guard | P4 | C-03 | Must | | Todo |
@@ -58,7 +58,7 @@ Optional payment tasks `C-21` (QR demo provider, P6) and `C-22` (sandbox gateway
 
 ## 4. Data model notes
 
-Minimum entities from Assignment 1: `Product`, `User`, `Order`, `OrderItem`, `Payment`. Assignment 2 adds `Promotion` and `LoyaltyTransaction`. Proposed additions pending `D-09`: toppings captured on `OrderItem`; a stock-held marker or equivalent so release on cancel happens once.
+Minimum entities from Assignment 1: `Product`, `User`, `Order`, `OrderItem`, `Payment`. Assignment 2 adds `Promotion` and `LoyaltyTransaction`. The final model is in [class-domain.md](../diagrams/class-domain.md) (`D-09`) and in `apps/api/prisma/schema.prisma` (`C-03`): toppings through `OrderItemTopping`, and `Order.stockHeld` so release on cancel happens once.
 
 ## 5. Dependency view
 

@@ -24,9 +24,9 @@ Covers requirements, modeling, architecture, traceability, and handover document
 | D-11 | One ADR per significant decision from D-01 (A2-T3.1) | `docs/architecture/adr/NNN-*.md` | P2 | D-01 | Must | | Todo |
 | D-12 | UML deployment diagram for production on the platform actually used (A2-T3.2); every node traces to an architecture component and to code | `docs/diagrams/deployment-production.*` | P3 | D-10, D-11 | Must | | Todo |
 | D-13 | Consistency review: SRS, use case, three diagrams, data model, state machine, API list agree | Review checklist in a PR | P3 | D-07 to D-12 | Must | | Todo |
-| D-14 | Traceability matrix in the Assignment 2 format: Requirement, Use-case/User Story, Design/Diagram, Code/API, Test. Skeleton in P2, final in P7 | `docs/traceability-matrix.md` | P2 to P7 | D-04, D-06, T-01 | Must | | Todo |
+| D-14 | Traceability matrix in the Assignment 2 format: Requirement, Use-case/User Story, Design/Diagram, Code/API, Test. Skeleton in P2, final in P7 | [`docs/traceability-matrix.md`](../traceability-matrix.md) | P2 to P7 | D-04, D-06, T-01 | Must | | In progress (skeleton in review) |
 | D-15 | Deployment guide: local, production, rollback | `docs/deployment.md` | P7 | S-07, S-08 | Must | | Todo |
-| D-16 | README: run locally, test, build, deploy, rollback. Skeleton in P0, final in P7 | `README.md` | P0 to P7 | S-01 | Must | | Todo |
+| D-16 | README: run locally, test, build, deploy, rollback. Skeleton in P0, final in P7 | [`README.md`](../../README.md) | P0 to P7 | S-01 | Must | | In progress (skeleton in review) |
 | D-17 | Scrum artifacts: sprint backlogs, burndown, review and retrospective notes, customer feedback | `docs/scrum/` (proposed folder) | P1 to P7 | S-02 | Must | | Todo |
 | D-18 | Release notes, demo video script, submission checklist | `docs/release-notes.md`, checklist | P7 | all | Must | | Todo |
 

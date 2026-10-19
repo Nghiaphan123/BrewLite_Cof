@@ -143,18 +143,19 @@ Delay on any of these delays delivery. `D-01` (the decision meeting) is the sing
 
 ## 6. Project documents these plans refer to
 
-Target paths follow the repository layout in Assignment 2, section 9. The five existing documents are moved there by `D-02`; until then they sit at the repository root.
+Paths follow the repository layout in Assignment 2, section 9. `D-02` moved the earlier flat files here. Status as of 2026-10-19:
 
-| Document | Target path | Status | Planned by |
+| Document | Path | Status | Planned by |
 |---|---|---|---|
-| Software requirements specification | [../requirements/srs.md](../requirements/srs.md) | Exists as `requirements.md`; needs MoSCoW and gaps filled | D-02, D-04 |
-| Context and scope | [../requirements/context-and-scope.md](../requirements/context-and-scope.md) | To be written | D-03 |
-| Use-case specification | [../requirements/use-case-uc01-place-and-pay.md](../requirements/use-case-uc01-place-and-pay.md) | To be written | D-06 |
-| Diagrams | [../diagrams/](../diagrams/) | `diagrams.md` exists; activity, class, deployment diagrams missing | D-05, D-07 to D-09, D-12 |
-| Architecture description | [../architecture/architecture.md](../architecture/architecture.md) | Exists; needs trade-offs, logging, health, config, migrations | D-02, D-10 |
-| Architecture decision records | [../architecture/adr/](../architecture/adr/) | To be written | D-11 |
-| Traceability matrix | [../traceability-matrix.md](../traceability-matrix.md) | Exists; needs the Assignment 2 format | D-14 |
-| Deployment guide | [../deployment.md](../deployment.md) | Local only; production and rollback missing | D-15 |
+| Software requirements specification | [../requirements/srs.md](../requirements/srs.md) | Written (D-04); still has some "pending D-01" notes to update from the decision log | D-02, D-04 |
+| Context and scope | [../requirements/context-and-scope.md](../requirements/context-and-scope.md) | Written | D-03 |
+| Use-case specification | [../requirements/use-case-uc01-place-and-pay.md](../requirements/use-case-uc01-place-and-pay.md) | Written | D-06 |
+| Diagrams | [../diagrams/](../diagrams/) | Use-case, activity, sequence, class, C4 written; production deployment diagram missing; use-case and sequence still Mermaid | D-05, D-07 to D-09, D-12 |
+| Architecture description | [../architecture/architecture.md](../architecture/architecture.md) | Written (D-10) | D-02, D-10 |
+| Architecture decision records | [../architecture/adr/](../architecture/adr/README.md) | ADR 001 to 015 written; 004 and 012 to 015 still Proposed | D-11 |
+| Test strategy | [../testing/test-strategy.md](../testing/test-strategy.md) | Written (T-01), in review | T-01 |
+| Traceability matrix | [../traceability-matrix.md](../traceability-matrix.md) | Assignment 2 format skeleton with test IDs; code and test columns filled in later | D-14 |
+| Deployment guide | [../deployment.md](../deployment.md) | Local Compose stack; production and rollback missing | D-15 |
 
 ## 7. Open decisions
 

@@ -11,8 +11,8 @@ Covers tests in `apps/api`, `apps/web`, and `tests/`. Column meanings are in the
 
 | ID | Task | Output | Phase | Needs | Priority | Owner | Status |
 |---|---|---|---|---|---|---|---|
-| T-01 | Test strategy: levels, tools, test ID convention, list of test cases linked to requirement IDs | Strategy section and case list | P2 | D-04, D-01 (test tools) | Must | | Todo |
-| T-02 | Test infrastructure: test database, Jest configuration, E2E tool setup, test job in CI | Config and CI job | P3 | T-01, S-05 | Must | | Todo |
+| T-01 | Test strategy: levels, tools, test ID convention, list of test cases linked to requirement IDs | [`docs/testing/test-strategy.md`](../testing/test-strategy.md) | P2 | D-04, D-01 (test tools) | Must | | Review |
+| T-02 | Test infrastructure: test database, test runner configuration (Vitest, see ADR 015), E2E tool setup, test job in CI | Config and CI job | P3 | T-01, S-05 | Must | | Todo |
 | T-03 | Sprint 1 tests: products API (unit and integration), menu component and loading, empty, error states (A2-T4.3) | Tests | P3 | C-04, C-14 | Must | | Todo |
 | T-05 | State machine unit tests: legal path allowed; illegal transitions rejected, including cancel from `PREPARING` and `READY`; terminal states (Task 10 criterion a) | Tests | P3 | C-09 | Must | | Todo |
 | T-04 | Integration tests: auth (hash stored, JWT issued, 401/403), order creation (valid gives `PENDING`, invalid rejected), payment success and failure | Tests | P5 | C-05, C-06, C-07, C-08 | Must | | Todo |
@@ -38,12 +38,12 @@ Assignment 2, Task 5.2 requires: unit tests for important business logic, integr
 
 | Level | Where | Tools (confirm in D-01) |
 |---|---|---|
-| Unit | `apps/api`, `apps/web` next to code | Jest; React Testing Library |
-| Integration | `apps/api` or `tests/` against a test database | Jest with Supertest |
-| End-to-end | `tests/` against the Compose stack | Playwright or Cypress |
-| Non-functional | `tests/` scripts | Timing script; manual browser smoke test |
+| Unit | `apps/api`, `apps/web` next to code | Vitest (ADR 015, proposed; ADR 011 said Jest); React Testing Library |
+| Integration | `apps/api/test` against a PostgreSQL test database | Vitest with Supertest |
+| End-to-end | `tests/e2e/` against the Compose stack | Playwright (decision 11) |
+| Non-functional | `tests/nfr/` scripts | `autocannon` (decision 12); manual browser smoke test |
 
-Test IDs follow the Assignment 2 example style (`API-T01`, `INT-T03`). Add a prefix per level, for example `UNIT-`, `API-`, `INT-`, `E2E-`, `NFR-`. Every test ID must appear in the traceability matrix ([D-14](01-documentation-plan.md)).
+Test IDs follow the Assignment 2 example style (`API-T01`, `INT-T03`). Add a prefix per level, for example `UNIT-`, `API-`, `INT-`, `E2E-`, `NFR-`. Every test ID must appear in the traceability matrix ([D-14](../traceability-matrix.md)). The full list of test IDs is in the [test strategy](../testing/test-strategy.md#7-test-case-list).
 
 ## 4. Requirement to test map
 
@@ -69,7 +69,7 @@ Test IDs follow the Assignment 2 example style (`API-T01`, `INT-T03`). Add a pre
 | NFR-06 Run and handover | T-11 |
 | NFR-07 UI states | T-03, T-09 |
 
-This map follows the requirement IDs in the current `requirements.md`; update it when `D-04` finalizes the SRS.
+This map lists the tasks per requirement for FR-01 to FR-12 and NFR-01 to NFR-07. The test IDs for every requirement in the [SRS](../requirements/srs.md), including FR-13 to FR-18 and NFR-08 to NFR-15, are in the [test strategy coverage summary](../testing/test-strategy.md#8-coverage-summary).
 
 ## 5. Dependency view
 
