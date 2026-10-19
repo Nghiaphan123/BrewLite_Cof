@@ -37,7 +37,7 @@ Task 10 requires applying a valid promotion and crediting loyalty points once af
 
 **Follow-up**
 
-- **Correction to the decision log:** the log says a unique `orderId` on `LoyaltyTransaction` enforces one credit. That would also block the reversal row. Use a unique pair (`orderId`, `type`) so each order has at most one `EARN` and one `REVERSAL`. Update decision 9 in the log to match.
+- **Correction to the decision log:** the log says a unique `orderId` on `LoyaltyTransaction` enforces one credit. That would also block the reversal row. Use a unique pair (`orderId`, `type`) so each order has at most one `EARN` and one `REVERSAL`. Decision 9 in the log was updated to match (decision log version 0.2).
 - **Open:** when `usedCount` goes up (at order creation or at `PAID`) and whether it is given back on cancel; decide before `C-12`.
 - `T-08` uses the seeded codes.
 

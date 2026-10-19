@@ -1,12 +1,12 @@
 # BrewLite - Decision Log
 
-**Version:** 0.1  
-**Status:** Proposed; every decision needs team confirmation at the D-01 meeting  
+**Version:** 0.2  
+**Status:** Accepted, except decision 3 (hosting, still Proposed until its checks are done); items marked **(verify)** still need a check. Decision 14 is a new proposal.  
 **Location:** `docs/plans/decision-log.md`  
 **Task:** D-01 (decision meeting and log)  
-**Related:** [Overview](/docs/00-overview.md), [Documentation plan](/docs/plans/01-documentation-plan.md#3-decision-checklist-d-01), [Payment plan](/docs//plans/05-payment-plan.md)
+**Related:** [Overview](00-overview.md), [Documentation plan](01-documentation-plan.md#3-decision-checklist-d-01), [Payment plan](05-payment-plan.md), [ADR index](../architecture/adr/README.md)
 
-This log records the 13 decisions from the decision checklist. Each entry has a status, the options considered, the choice, the reason, and the consequences. Once a decision is **Accepted**, write it up as an ADR (`D-11`) in `docs/architecture/adr/` and link it in the table below.
+This log records the 13 decisions from the decision checklist, plus decision 14 added while writing the test strategy (`T-01`). Each entry has a status, the options considered, the choice, the reason, and the consequences. Once a decision is **Accepted**, write it up as an ADR (`D-11`) in `docs/architecture/adr/` and link it in the table below.
 
 ## 1. How to use this log
 
@@ -27,29 +27,30 @@ This log records the 13 decisions from the decision checklist. Each entry has a 
 
 ## 2. Summary
 
-| #   | Decision                      | Choice                                                                | Status            | Blocks                 | ADR                              |
-| --- | ----------------------------- | --------------------------------------------------------------------- | ----------------- | ---------------------- | -------------------------------- |
-| 1   | ORM                           | Prisma                                                                | Proposed          | C-03, S-04, D-09, D-10 | `002-orm-prisma.md`              |
-| 2   | Cart state                    | Zustand with `persist`                                                | Proposed          | C-16                   | `003-cart-state-zustand.md`      |
-| 3   | Hosting platform              | Render (Docker); VPS with Compose and Caddy as fallback               | Proposed (verify) | S-06, S-07, D-12       | `004-hosting-platform.md`        |
-| 4   | Payment approach              | Mock provider behind `PaymentProvider`; QR demo and sandbox are Could | Proposed          | C-07, D-08             | `005-payment-mock-provider.md`   |
-| 5   | Currency and rounding         | Whole VND as integers; discounts rounded down                         | Proposed          | C-06, C-15             | `006-money-and-pricing.md`       |
-| 6   | Size and topping pricing      | Size S base; M +5,000; L +10,000; topping +5,000 each                 | Proposed          | C-15, C-06, D-04       | `006-money-and-pricing.md`       |
-| 7   | Stock unit                    | Finished drinks per product                                           | Proposed          | C-11, D-09             | `007-stock-unit.md`              |
-| 8   | Cancellation and retry expiry | Owner cancels; simulated refund; 15 min expiry                        | Proposed          | C-09, D-06             | `008-cancellation-and-expiry.md` |
-| 9   | Promotion and loyalty         | `PERCENT` or `FIXED` codes; 1 point per 1,000 VND                     | Proposed          | C-12, D-04             | `009-promotion-loyalty.md`       |
-| 10  | Diagram format                | PlantUML source plus exported SVG                                     | Proposed          | D-05 to D-09, D-12     | `010-diagram-format.md`          |
-| 11  | Test tools                    | Jest, Supertest, RTL, Playwright, real PostgreSQL                     | Proposed          | T-01, T-02             | `011-test-tooling.md`            |
-| 12  | Performance test method       | p95 under 500 ms with `autocannon`                                    | Proposed          | T-10                   | `011-test-tooling.md`            |
-| 13  | Browser support baseline      | Latest 2 versions of major browsers (verify)                          | Proposed (verify) | T-11, D-04             | `011-test-tooling.md`            |
+| #   | Decision                      | Choice                                                                         | Status                             | Blocks                 | ADR                                                                                    |
+| --- | ----------------------------- | ------------------------------------------------------------------------------ | ---------------------------------- | ---------------------- | -------------------------------------------------------------------------------------- |
+| 1   | ORM                           | Prisma                                                                         | Accepted                           | C-03, S-04, D-09, D-10 | [`002-orm-prisma.md`](../architecture/adr/002-orm-prisma.md)                           |
+| 2   | Cart state                    | Zustand with `persist`                                                         | Accepted                           | C-16                   | [`003-cart-state-zustand.md`](../architecture/adr/003-cart-state-zustand.md)           |
+| 3   | Hosting platform              | Render (Docker); VPS with Compose and Caddy as fallback                        | Proposed (verify)                  | S-06, S-07, D-12       | [`004-hosting-platform.md`](../architecture/adr/004-hosting-platform.md)               |
+| 4   | Payment approach              | Mock provider behind `PaymentProvider`; QR demo and sandbox are Could          | Accepted                           | C-07, D-08             | [`005-payment-mock-provider.md`](../architecture/adr/005-payment-mock-provider.md)     |
+| 5   | Currency and rounding         | Whole VND as integers; discounts rounded down                                  | Accepted                           | C-06, C-15             | [`006-money-and-pricing.md`](../architecture/adr/006-money-and-pricing.md)             |
+| 6   | Size and topping pricing      | Size S base; M +5,000; L +10,000; topping +5,000 each                          | Accepted                           | C-15, C-06, D-04       | [`006-money-and-pricing.md`](../architecture/adr/006-money-and-pricing.md)             |
+| 7   | Stock unit                    | Finished drinks per product                                                    | Accepted                           | C-11, D-09             | [`007-stock-unit.md`](../architecture/adr/007-stock-unit.md)                           |
+| 8   | Cancellation and retry expiry | Owner cancels; simulated refund; 15 min expiry                                 | Accepted                           | C-09, D-06             | [`008-cancellation-and-expiry.md`](../architecture/adr/008-cancellation-and-expiry.md) |
+| 9   | Promotion and loyalty         | `PERCENT` or `FIXED` codes; 1 point per 1,000 VND                              | Accepted                           | C-12, D-04             | [`009-promotion-loyalty.md`](../architecture/adr/009-promotion-loyalty.md)             |
+| 10  | Diagram format                | PlantUML source plus exported SVG                                              | Accepted (confirm with instructor) | D-05 to D-09, D-12     | [`010-diagram-format.md`](../architecture/adr/010-diagram-format.md)                   |
+| 11  | Test tools                    | Jest, Supertest, RTL, Playwright, real PostgreSQL                              | Accepted (API runner: see 14)      | T-01, T-02             | [`011-test-tooling.md`](../architecture/adr/011-test-tooling.md)                       |
+| 12  | Performance test method       | p95 under 500 ms with `autocannon`                                             | Accepted                           | T-10                   | [`011-test-tooling.md`](../architecture/adr/011-test-tooling.md)                       |
+| 13  | Browser support baseline      | Latest 2 versions of major browsers (verify)                                   | Accepted (verify)                  | T-11, D-04             | [`011-test-tooling.md`](../architecture/adr/011-test-tooling.md)                       |
+| 14  | API test runner               | Vitest (already scaffolded in `apps/api`) instead of Jest; Supertest unchanged | Proposed                           | T-01, T-02             | [`015-test-runner-vitest.md`](../architecture/adr/015-test-runner-vitest.md)           |
 
-Decision `001-monorepo.md` (single repository with `apps/web` and `apps/api`) is already fixed by Assignment 2, section 9. Record it as an ADR for completeness; it needs no vote.
+Decision [`001-monorepo.md`](../architecture/adr/001-monorepo.md) (single repository with `apps/web` and `apps/api`) is already fixed by Assignment 2, section 9. Record it as an ADR for completeness; it needs no vote.
 
 ## 3. Decisions
 
 ### D-01.1 ORM
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Options:** Prisma, TypeORM
 - **Decision:** Prisma
 - **Reason:**
@@ -57,12 +58,12 @@ Decision `001-monorepo.md` (single repository with `apps/web` and `apps/api`) is
   - Migrations and seed commands are built in and reproducible, which Assignment 2 Task 5.2 requires.
   - Interactive transactions and a composite unique constraint on `userId` and `idempotencyKey` are supported.
   - Generated types are easier for a five-person team than TypeORM decorators.
-- **Consequences:** `DATABASE_URL` stays as is. Scripts `db:migrate` and `db:seed` map to Prisma Migrate and the seed command. Update the "Prisma or TypeORM" wording in [architecture.md](../architecture.md).
+- **Consequences:** `DATABASE_URL` stays as is. Scripts `db:migrate` and `db:seed` map to Prisma Migrate and the seed command. Update the "Prisma or TypeORM" wording in [architecture.md](../architecture/architecture.md).
 - **Revisit if:** the team already has strong TypeORM experience.
 
 ### D-01.2 Cart state
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Options:** Zustand, React Context
 - **Decision:** Zustand with the `persist` middleware (localStorage)
 - **Reason:** The checkout flow sends a signed-out customer to sign in while keeping the cart. Context alone loses the cart on reload; `persist` keeps it with little code. Assignment 1 lists Zustand in the stack.
@@ -84,8 +85,8 @@ Decision `001-monorepo.md` (single repository with `apps/web` and `apps/api`) is
 
 ### D-01.4 Payment approach
 
-- **Status:** Proposed
-- **Options:** Mock provider, static QR, dynamic QR, sandbox gateway (see [05-payment-plan.md](/docs/plans/05-payment-plan.md#2-options))
+- **Status:** Accepted
+- **Options:** Mock provider, static QR, dynamic QR, sandbox gateway (see [05-payment-plan.md](05-payment-plan.md#2-options))
 - **Decision:** Mock provider behind a `PaymentProvider` interface (`C-07`). QR demo (`C-21`) and sandbox adapter (`C-22`) stay **Could**.
 - **Reason:** The assignment requires a mock gateway. A QR image alone cannot confirm payment. One interface keeps the state machine, idempotency, and stock rules the same for every provider.
 - **Rules:**
@@ -95,13 +96,13 @@ Decision `001-monorepo.md` (single repository with `apps/web` and `apps/api`) is
 
 ### D-01.5 Currency and rounding
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Decision:** Prices and totals are whole VND stored as integers. No decimals, no floating-point math. A percent discount is `floor(subtotal * percent / 100)`.
 - **Consequences:** Database columns are integers. The UI formats with thousands separators (for example 45.000đ). The wireframe total (123.000đ) is illustrative only.
 
 ### D-01.6 Size and topping pricing
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Decision:** The product `price` is the price for size S.
 
 | Option       | Surcharge (VND) |
@@ -117,15 +118,15 @@ Decision `001-monorepo.md` (single repository with `apps/web` and `apps/api`) is
 
 ### D-01.7 Stock unit
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Options:** Finished drinks per product, ingredients
 - **Decision:** Finished drinks per product (`Product.stock`)
 - **Reason:** Matches the minimum data model. Ingredient stock needs a recipe table and adds work with no assignment benefit. All sizes and toppings draw from the same product stock.
-- **Consequences:** One order item with quantity `n` holds `n` units. A stock-held marker or equivalent on the order ensures release happens once (see [architecture.md](../architecture.md#33-persistence)).
+- **Consequences:** One order item with quantity `n` holds `n` units. A stock-held marker or equivalent on the order ensures release happens once (see [architecture.md](../architecture/architecture.md#62-stock-holding-with-optimistic-locking)).
 
 ### D-01.8 Cancellation details and retry expiry
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Fixed by the assignment diagram:** `CANCELLED` is reachable only from `PENDING`, `PAYMENT_FAILED`, and `PAID`.
 - **Decision:**
   - The order owner may cancel in any of those three states. A `PAID` order that has moved to `PREPARING` or later cannot be cancelled (the state machine rejects it).
@@ -136,30 +137,30 @@ Decision `001-monorepo.md` (single repository with `apps/web` and `apps/api`) is
 
 ### D-01.9 Promotion and loyalty rules
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Decision:**
   - **Promotion fields:** code (uppercase letters and digits), type (`PERCENT` or `FIXED`), value, minimum order total, valid from and to, active flag, optional usage limit.
   - **Seed codes:** `BREW10` (10 percent) and `WELCOME20K` (20,000 VND off).
   - One code per order. The discount never exceeds the subtotal.
-  - **Points:** `floor(paidTotal / 1000)`, credited once per order after `PAID`. A unique `orderId` on `LoyaltyTransaction` enforces this.
+  - **Points:** `floor(paidTotal / 1000)`, credited once per order after `PAID`. A unique pair (`orderId`, `type`) on `LoyaltyTransaction` enforces this: at most one `EARN` and one `REVERSAL` row per order. A unique `orderId` alone would block the reversal row from decision 8 (corrected in version 0.2, see ADR 009).
   - Redeeming points is **Won't** in this delivery; the assignment only requires earning them.
 - **Consequences:** `Promotion` and `LoyaltyTransaction` appear in the class diagram (`D-09`). Tests in `T-08` use the seeded codes.
 
 ### D-01.10 Diagram format
 
-- **Status:** Proposed
+- **Status:** Accepted (confirm with instructor)
 - **Options:** Mermaid with exported images, PlantUML
 - **Decision:** PlantUML for the five required diagrams (use-case, activity, sequence, class, deployment), each committed as a `.puml` source plus an exported `.svg`. Mermaid stays for flowcharts inside the plan documents.
 - **Reason:**
   - Assignment 2 asks for UML use-case, activity with swimlanes, class, and deployment diagrams. Its own example file is `sequence-checkout.puml`.
   - Mermaid has no native use-case, deployment, or swimlane activity diagram, so those would be flowcharts imitating UML.
   - GitHub does not render `.puml`, so the exported SVG must be committed with it.
-- **Consequences:** Convert the existing `sequence-checkout.mmd` and the use-case overview to PlantUML. Update the links in [sequence-checkout.md](/docs/diagrams/sequence-checkout.md) and [use-case-overview.md](/docs/diagrams/use-case-overview.md), and replace the export command. Add the PlantUML export step to the README.
+- **Consequences:** Convert the existing `sequence-checkout.mmd` and the use-case overview to PlantUML. Update the links in [sequence-checkout.md](../diagrams/sequence-checkout.md) and [use-case-overview.md](../diagrams/use-case-overview.md), and replace the export command. Add the PlantUML export step to the README.
 - **Verify first:** Ask the instructor whether Mermaid is acceptable. If yes, the team may keep Mermaid, but the choice must then apply to all five diagrams.
 
 ### D-01.11 Test tools
 
-- **Status:** Proposed
+- **Status:** Accepted. The API runner is under review in decision 14: `apps/api` was scaffolded with Vitest, not Jest.
 - **Decision:**
 
 | Level                          | Tool                                                          |
@@ -174,7 +175,7 @@ Decision `001-monorepo.md` (single repository with `apps/web` and `apps/api`) is
 
 ### D-01.12 Performance test method
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Decision:**
   - **Data:** about 30 products and 10 users; bcrypt cost 10.
   - **Method:** 20 warm-up requests, then 200 requests per endpoint at 10 concurrent connections, using `autocannon`.
@@ -185,10 +186,18 @@ Decision `001-monorepo.md` (single repository with `apps/web` and `apps/api`) is
 
 ### D-01.13 Browser support baseline
 
-- **Status:** Proposed (verify)
+- **Status:** Accepted (verify)
 - **Decision:** Latest two stable versions of Chrome, Edge, Firefox, and Safari on desktop, plus Chrome on Android and Safari on iOS. Playwright runs on Chromium and WebKit; manual smoke tests use Chrome desktop and one real phone.
 - **Verify:** Check the browser support list of the Next.js version in use so the project does not promise more than the framework supports.
 - **Consequences:** `T-11` and the browser NFR in `D-04` use this list.
+
+### D-01.14 API test runner
+
+- **Status:** Proposed
+- **Options:** Jest (decision 11), Vitest
+- **Decision:** Use **Vitest** for unit and integration tests in `apps/api`, with Supertest for HTTP calls. Keep the rest of decision 11 (React Testing Library, Playwright, real PostgreSQL).
+- **Reason:** The NestJS 12 scaffold in `apps/api` already ships with Vitest (`vitest.config.ts`, `vitest.config.e2e.ts`, `npm test` runs `vitest run`). Switching back to Jest adds setup work and gives no benefit for the assignment.
+- **Consequences:** If accepted, mark decision 11 **Changed** for the API runner and accept [ADR 015](../architecture/adr/015-test-runner-vitest.md). The frontend runner (`apps/web` has none yet) is chosen in `T-02`; Vitest with React Testing Library is suggested so both apps use one runner. The [test strategy](../testing/test-strategy.md) already uses Vitest.
 
 ## 4. Impact on other tasks
 
@@ -203,21 +212,22 @@ Decision `001-monorepo.md` (single repository with `apps/web` and `apps/api`) is
 | C-03       | Prisma schema, migrations, and seed (products, users, two promotion codes)              |
 | C-09       | State machine plus the 15-minute expiry job                                             |
 | S-06       | Provision Render; confirm plan limits                                                   |
-| T-01, T-02 | Jest, Supertest, RTL, Playwright, PostgreSQL test database                              |
+| T-01, T-02 | Vitest (decision 14, proposed), Supertest, RTL, Playwright, PostgreSQL test database    |
 
 ## 5. Meeting record
 
-| Field                               | Value |
-| ----------------------------------- | ----- |
-| Date                                |       |
-| Attendees                           |       |
-| Decisions accepted                  |       |
-| Decisions changed from the proposal |       |
-| Decisions still open                |       |
-| Follow-up owners                    |       |
+| Field                               | Value                                                     |
+| ----------------------------------- | --------------------------------------------------------- |
+| Date                                | 2026-10-18 (commit `5400762` "finalize decisions")        |
+| Attendees                           | (to fill in)                                              |
+| Decisions accepted                  | 1, 2, 4 to 13 (10 and 13 still have a check to do)        |
+| Decisions changed from the proposal | 9: uniqueness is (`orderId`, `type`), not `orderId` alone |
+| Decisions still open                | 3 (hosting, verify plan limits); 14 (Vitest, new)         |
+| Follow-up owners                    | (to fill in)                                              |
 
 ## 6. Change history
 
-| Version | Date       | Change                            | Author |
-| ------- | ---------- | --------------------------------- | ------ |
-| 0.1     | 2026-10-18 | First draft of proposed decisions |        |
+| Version | Date       | Change                                                                                                      | Author |
+| ------- | ---------- | ----------------------------------------------------------------------------------------------------------- | ------ |
+| 0.1     | 2026-10-18 | First draft of proposed decisions                                                                           |        |
+| 0.2     | 2026-10-19 | Statuses set to match the ADRs; decision 9 uniqueness corrected; decision 14 (Vitest) proposed; links fixed |        |
