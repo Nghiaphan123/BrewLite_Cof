@@ -4,9 +4,9 @@
 **Status:** Draft for team review (task D-09)  
 **Source file:** [class-domain.puml](class-domain.puml) (PlantUML, source of truth)  
 **Rendered file:** [class-domain.svg](class-domain.svg)  
-**Related:** [SRS](../requirements/srs.md), [UC-01 spec](../requirements/use-case-uc01-place-and-pay.md), [Sequence diagram](sequence-checkout.md), [Decision log](../architecture/ard/decisions.md), [Implementation plan](../plans/03-implementation-plan.md)
+**Related:** [SRS](../requirements/srs.md), [UC-01 spec](../requirements/use-case-uc01-place-and-pay.md), [Sequence diagram](sequence-checkout.md), [Decision log](../plans/decision-log.md), [Implementation plan](../plans/03-implementation-plan.md)
 
-This is the domain-level class diagram required by Assignment 2, Task 2.3, plus the database constraints that follow from it. It applies the decisions in the [decision log](../architecture/ard/decisions.md) (Prisma, whole-VND integers, pricing surcharges, finished-drink stock, cancellation and expiry, promotion and loyalty rules). Items marked **(proposed)** are team suggestions to confirm.
+This is the domain-level class diagram required by Assignment 2, Task 2.3, plus the database constraints that follow from it. It applies the decisions in the [decision log](../plans/decision-log.md) (Prisma, whole-VND integers, pricing surcharges, finished-drink stock, cancellation and expiry, promotion and loyalty rules). Items marked **(proposed)** are team suggestions to confirm.
 
 ## 1. Diagram
 
