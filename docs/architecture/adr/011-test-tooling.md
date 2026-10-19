@@ -1,6 +1,6 @@
 # ADR 011: Standardize test tools, performance method, and browser baseline
 
-**Status:** Accepted (browser list to verify)  
+**Status:** Accepted (browser list to verify). The API runner is under review in [ADR 015](015-test-runner-vitest.md) (proposed: Vitest).  
 **Date:** 2026-10-19  
 **Decision log:** [Decisions 11, 12, and 13](../../plans/decision-log.md)  
 **Related tasks:** T-01, T-02, T-10, T-11, D-04
