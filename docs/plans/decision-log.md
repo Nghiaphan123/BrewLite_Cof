@@ -43,6 +43,7 @@ This log records the 13 decisions from the decision checklist, plus decision 14 
 | 12  | Performance test method       | p95 under 500 ms with `autocannon`                                             | Accepted                           | T-10                   | [`011-test-tooling.md`](../architecture/adr/011-test-tooling.md)                       |
 | 13  | Browser support baseline      | Latest 2 versions of major browsers (verify)                                   | Accepted (verify)                  | T-11, D-04             | [`011-test-tooling.md`](../architecture/adr/011-test-tooling.md)                       |
 | 14  | API test runner               | Vitest (already scaffolded in `apps/api`) instead of Jest; Supertest unchanged | Accepted                           | T-01, T-02             | [`015-test-runner-vitest.md`](../architecture/adr/015-test-runner-vitest.md)           |
+| 15  | Hosted APM agent              | None: `@nestjs/observe` removed from `apps/api`; logs and health per ADR 014   | Accepted                           | T-01, T-02, S-04, S-06 | -                                                                                      |
 
 Decision [`001-monorepo.md`](../architecture/adr/001-monorepo.md) (single repository with `apps/web` and `apps/api`) is already fixed by Assignment 2, section 9. Record it as an ADR for completeness; it needs no vote.
 
@@ -199,6 +200,18 @@ Decision [`001-monorepo.md`](../architecture/adr/001-monorepo.md) (single reposi
 - **Reason:** The NestJS 12 scaffold in `apps/api` already ships with Vitest (`vitest.config.ts`, `vitest.config.e2e.ts`, `npm test` runs `vitest run`). Switching back to Jest adds setup work and gives no benefit for the assignment.
 - **Consequences:** Decision 11 is marked **Changed** for the API runner, [ADR 015](../architecture/adr/015-test-runner-vitest.md) is Accepted, and ADR 011 is marked superseded for the runner. The frontend runner (`apps/web` has none yet) is chosen in `T-02`; Vitest with React Testing Library is suggested so both apps use one runner. The [test strategy](../testing/test-strategy.md) already uses Vitest.
 
+### D-01.15 Hosted APM agent (`@nestjs/observe`)
+
+- **Status:** Accepted (2026-10-19)
+- **Options:** Keep the `@nestjs/observe` agent that the NestJS 12 scaffold added (with keys from the environment), remove it
+- **Decision:** Remove it. `apps/api` has no hosted APM agent; logging, health, and configuration follow [ADR 014](../architecture/adr/014-logging-and-config.md).
+- **Reason:**
+  - It is not a fake or mock API. It is a commercial observability agent that ships traces, metrics, logs, and by default source-code fragments of errors to `https://observe-api.nestjs.com`, which needs a sign-up key and secret.
+  - With the scaffold's placeholder keys (`YOUR_APP_KEY`) every run, including tests, made outbound calls that the collector rejects with 401. During `npm run test:e2e` its worker thread crashed and logged `ERROR [ObserveAgentWorker] Worker stopped with exit code 1`, which is noise and a source of flaky, network-dependent tests.
+  - It wraps providers in proxies and patches the console logger. That can interfere with test doubles (`vi.spyOn`) and with the structured logs in ADR 014.
+  - It has no switch to turn it off by environment, it is version 0.1, and nothing in the assignment needs it.
+- **Consequences:** `@nestjs/observe` is gone from `package.json`, `package-lock.json`, `app.module.ts`, and `main.ts`; no new environment variable is needed. Fakes for testing stay where they belong: the mock payment provider (decision 4) and test doubles in Vitest. Revisit only if the team wants hosted tracing in production; then load the keys from the environment and disable the agent when `NODE_ENV=test`.
+
 ## 4. Impact on other tasks
 
 | Task       | What changes because of these decisions                                                 |
@@ -231,4 +244,4 @@ Decision [`001-monorepo.md`](../architecture/adr/001-monorepo.md) (single reposi
 | ------- | ---------- | ----------------------------------------------------------------------------------------------------------- | ------ |
 | 0.1     | 2026-10-18 | First draft of proposed decisions                                                                           |        |
 | 0.2     | 2026-10-19 | Statuses set to match the ADRs; decision 9 uniqueness corrected; decision 14 (Vitest) proposed; links fixed |        |
-| 0.3     | 2026-10-19 | Decision 14 (Vitest) accepted; decision 11 marked Changed for the test runner; ADR 011 superseded for the runner by ADR 015 |        |
+| 0.3     | 2026-10-19 | Decision 14 (Vitest) accepted; decision 11 marked Changed for the test runner; ADR 011 superseded for the runner by ADR 015; decision 15 (no hosted APM agent, `@nestjs/observe` removed) |        |
