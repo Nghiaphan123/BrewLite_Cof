@@ -1,6 +1,6 @@
 # BrewLite - Local Deployment Guide
 
-This guide describes the intended local Docker Compose deployment for development and class demo. It is a target runbook; this repository currently contains documentation only, so Compose commands work after the frontend/backend projects and `docker-compose.yml` are added.
+This guide describes the local Docker Compose deployment for development and class demo. The stack is defined in [`docker-compose.yml`](../docker-compose.yml) (`S-04`) with the images in `apps/api/Dockerfile` and `apps/web/Dockerfile`. The production part and rollback are added in `D-15` (P7).
 
 ## 1. Prerequisites
 
@@ -11,36 +11,37 @@ This guide describes the intended local Docker Compose deployment for developmen
 
 ## 2. Expected services and ports
 
-| Service    | Container port |                     Host port | Purpose         |
-| ---------- | -------------: | ----------------------------: | --------------- |
-| `frontend` |           3000 |                          3000 | Next.js web UI  |
-| `backend`  |           3001 |                          3001 | NestJS REST API |
-| `db`       |           5432 | 5432 (optional host exposure) | PostgreSQL      |
+| Service | Container port |                      Host port | Purpose         |
+| ------- | -------------: | -----------------------------: | --------------- |
+| `web`   |           3000 |                           3000 | Next.js web UI  |
+| `api`   |           3001 |                           3001 | NestJS REST API |
+| `db`    |           5432 | `POSTGRES_PORT` (default 5432) | PostgreSQL      |
 
-Inside Compose, backend connects to host `db`, not `localhost`. Browser requests use the host-visible API URL; configure it separately from the backend's internal database URL.
+Inside Compose, the API connects to host `db`, not `localhost`. Browser requests use the host-visible API URL; configure it separately from the backend's internal database URL.
 
 ## 3. Configuration
 
 1. Copy `.env.example` to `.env` at repository root.
 2. Set local development values. Never commit `.env` or real secrets.
-3. Expected settings (proposed names; align with application configuration):
+3. Settings in `.env.example`:
 
 ```dotenv
 POSTGRES_DB=brewlite
 POSTGRES_USER=brewlite
 POSTGRES_PASSWORD=change-me-local
-DATABASE_URL=postgresql://brewlite:change-me-local@db:5432/brewlite
+POSTGRES_PORT=5432
+DATABASE_URL=postgresql://brewlite:change-me-local@localhost:5432/brewlite
 JWT_SECRET=replace-with-local-random-secret
 API_PORT=3001
 CORS_ORIGIN=http://localhost:3000
 NEXT_PUBLIC_API_URL=http://localhost:3001
 ```
 
-`DATABASE_URL` is deliberately ORM-neutral; add any ORM-specific query parameters only after the ORM decision is recorded. `CORS_ORIGIN` must match the URL the browser uses for the frontend, because the browser calls the API directly. Use URL-encoded credentials in `DATABASE_URL` if password contains URL-reserved characters. Production secrets must come from the deployment environment or secret store.
+`DATABASE_URL` in `.env` is for Prisma commands run on your machine (host `localhost`). Docker Compose builds the API container's own `DATABASE_URL` from the `POSTGRES_*` values with host `db`, so you do not edit it for Compose. Prisma (ADR 002) reads it through `apps/api/prisma.config.ts`. `CORS_ORIGIN` must match the URL the browser uses for the frontend, because the browser calls the API directly. Use URL-encoded credentials in `DATABASE_URL` if the password contains URL-reserved characters; Compose inserts `POSTGRES_PASSWORD` into its URL as is, so pick a local password without them. Production secrets must come from the deployment environment or secret store.
 
 ## 4. Start the stack
 
-After code and Compose manifest exist:
+From the repository root:
 
 ```powershell
 docker compose up --build -d
@@ -50,15 +51,25 @@ Check status and logs:
 
 ```powershell
 docker compose ps
-docker compose logs -f backend
+docker compose logs -f api
 ```
 
-Apply migrations and sample menu seed using project-defined commands. Keep the script names below ORM-neutral and map them to the chosen ORM's tooling (Prisma Migrate or TypeORM migrations) once decided:
+The API container applies pending migrations (`prisma migrate deploy`) every time it starts. Load the sample data once (30 products, 5 toppings, 10 demo users, promotions `BREW10` and `WELCOME20K`); the seed is safe to run again:
 
 ```powershell
-docker compose exec backend npm run db:migrate
-docker compose exec backend npm run db:seed
+docker compose exec api npm run db:seed
 ```
+
+Prisma scripts in `apps/api` (run them in the container, or on your machine against the Compose database with `DATABASE_URL` pointing to `localhost`):
+
+| Script                | Prisma command          | Use                                         |
+| --------------------- | ----------------------- | ------------------------------------------- |
+| `npm run db:generate` | `prisma generate`       | Generate the client into `src/generated/`   |
+| `npm run db:validate` | `prisma validate`       | Check `prisma/schema.prisma`                |
+| `npm run db:migrate`  | `prisma migrate dev`    | Create and apply a migration in development |
+| `npm run db:deploy`   | `prisma migrate deploy` | Apply committed migrations (CI, production) |
+| `npm run db:seed`     | `prisma db seed`        | Load the sample data                        |
+| `npm run db:reset`    | `prisma migrate reset`  | Drop and rebuild the local database         |
 
 Open the UI at `http://localhost:3000`; API base is `http://localhost:3001`.
 
@@ -92,24 +103,24 @@ Rebuild after code or dependency changes:
 docker compose up --build -d
 ```
 
-## 7. Compose manifest expectations
+## 7. Compose manifest
 
-- Add health checks for PostgreSQL and backend readiness; make backend wait for a healthy database.
-- Persist PostgreSQL data in a named volume.
-- Keep app containers on a private Compose network; expose only ports needed locally.
-- Run migrations explicitly or through a controlled one-shot step before demo startup.
-- Use a mock payment service and non-sensitive local credentials.
-- Exclude `.env`, database files, and secrets from Git.
+- `db` has a `pg_isready` health check and keeps its data in the named volume `db-data`.
+- `api` starts only after `db` is healthy, runs `prisma migrate deploy`, then starts NestJS. Its health check calls `GET /health`, which is added in `C-04`; until then `docker compose ps` shows the API as unhealthy even though it answers on port 3001.
+- `web` is built with `NEXT_PUBLIC_API_URL` as a build argument, because Next.js inlines it at build time. Rebuild the web image after changing it.
+- All services share the default private Compose network; only ports 3000, 3001, and the database port are published for local use.
+- The payment provider is the mock (`PAYMENT_PROVIDER=mock`); local credentials are placeholders.
+- `.env`, database files, and secrets stay out of Git (`.gitignore`, `.dockerignore`).
 
 ## 8. Troubleshooting
 
 - **Docker daemon unavailable:** start Docker Desktop and retry `docker compose ps`.
 - **Port already in use:** stop the conflicting service or change host port mapping and frontend API URL together.
-- **Backend cannot reach DB:** use `db` as hostname inside Compose; confirm DB health and credentials.
-- **Schema/table missing:** run migrations and seed data using implementation-defined commands.
-- **Browser cannot reach API:** publish backend host port and set `NEXT_PUBLIC_API_URL` to `localhost`, not the Compose-only service name.
-- **Browser reports a CORS error:** set `CORS_ORIGIN` to the exact frontend origin (scheme, host, and port), then restart the backend.
-- **Frontend shows empty menu:** check backend logs, seed products, and verify API URL.
+- **API cannot reach DB:** use `db` as hostname inside Compose; confirm DB health and credentials.
+- **Schema/table missing:** check `docker compose logs api` for the migration step, then run `docker compose exec api npm run db:seed`.
+- **Browser cannot reach API:** publish the API host port and set `NEXT_PUBLIC_API_URL` to `localhost`, not the Compose-only service name.
+- **Browser reports a CORS error:** set `CORS_ORIGIN` to the exact frontend origin (scheme, host, and port), then restart the API (`docker compose up -d api`).
+- **Web shows an empty menu:** check the API logs, seed products, and verify API URL.
 
 ## 9. Production note
 
