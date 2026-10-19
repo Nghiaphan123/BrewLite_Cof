@@ -1,0 +1,240 @@
+// BrewLite - Prisma schema (C-03)
+//
+// Source of truth for the model: docs/diagrams/class-domain.puml and
+// docs/diagrams/class-domain.md (D-09). Decisions: ADR 002 (Prisma),
+// ADR 006 (whole-VND integers), ADR 007 (stock in finished drinks),
+// ADR 008 (cancellation and 15-minute expiry), ADR 009 (promotion and loyalty).
+//
+// Conventions
+// - Money is whole VND stored as Int. No Decimal, no Float.
+// - Ids are UUID strings. DateTime values are stored in UTC.
+// - Model names are PascalCase; table names are snake_case through @@map.
+// - Checks that Prisma cannot express (stock >= 0, qty > 0, ...) are added by
+//   hand in the migration SQL (see prisma/migrations/*/migration.sql).
+//
+// The connection URL is not set here: Prisma 7 reads it from prisma.config.ts.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------- Enums
+
+enum OrderStatus {
+  PENDING
+  PAID
+  PAYMENT_FAILED
+  PREPARING
+  READY
+  COMPLETED
+  CANCELLED
+}
+
+enum Size {
+  S
+  M
+  L
+}
+
+enum PaymentMethod {
+  WALLET
+  CARD
+}
+
+enum PaymentStatus {
+  SUCCEEDED
+  FAILED
+  REFUNDED
+}
+
+enum PromotionType {
+  PERCENT
+  FIXED
+}
+
+enum LoyaltyTransactionType {
+  EARN
+  REVERSAL
+}
+
+// ---------------------------------------------------------------- Models
+
+/// A registered customer. Only the bcrypt hash of the password is stored.
+model User {
+  id            String   @id @default(uuid()) @db.Uuid
+  /// Stored in lower case by the application.
+  email         String   @unique
+  passwordHash  String   @map("password_hash")
+  /// Running balance; changed only together with a LoyaltyTransaction row.
+  loyaltyPoints Int      @default(0) @map("loyalty_points")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  orders              Order[]
+  payments            Payment[]
+  loyaltyTransactions LoyaltyTransaction[]
+
+  @@map("users")
+}
+
+/// A drink on the menu. `price` is the size S price; `stock` counts finished drinks.
+model Product {
+  id       String @id @default(uuid()) @db.Uuid
+  name     String
+  /// Whole VND, size S.
+  price    Int
+  imageUrl String @map("image_url")
+  /// Finished drinks available. Check stock >= 0 is in the migration SQL.
+  stock    Int    @default(0)
+  /// Optimistic lock: every stock update is conditional on the version and increments it.
+  version  Int    @default(0)
+
+  orderItems OrderItem[]
+
+  @@map("products")
+}
+
+/// An available topping (+5,000 VND each per decision 6). `active` hides it without deleting it.
+model Topping {
+  id     String  @id @default(uuid()) @db.Uuid
+  name   String  @unique
+  /// Whole VND.
+  price  Int
+  active Boolean @default(true)
+
+  orderItems OrderItemTopping[]
+
+  @@map("toppings")
+}
+
+/// A customer's order. total = subtotal - discountAmount.
+model Order {
+  id             String      @id @default(uuid()) @db.Uuid
+  userId         String      @map("user_id") @db.Uuid
+  status         OrderStatus @default(PENDING)
+  subtotal       Int
+  discountAmount Int         @default(0) @map("discount_amount")
+  total          Int
+  promotionId    String?     @map("promotion_id") @db.Uuid
+  /// True while stock is held; set to false in the same transaction that releases it.
+  stockHeld      Boolean     @default(true) @map("stock_held")
+  /// End of the 15-minute payment window for PENDING and PAYMENT_FAILED orders.
+  expiresAt      DateTime    @map("expires_at") @db.Timestamptz(3)
+  createdAt      DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user                User                 @relation(fields: [userId], references: [id], onDelete: Restrict)
+  promotion           Promotion?           @relation(fields: [promotionId], references: [id], onDelete: Restrict)
+  items               OrderItem[]
+  payments            Payment[]
+  loyaltyTransactions LoyaltyTransaction[]
+
+  /// GET /orders/me lists a user's orders newest first.
+  @@index([userId, createdAt(sort: Desc)])
+  /// The expiry job looks up unpaid orders whose window has passed.
+  @@index([status, expiresAt])
+  @@map("orders")
+}
+
+/// One line of an order. unitPrice = product price + size surcharge + topping prices.
+model OrderItem {
+  id        String @id @default(uuid()) @db.Uuid
+  orderId   String @map("order_id") @db.Uuid
+  productId String @map("product_id") @db.Uuid
+  size      Size
+  /// Check qty > 0 is in the migration SQL.
+  qty       Int
+  /// Price snapshot at order time, whole VND.
+  unitPrice Int    @map("unit_price")
+  /// unitPrice x qty.
+  lineTotal Int    @map("line_total")
+
+  order    Order              @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product  Product            @relation(fields: [productId], references: [id], onDelete: Restrict)
+  toppings OrderItemTopping[]
+
+  @@index([orderId])
+  @@map("order_items")
+}
+
+/// Association class between OrderItem and Topping with a price snapshot.
+model OrderItemTopping {
+  orderItemId String @map("order_item_id") @db.Uuid
+  toppingId   String @map("topping_id") @db.Uuid
+  /// Topping price at order time, whole VND.
+  unitPrice   Int    @map("unit_price")
+
+  orderItem OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  topping   Topping   @relation(fields: [toppingId], references: [id], onDelete: Restrict)
+
+  @@id([orderItemId, toppingId])
+  @@map("order_item_toppings")
+}
+
+/// One payment attempt. A failed attempt and a later successful retry are separate rows.
+model Payment {
+  id             String        @id @default(uuid()) @db.Uuid
+  orderId        String        @map("order_id") @db.Uuid
+  /// Copied from the order so the database can enforce key uniqueness per user.
+  userId         String        @map("user_id") @db.Uuid
+  idempotencyKey String        @map("idempotency_key")
+  /// Equals Order.total at the moment of the attempt, whole VND.
+  amount         Int
+  method         PaymentMethod
+  status         PaymentStatus
+  createdAt      DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  /// Set when a PAID order is cancelled (simulated refund).
+  refundedAt     DateTime?     @map("refunded_at") @db.Timestamptz(3)
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  /// Idempotency (FR-10): the same key from the same user has one effect.
+  @@unique([userId, idempotencyKey])
+  @@index([orderId])
+  @@map("payments")
+}
+
+/// A discount code: PERCENT (value 1..100) or FIXED (value in VND).
+model Promotion {
+  id            String        @id @default(uuid()) @db.Uuid
+  /// Uppercase letters and digits.
+  code          String        @unique
+  type          PromotionType
+  value         Int
+  /// Whole VND; 0 means no minimum.
+  minOrderTotal Int           @default(0) @map("min_order_total")
+  validFrom     DateTime      @map("valid_from") @db.Timestamptz(3)
+  validTo       DateTime      @map("valid_to") @db.Timestamptz(3)
+  active        Boolean       @default(true)
+  /// Null means unlimited.
+  usageLimit    Int?          @map("usage_limit")
+  usedCount     Int           @default(0) @map("used_count")
+
+  orders Order[]
+
+  @@map("promotions")
+}
+
+/// A change to a customer's points: EARN after PAID, REVERSAL (negative) after a PAID cancel.
+model LoyaltyTransaction {
+  id        String                 @id @default(uuid()) @db.Uuid
+  userId    String                 @map("user_id") @db.Uuid
+  orderId   String                 @map("order_id") @db.Uuid
+  type      LoyaltyTransactionType
+  /// Positive for EARN, negative for REVERSAL.
+  points    Int
+  createdAt DateTime               @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Restrict)
+  order Order @relation(fields: [orderId], references: [id], onDelete: Restrict)
+
+  /// At most one EARN and one REVERSAL per order (ADR 009).
+  @@unique([orderId, type])
+  @@index([userId])
+  @@map("loyalty_transactions")
+}
