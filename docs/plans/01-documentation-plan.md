@@ -70,7 +70,7 @@ Decide these in the P0 meeting. Record each as an ADR (D-11).
 | 8 | Cancellation details and retry expiry | Who may cancel; refund handling for `PAID`; expiry window | C-09, D-06 |
 | 9 | Promotion and loyalty rules | Code format, discount type, points per amount | C-12, D-04 |
 | 10 | Diagram format | Mermaid with exported images, or PlantUML | D-05 to D-09, D-12 |
-| 11 | Test tools | Jest, Supertest, test database, Playwright or Cypress | T-01, T-02 |
+| 11 | Test tools | Jest, Supertest, test database, Playwright or Cypress (decided: Vitest, Supertest, Playwright, real PostgreSQL; ADR 011 and ADR 015) | T-01, T-02 |
 | 12 | Performance test method | Sample size, request mix, environment | T-10 |
 | 13 | Browser support baseline | Exact browsers and versions | T-11, D-04 |
 

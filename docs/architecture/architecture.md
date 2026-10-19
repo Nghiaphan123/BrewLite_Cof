@@ -249,11 +249,11 @@ ADR files are in [`docs/architecture/adr/`](adr/README.md) (written in `D-11`). 
 | [`008-cancellation-and-expiry.md`](adr/008-cancellation-and-expiry.md) | Owner cancel, simulated refund, 15-minute expiry                           | Decision 8                 | Accepted                           |
 | [`009-promotion-loyalty.md`](adr/009-promotion-loyalty.md)             | Promotion types and loyalty points                                         | Decision 9                 | Accepted                           |
 | [`010-diagram-format.md`](adr/010-diagram-format.md)                   | PlantUML with exported SVG                                                 | Decision 10                | Accepted (confirm with instructor) |
-| [`011-test-tooling.md`](adr/011-test-tooling.md)                       | Test tools, performance method, browser baseline                           | Decisions 11 to 13         | Accepted (browser list to verify)  |
+| [`011-test-tooling.md`](adr/011-test-tooling.md)                       | Test tools, performance method, browser baseline                           | Decisions 11 to 13         | Superseded by 015 (runner); rest Accepted (browser list to verify) |
 | [`012-architecture-style.md`](adr/012-architecture-style.md)           | Modular monolith (section 2)                                               | New **(proposed)**         | Proposed                           |
 | [`013-auth-token-handling.md`](adr/013-auth-token-handling.md)         | JWT lifetime and storage (sections 9.1 and 11)                             | New **(proposed)**         | Proposed                           |
 | [`014-logging-and-config.md`](adr/014-logging-and-config.md)           | Structured logging and build-time web configuration (sections 9.2 and 9.4) | New **(proposed)**         | Proposed                           |
-| [`015-test-runner-vitest.md`](adr/015-test-runner-vitest.md)           | Vitest as the API test runner                                              | Decision 14 **(proposed)** | Proposed                           |
+| [`015-test-runner-vitest.md`](adr/015-test-runner-vitest.md)           | Vitest as the API test runner                                              | Decision 14                | Accepted                           |
 
 ## 13. Traceability from architecture to code
 

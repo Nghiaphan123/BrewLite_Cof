@@ -36,9 +36,9 @@ Assignment 2, Task 5.2 requires: unit tests for important business logic, integr
 
 ## 3. Test levels and locations
 
-| Level | Where | Tools (confirm in D-01) |
+| Level | Where | Tools (ADR 011, ADR 015) |
 |---|---|---|
-| Unit | `apps/api`, `apps/web` next to code | Vitest (ADR 015, proposed; ADR 011 said Jest); React Testing Library |
+| Unit | `apps/api`, `apps/web` next to code | Vitest (ADR 015); React Testing Library |
 | Integration | `apps/api/test` against a PostgreSQL test database | Vitest with Supertest |
 | End-to-end | `tests/e2e/` against the Compose stack | Playwright (decision 11) |
 | Non-functional | `tests/nfr/` scripts | `autocannon` (decision 12); manual browser smoke test |

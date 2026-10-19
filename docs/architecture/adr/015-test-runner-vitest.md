@@ -1,6 +1,6 @@
 # ADR 015: Use Vitest as the test runner in the API
 
-**Status:** Proposed (changes the API runner in ADR 011 if accepted)  
+**Status:** Accepted (2026-10-19). Supersedes the test runner part of [ADR 011](011-test-tooling.md).  
 **Date:** 2026-10-19  
 **Decision log:** [Decision 14](../../plans/decision-log.md)  
 **Related tasks:** T-01, T-02, T-03 to T-08, C-01
@@ -33,7 +33,7 @@ Use **Vitest** with **Supertest** for unit and integration tests in `apps/api`. 
 
 **Follow-up**
 
-- If accepted, mark decision 11 **Changed** for the API runner in the decision log and set ADR 011 to "Accepted, API runner superseded by ADR 015".
+- Done: decision 11 is marked **Changed** for the API runner in the decision log, and ADR 011 is marked superseded by this ADR for the runner.
 - `T-02` adds the integration configuration (test database, single worker) and the web runner.
 
 ## Revisit if

@@ -1,7 +1,7 @@
 # BrewLite - Decision Log
 
-**Version:** 0.2  
-**Status:** Accepted, except decision 3 (hosting, still Proposed until its checks are done); items marked **(verify)** still need a check. Decision 14 is a new proposal.  
+**Version:** 0.3  
+**Status:** Accepted, except decision 3 (hosting, still Proposed until its checks are done); items marked **(verify)** still need a check.  
 **Location:** `docs/plans/decision-log.md`  
 **Task:** D-01 (decision meeting and log)  
 **Related:** [Overview](00-overview.md), [Documentation plan](01-documentation-plan.md#3-decision-checklist-d-01), [Payment plan](05-payment-plan.md), [ADR index](../architecture/adr/README.md)
@@ -39,10 +39,10 @@ This log records the 13 decisions from the decision checklist, plus decision 14 
 | 8   | Cancellation and retry expiry | Owner cancels; simulated refund; 15 min expiry                                 | Accepted                           | C-09, D-06             | [`008-cancellation-and-expiry.md`](../architecture/adr/008-cancellation-and-expiry.md) |
 | 9   | Promotion and loyalty         | `PERCENT` or `FIXED` codes; 1 point per 1,000 VND                              | Accepted                           | C-12, D-04             | [`009-promotion-loyalty.md`](../architecture/adr/009-promotion-loyalty.md)             |
 | 10  | Diagram format                | PlantUML source plus exported SVG                                              | Accepted (confirm with instructor) | D-05 to D-09, D-12     | [`010-diagram-format.md`](../architecture/adr/010-diagram-format.md)                   |
-| 11  | Test tools                    | Jest, Supertest, RTL, Playwright, real PostgreSQL                              | Accepted (API runner: see 14)      | T-01, T-02             | [`011-test-tooling.md`](../architecture/adr/011-test-tooling.md)                       |
+| 11  | Test tools                    | Vitest (was Jest, see 14), Supertest, RTL, Playwright, real PostgreSQL         | Changed (runner: see 14)           | T-01, T-02             | [`011-test-tooling.md`](../architecture/adr/011-test-tooling.md)                       |
 | 12  | Performance test method       | p95 under 500 ms with `autocannon`                                             | Accepted                           | T-10                   | [`011-test-tooling.md`](../architecture/adr/011-test-tooling.md)                       |
 | 13  | Browser support baseline      | Latest 2 versions of major browsers (verify)                                   | Accepted (verify)                  | T-11, D-04             | [`011-test-tooling.md`](../architecture/adr/011-test-tooling.md)                       |
-| 14  | API test runner               | Vitest (already scaffolded in `apps/api`) instead of Jest; Supertest unchanged | Proposed                           | T-01, T-02             | [`015-test-runner-vitest.md`](../architecture/adr/015-test-runner-vitest.md)           |
+| 14  | API test runner               | Vitest (already scaffolded in `apps/api`) instead of Jest; Supertest unchanged | Accepted                           | T-01, T-02             | [`015-test-runner-vitest.md`](../architecture/adr/015-test-runner-vitest.md)           |
 
 Decision [`001-monorepo.md`](../architecture/adr/001-monorepo.md) (single repository with `apps/web` and `apps/api`) is already fixed by Assignment 2, section 9. Record it as an ADR for completeness; it needs no vote.
 
@@ -160,13 +160,13 @@ Decision [`001-monorepo.md`](../architecture/adr/001-monorepo.md) (single reposi
 
 ### D-01.11 Test tools
 
-- **Status:** Accepted. The API runner is under review in decision 14: `apps/api` was scaffolded with Vitest, not Jest.
+- **Status:** Changed for the test runner: Jest is replaced by Vitest in decision 14 ([ADR 015](../architecture/adr/015-test-runner-vitest.md)). The rest of this decision stays Accepted.
 - **Decision:**
 
 | Level                          | Tool                                                          |
 | ------------------------------ | ------------------------------------------------------------- |
-| API unit and integration       | Jest, Supertest                                               |
-| Frontend unit and component    | Jest, React Testing Library                                   |
+| API unit and integration       | Vitest (decision 14; was Jest), Supertest                     |
+| Frontend unit and component    | Vitest preferred (decision 14, set up in T-02), RTL           |
 | End to end                     | Playwright                                                    |
 | Database for integration tests | Real PostgreSQL (CI service container or Compose), not SQLite |
 
@@ -193,11 +193,11 @@ Decision [`001-monorepo.md`](../architecture/adr/001-monorepo.md) (single reposi
 
 ### D-01.14 API test runner
 
-- **Status:** Proposed
+- **Status:** Accepted (2026-10-19)
 - **Options:** Jest (decision 11), Vitest
 - **Decision:** Use **Vitest** for unit and integration tests in `apps/api`, with Supertest for HTTP calls. Keep the rest of decision 11 (React Testing Library, Playwright, real PostgreSQL).
 - **Reason:** The NestJS 12 scaffold in `apps/api` already ships with Vitest (`vitest.config.ts`, `vitest.config.e2e.ts`, `npm test` runs `vitest run`). Switching back to Jest adds setup work and gives no benefit for the assignment.
-- **Consequences:** If accepted, mark decision 11 **Changed** for the API runner and accept [ADR 015](../architecture/adr/015-test-runner-vitest.md). The frontend runner (`apps/web` has none yet) is chosen in `T-02`; Vitest with React Testing Library is suggested so both apps use one runner. The [test strategy](../testing/test-strategy.md) already uses Vitest.
+- **Consequences:** Decision 11 is marked **Changed** for the API runner, [ADR 015](../architecture/adr/015-test-runner-vitest.md) is Accepted, and ADR 011 is marked superseded for the runner. The frontend runner (`apps/web` has none yet) is chosen in `T-02`; Vitest with React Testing Library is suggested so both apps use one runner. The [test strategy](../testing/test-strategy.md) already uses Vitest.
 
 ## 4. Impact on other tasks
 
@@ -212,17 +212,17 @@ Decision [`001-monorepo.md`](../architecture/adr/001-monorepo.md) (single reposi
 | C-03       | Prisma schema, migrations, and seed (products, users, two promotion codes)              |
 | C-09       | State machine plus the 15-minute expiry job                                             |
 | S-06       | Provision Render; confirm plan limits                                                   |
-| T-01, T-02 | Vitest (decision 14, proposed), Supertest, RTL, Playwright, PostgreSQL test database    |
+| T-01, T-02 | Vitest (decision 14), Supertest, RTL, Playwright, PostgreSQL test database              |
 
 ## 5. Meeting record
 
 | Field                               | Value                                                     |
 | ----------------------------------- | --------------------------------------------------------- |
-| Date                                | 2026-10-18 (commit `5400762` "finalize decisions")        |
+| Date                                | 2026-10-18 (commit `5400762` "finalize decisions"); 2026-10-19 (decision 14) |
 | Attendees                           | (to fill in)                                              |
-| Decisions accepted                  | 1, 2, 4 to 13 (10 and 13 still have a check to do)        |
-| Decisions changed from the proposal | 9: uniqueness is (`orderId`, `type`), not `orderId` alone |
-| Decisions still open                | 3 (hosting, verify plan limits); 14 (Vitest, new)         |
+| Decisions accepted                  | 1, 2, 4 to 14 (10 and 13 still have a check to do)        |
+| Decisions changed from the proposal | 9: uniqueness is (`orderId`, `type`), not `orderId` alone; 11: test runner Jest replaced by Vitest (decision 14) |
+| Decisions still open                | 3 (hosting, verify plan limits)                           |
 | Follow-up owners                    | (to fill in)                                              |
 
 ## 6. Change history
@@ -231,3 +231,4 @@ Decision [`001-monorepo.md`](../architecture/adr/001-monorepo.md) (single reposi
 | ------- | ---------- | ----------------------------------------------------------------------------------------------------------- | ------ |
 | 0.1     | 2026-10-18 | First draft of proposed decisions                                                                           |        |
 | 0.2     | 2026-10-19 | Statuses set to match the ADRs; decision 9 uniqueness corrected; decision 14 (Vitest) proposed; links fixed |        |
+| 0.3     | 2026-10-19 | Decision 14 (Vitest) accepted; decision 11 marked Changed for the test runner; ADR 011 superseded for the runner by ADR 015 |        |

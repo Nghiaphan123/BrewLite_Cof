@@ -1,6 +1,6 @@
 # ADR 011: Standardize test tools, performance method, and browser baseline
 
-**Status:** Accepted (browser list to verify). The API runner is under review in [ADR 015](015-test-runner-vitest.md) (proposed: Vitest).  
+**Status:** Superseded by [ADR 015](015-test-runner-vitest.md) for the test runner (Jest replaced by Vitest). The rest stays Accepted (browser list to verify).  
 **Date:** 2026-10-19  
 **Decision log:** [Decisions 11, 12, and 13](../../plans/decision-log.md)  
 **Related tasks:** T-01, T-02, T-10, T-11, D-04
@@ -17,8 +17,8 @@ Assignments require unit, integration, and at least one end-to-end test, plus an
 
 ## Decision
 
-- **API unit and integration:** Jest and Supertest.
-- **Frontend unit and component:** Jest and React Testing Library.
+- **API unit and integration:** Jest and Supertest. *Superseded by ADR 015: Vitest and Supertest.*
+- **Frontend unit and component:** Jest and React Testing Library. *Superseded by ADR 015: Vitest is preferred with React Testing Library (set up in T-02).*
 - **End to end:** Playwright.
 - **Integration database:** real PostgreSQL (a CI service container or Docker Compose), not SQLite.
 - **Performance:** about 30 products and 10 users, bcrypt cost 10; 20 warm-up requests then 200 requests per endpoint at 10 concurrent connections with `autocannon`, on `GET /products`, `GET /products/:id`, `POST /auth/login`, `POST /orders`, `POST /payments`, and `GET /orders/me`. **Pass:** p95 under 500 ms, run on the Compose stack and on production after warming it.

@@ -20,11 +20,11 @@ An ADR is a short record of one important decision: the situation, the options, 
 | [008](008-cancellation-and-expiry.md) | Owner cancel, simulated refund, 15-minute expiry           | Accepted                           | Decision 8              |
 | [009](009-promotion-loyalty.md)       | Percent and fixed promotions, earn-only points             | Accepted                           | Decision 9              |
 | [010](010-diagram-format.md)          | PlantUML with exported SVG                                 | Accepted (confirm with instructor) | Decision 10             |
-| [011](011-test-tooling.md)            | Test tools, performance method, browser baseline           | Accepted (browser list to verify)  | Decisions 11 to 13      |
+| [011](011-test-tooling.md)            | Test tools, performance method, browser baseline           | Superseded by 015 (runner); rest Accepted (browser list to verify) | Decisions 11 to 13      |
 | [012](012-architecture-style.md)      | Modular monolith                                           | Proposed                           | New                     |
 | [013](013-auth-token-handling.md)     | Short-lived bearer JWT in the browser                      | Proposed                           | New                     |
 | [014](014-logging-and-config.md)      | Structured logs, validated config, build-time web settings | Proposed                           | New                     |
-| [015](015-test-runner-vitest.md)      | Vitest as the API test runner (changes part of ADR 011)    | Proposed                           | Decision 14             |
+| [015](015-test-runner-vitest.md)      | Vitest as the API test runner (supersedes part of ADR 011) | Accepted                           | Decision 14             |
 
 ## 2. Status values
 
@@ -80,4 +80,4 @@ The condition that would reopen this decision.
 6. **Browser list** (ADR 011): check it against the Next.js version's support list.
 7. **Prisma check constraints** (ADR 002): checked with Prisma 7.10.1 in `C-03`. The checks are added at the end of the first migration SQL, apply with `prisma migrate deploy`, and `prisma migrate diff` reports no drift.
 8. **Web build argument** (ADR 014): confirm the CD build step passes the API URL.
-9. **Test runner** (ADR 015): the API scaffold uses Vitest, not the Jest chosen in ADR 011. Accept or reject ADR 015.
+9. **Test runner** (ADR 015): resolved. ADR 015 (Vitest) is Accepted and supersedes the Jest runner in ADR 011.

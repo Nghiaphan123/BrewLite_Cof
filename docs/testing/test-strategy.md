@@ -37,7 +37,7 @@ This document defines how BrewLite is tested: the test levels, tools, environmen
 | End to end     | A customer journey through the browser, web, API, and database together                | Playwright (Chromium and WebKit)                                | `tests/e2e/`                                  | `npx playwright test` against the Compose stack |
 | Non-functional | Performance, security, browsers, handover, deployment                                  | `autocannon`, scripts, manual checklists                        | `tests/nfr/` and evidence notes               | Scripts and checklists in T-10 and T-11         |
 
-**Note on tools.** [ADR 011](../architecture/adr/011-test-tooling.md) chose Jest. The NestJS 12 scaffold in `apps/api` already uses Vitest (`vitest.config.ts`, `vitest.config.e2e.ts`), and its sample test passes. This strategy uses Vitest, as proposed in [ADR 015](../architecture/adr/015-test-runner-vitest.md) and decision 14 in the [decision log](../plans/decision-log.md). Supertest, Playwright, React Testing Library, and real PostgreSQL stay as ADR 011 decided. If the team rejects ADR 015, only the runner changes; the test IDs and cases below stay the same.
+**Note on tools.** The test runner is Vitest, accepted in [ADR 015](../architecture/adr/015-test-runner-vitest.md) and decision 14 in the [decision log](../plans/decision-log.md). It supersedes the Jest runner chosen in [ADR 011](../architecture/adr/011-test-tooling.md); the NestJS 12 scaffold in `apps/api` already uses Vitest (`vitest.config.ts`, `vitest.config.e2e.ts`). Supertest, Playwright, React Testing Library, and real PostgreSQL stay as ADR 011 decided.
 
 **Note on names.** The scaffold calls its Supertest suite `test:e2e`. In this strategy those are **API** and **Integration** tests. "End to end" means only the Playwright tests in `tests/e2e/`. T-02 may rename the script to `test:api` **(proposed)**.
 
@@ -240,10 +240,9 @@ Keep the CI logs (or screenshots) of these tests with the release evidence (`D-1
 
 ## 10. Points to confirm
 
-1. **Test runner:** accept or reject [ADR 015](../architecture/adr/015-test-runner-vitest.md) (Vitest instead of Jest in `apps/api`).
-2. **Web test runner:** Vitest with React Testing Library is proposed; decide in `T-02`.
-3. **Mock outcome control:** the exact mechanism (test header, test amount, or `PAYMENT_MOCK_CONTROL`) is decided in `C-07`; `UNIT-T07`, `API-T12`, and `API-T21` depend on it.
-4. **Status codes:** 403 or 404 for another user's order (`API-T15`) and 409 for an order that is not payable (`API-T16`) are proposals from the UC-01 spec.
-5. **Expiry start** (ADR 008): `UNIT-T08` and `INT-T10` assume the window starts at order creation unless the team decides it restarts on retry.
-6. **Promotion usage count** (ADR 009): when `usedCount` goes up affects `UNIT-T05` and `API-T20`.
-7. **E2E in CI:** run Playwright on every pull request, or only on `main` and before a release **(proposed: `main` and release)**.
+1. **Web test runner:** Vitest with React Testing Library is proposed; decide in `T-02`.
+2. **Mock outcome control:** the exact mechanism (test header, test amount, or `PAYMENT_MOCK_CONTROL`) is decided in `C-07`; `UNIT-T07`, `API-T12`, and `API-T21` depend on it.
+3. **Status codes:** 403 or 404 for another user's order (`API-T15`) and 409 for an order that is not payable (`API-T16`) are proposals from the UC-01 spec.
+4. **Expiry start** (ADR 008): `UNIT-T08` and `INT-T10` assume the window starts at order creation unless the team decides it restarts on retry.
+5. **Promotion usage count** (ADR 009): when `usedCount` goes up affects `UNIT-T05` and `API-T20`.
+6. **E2E in CI:** run Playwright on every pull request, or only on `main` and before a release **(proposed: `main` and release)**.
