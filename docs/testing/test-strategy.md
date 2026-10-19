@@ -74,7 +74,7 @@ This document defines how BrewLite is tested: the test levels, tools, environmen
 | Products   | 30 drinks with whole-VND prices; one product "Cà phê phin giới hạn" with stock 1                             | Menu tests, performance (decision 12), out-of-stock and concurrency tests |
 | Toppings   | 5 toppings at +5,000 VND                                                                                     | Pricing tests                                                             |
 | Users      | `customer01@brewlite.test` to `customer10@brewlite.test`, bcrypt cost 10, password from `SEED_USER_PASSWORD` | Auth, ownership, and performance tests                                    |
-| Promotions | `BREW10` (10 percent), `WELCOME20K` (20,000 VND off, minimum order 50,000 VND **(proposed)**)                | Promotion tests (T-08)                                                    |
+| Promotions | `BREW10` (10 percent), `WELCOME20K` (20,000 VND off, minimum order 50,000 VND, decision 16)                | Promotion tests (T-08)                                                    |
 
 The seed is repeatable: running it twice creates no duplicates (`INT-T08`).
 

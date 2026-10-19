@@ -18,7 +18,7 @@ Task 10 requires applying a valid promotion and crediting loyalty points once af
 ## Decision
 
 - A promotion has a code (uppercase letters and digits), a type (`PERCENT` or `FIXED`), a value, a minimum order total, a validity period, an active flag, and an optional usage limit.
-- Seed codes: `BREW10` (10 percent) and `WELCOME20K` (20,000 VND off).
+- Seed codes: `BREW10` (10 percent) and `WELCOME20K` (20,000 VND off, minimum order 50,000 VND; decision 16 in the log).
 - One code per order; the discount never exceeds the subtotal.
 - Points are `floor(paidTotal / 1000)`, credited once per order after `PAID`.
 - Redeeming points is **Won't** in this delivery.

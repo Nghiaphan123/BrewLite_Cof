@@ -176,7 +176,7 @@ Check the Next.js caching settings: authenticated API calls and user-specific pa
 
 ### 9.1 Security
 
-- Passwords hashed with bcrypt (cost 10); the hash is never returned.
+- Passwords hashed with bcrypt (cost 10, `bcryptjs` library, decision 17); the hash is never returned.
 - JWT signed with a secret from the environment; the user ID comes from the token, never from the request body. Token lifetime of about one hour is proposed **(proposed)**.
 - DTO validation with whitelisting rejects unknown fields.
 - Every order and payment read or write is limited to the owner.

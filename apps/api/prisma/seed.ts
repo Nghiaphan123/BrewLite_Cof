@@ -126,7 +126,7 @@ async function seedPromotions(): Promise<void> {
   const promotions = [
     // 10 percent off, no minimum (ADR 009).
     { code: 'BREW10', type: 'PERCENT' as const, value: 10, minOrderTotal: 0 },
-    // 20,000 VND off. The minimum keeps the discount below the subtotal (proposed).
+    // 20,000 VND off. The minimum keeps the discount below the subtotal (decision 16).
     {
       code: 'WELCOME20K',
       type: 'FIXED' as const,

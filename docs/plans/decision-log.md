@@ -6,7 +6,7 @@
 **Task:** D-01 (decision meeting and log)  
 **Related:** [Overview](00-overview.md), [Documentation plan](01-documentation-plan.md#3-decision-checklist-d-01), [Payment plan](05-payment-plan.md), [ADR index](../architecture/adr/README.md)
 
-This log records the 13 decisions from the decision checklist, plus decision 14 added while writing the test strategy (`T-01`). Each entry has a status, the options considered, the choice, the reason, and the consequences. Once a decision is **Accepted**, write it up as an ADR (`D-11`) in `docs/architecture/adr/` and link it in the table below.
+This log records the 13 decisions from the decision checklist, plus decision 14 added while writing the test strategy (`T-01`) and decisions 15 to 18 recorded on 2026-10-19 during `C-01` and `C-03`. Each entry has a status, the options considered, the choice, the reason, and the consequences. Once a decision is **Accepted**, write it up as an ADR (`D-11`) in `docs/architecture/adr/` and link it in the table below.
 
 ## 1. How to use this log
 
@@ -44,6 +44,9 @@ This log records the 13 decisions from the decision checklist, plus decision 14 
 | 13  | Browser support baseline      | Latest 2 versions of major browsers (verify)                                   | Accepted (verify)                  | T-11, D-04             | [`011-test-tooling.md`](../architecture/adr/011-test-tooling.md)                       |
 | 14  | API test runner               | Vitest (already scaffolded in `apps/api`) instead of Jest; Supertest unchanged | Accepted                           | T-01, T-02             | [`015-test-runner-vitest.md`](../architecture/adr/015-test-runner-vitest.md)           |
 | 15  | Hosted APM agent              | None: `@nestjs/observe` removed from `apps/api`; logs and health per ADR 014   | Accepted                           | T-01, T-02, S-04, S-06 | -                                                                                      |
+| 16  | `WELCOME20K` minimum order    | 20,000 VND off only when the subtotal is at least 50,000 VND                   | Accepted                           | C-03, C-12, T-08       | [`009-promotion-loyalty.md`](../architecture/adr/009-promotion-loyalty.md)             |
+| 17  | Password hashing library      | `bcryptjs` (pure JavaScript), cost 10                                          | Accepted                           | C-03, C-05, T-10       | [`013-auth-token-handling.md`](../architecture/adr/013-auth-token-handling.md)         |
+| 18  | Database naming               | Tables and columns in snake_case through `@@map` and `@map`                    | Accepted                           | C-03, D-09             | [`002-orm-prisma.md`](../architecture/adr/002-orm-prisma.md)                           |
 
 Decision [`001-monorepo.md`](../architecture/adr/001-monorepo.md) (single repository with `apps/web` and `apps/api`) is already fixed by Assignment 2, section 9. Record it as an ADR for completeness; it needs no vote.
 
@@ -141,7 +144,7 @@ Decision [`001-monorepo.md`](../architecture/adr/001-monorepo.md) (single reposi
 - **Status:** Accepted
 - **Decision:**
   - **Promotion fields:** code (uppercase letters and digits), type (`PERCENT` or `FIXED`), value, minimum order total, valid from and to, active flag, optional usage limit.
-  - **Seed codes:** `BREW10` (10 percent) and `WELCOME20K` (20,000 VND off).
+  - **Seed codes:** `BREW10` (10 percent, no minimum) and `WELCOME20K` (20,000 VND off, minimum order 50,000 VND, decision 16).
   - One code per order. The discount never exceeds the subtotal.
   - **Points:** `floor(paidTotal / 1000)`, credited once per order after `PAID`. A unique pair (`orderId`, `type`) on `LoyaltyTransaction` enforces this: at most one `EARN` and one `REVERSAL` row per order. A unique `orderId` alone would block the reversal row from decision 8 (corrected in version 0.2, see ADR 009).
   - Redeeming points is **Won't** in this delivery; the assignment only requires earning them.
@@ -212,6 +215,28 @@ Decision [`001-monorepo.md`](../architecture/adr/001-monorepo.md) (single reposi
   - It has no switch to turn it off by environment, it is version 0.1, and nothing in the assignment needs it.
 - **Consequences:** `@nestjs/observe` is gone from `package.json`, `package-lock.json`, `app.module.ts`, and `main.ts`; no new environment variable is needed. Fakes for testing stay where they belong: the mock payment provider (decision 4) and test doubles in Vitest. Revisit only if the team wants hosted tracing in production; then load the keys from the environment and disable the agent when `NODE_ENV=test`.
 
+### D-01.16 `WELCOME20K` minimum order
+
+- **Status:** Accepted (2026-10-19)
+- **Decision:** `WELCOME20K` is a `FIXED` promotion of 20,000 VND with `minOrderTotal` 50,000 VND. `BREW10` has no minimum.
+- **Reason:** The minimum keeps the fixed discount well below the subtotal (decision 9: the discount never exceeds the subtotal) and gives a clear boundary for promotion tests.
+- **Consequences:** The seed (`apps/api/prisma/seed.ts`) already uses these values. `T-08` tests the boundary: a subtotal of 50,000 VND accepts the code, a lower subtotal rejects it with a message (`API-T20`, `UNIT-T05`).
+
+### D-01.17 Password hashing library
+
+- **Status:** Accepted (2026-10-19)
+- **Options:** `bcrypt` (native addon), `bcryptjs` (pure JavaScript), `argon2`
+- **Decision:** `bcryptjs` with cost 10.
+- **Reason:** No native build step, so it installs the same way on Windows, in the Docker images, and on Render. Its hashes use the standard `$2a$`/`$2b$` format, so NFR-02 and the `NFR-T02` check are unchanged.
+- **Consequences:** The seed and the auth module (`C-05`) use `bcryptjs`. It is slower than the native addon; `T-10` measures `POST /auth/login` against the 500 ms p95 target (decision 12).
+
+### D-01.18 Database naming
+
+- **Status:** Accepted (2026-10-19)
+- **Decision:** Prisma models are PascalCase and fields camelCase; tables and columns are snake_case through `@@map` and `@map` (for example `Promotion.minOrderTotal` is `promotions.min_order_total`).
+- **Reason:** PostgreSQL folds unquoted names to lower case, so snake_case tables and columns can be used in raw SQL without quotes: the hand-written check constraints in the migration, test queries, and database checks such as `NFR-T02`.
+- **Consequences:** Already applied in `apps/api/prisma/schema.prisma` and the first migration (`C-03`). New models follow the same rule.
+
 ## 4. Impact on other tasks
 
 | Task       | What changes because of these decisions                                                 |
@@ -231,9 +256,9 @@ Decision [`001-monorepo.md`](../architecture/adr/001-monorepo.md) (single reposi
 
 | Field                               | Value                                                     |
 | ----------------------------------- | --------------------------------------------------------- |
-| Date                                | 2026-10-18 (commit `5400762` "finalize decisions"); 2026-10-19 (decision 14) |
+| Date                                | 2026-10-18 (commit `5400762` "finalize decisions"); 2026-10-19 (decisions 14 to 18) |
 | Attendees                           | (to fill in)                                              |
-| Decisions accepted                  | 1, 2, 4 to 14 (10 and 13 still have a check to do)        |
+| Decisions accepted                  | 1, 2, 4 to 18 (10 and 13 still have a check to do)        |
 | Decisions changed from the proposal | 9: uniqueness is (`orderId`, `type`), not `orderId` alone; 11: test runner Jest replaced by Vitest (decision 14) |
 | Decisions still open                | 3 (hosting, verify plan limits)                           |
 | Follow-up owners                    | (to fill in)                                              |
@@ -244,4 +269,4 @@ Decision [`001-monorepo.md`](../architecture/adr/001-monorepo.md) (single reposi
 | ------- | ---------- | ----------------------------------------------------------------------------------------------------------- | ------ |
 | 0.1     | 2026-10-18 | First draft of proposed decisions                                                                           |        |
 | 0.2     | 2026-10-19 | Statuses set to match the ADRs; decision 9 uniqueness corrected; decision 14 (Vitest) proposed; links fixed |        |
-| 0.3     | 2026-10-19 | Decision 14 (Vitest) accepted; decision 11 marked Changed for the test runner; ADR 011 superseded for the runner by ADR 015; decision 15 (no hosted APM agent, `@nestjs/observe` removed) |        |
+| 0.3     | 2026-10-19 | Decision 14 (Vitest) accepted; decision 11 marked Changed for the test runner; ADR 011 superseded for the runner by ADR 015; decision 15 (no hosted APM agent, `@nestjs/observe` removed); decisions 16 to 18 (`WELCOME20K` minimum 50,000 VND, `bcryptjs`, snake_case tables) accepted |        |

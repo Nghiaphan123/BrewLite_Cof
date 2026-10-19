@@ -8,7 +8,7 @@
 // Conventions
 // - Money is whole VND stored as Int. No Decimal, no Float.
 // - Ids are UUID strings. DateTime values are stored in UTC.
-// - Model names are PascalCase; table names are snake_case through @@map.
+// - Model names are PascalCase; table names are snake_case through @@map (decision 18).
 // - Checks that Prisma cannot express (stock >= 0, qty > 0, ...) are added by
 //   hand in the migration SQL (see prisma/migrations/*/migration.sql).
 //

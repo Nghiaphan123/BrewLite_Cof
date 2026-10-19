@@ -35,7 +35,7 @@ Issue a **short-lived access token** (about one hour) at login. The web app stor
 
 - Mitigate: keep the lifetime short, never render untrusted HTML, and set a content security policy where practical.
 - Check that a bad or expired token returns 401 and the UI sends the customer to sign in with the cart kept.
-- Hash passwords with bcrypt cost 10 (NFR-02).
+- Hash passwords with bcrypt cost 10 (NFR-02), using the `bcryptjs` library (decision 17 in the log).
 
 ## Revisit if
 
