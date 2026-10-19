@@ -24,6 +24,7 @@ An ADR is a short record of one important decision: the situation, the options, 
 | [012](012-architecture-style.md)      | Modular monolith                                           | Proposed                           | New                     |
 | [013](013-auth-token-handling.md)     | Short-lived bearer JWT in the browser                      | Proposed                           | New                     |
 | [014](014-logging-and-config.md)      | Structured logs, validated config, build-time web settings | Proposed                           | New                     |
+| [015](015-test-runner-vitest.md)      | Vitest as the API test runner (changes part of ADR 011)    | Proposed                           | Decision 14             |
 
 ## 2. Status values
 
@@ -71,11 +72,12 @@ The condition that would reopen this decision.
 
 ## 5. Open points found while writing the ADRs
 
-1. **Loyalty uniqueness** (ADR 009): the decision log says a unique `orderId`; the model needs a unique pair (`orderId`, `type`) because of the reversal row. Update the log.
+1. **Loyalty uniqueness** (ADR 009): resolved. Decision 9 in the log now uses the unique pair (`orderId`, `type`), matching the class model and the Prisma schema.
 2. **Expiry timing** (ADR 008): does the 15 minutes restart on a retry?
 3. **Promotion usage count** (ADR 009): when it increases, and whether cancel gives it back.
 4. **Hosting limits** (ADR 004): check Render's current plan limits before accepting.
 5. **Diagram format** (ADR 010): confirm with the instructor; the use-case overview and sequence diagram still need converting to PlantUML.
 6. **Browser list** (ADR 011): check it against the Next.js version's support list.
-7. **Prisma check constraints** (ADR 002): check how the chosen Prisma version handles hand-added checks in migrations.
+7. **Prisma check constraints** (ADR 002): checked with Prisma 7.10.1 in `C-03`. The checks are added at the end of the first migration SQL, apply with `prisma migrate deploy`, and `prisma migrate diff` reports no drift.
 8. **Web build argument** (ADR 014): confirm the CD build step passes the API URL.
+9. **Test runner** (ADR 015): the API scaffold uses Vitest, not the Jest chosen in ADR 011. Accept or reject ADR 015.

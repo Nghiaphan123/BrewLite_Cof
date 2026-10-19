@@ -235,24 +235,25 @@ Images are tagged with the commit SHA, pushed to a registry if the platform need
 
 ## 12. Architecture decision records
 
-ADR files are written in `D-11` under `docs/architecture/adr/`. They record the decisions in the [decision log](../plans/decision-log.md).
+ADR files are in [`docs/architecture/adr/`](adr/README.md) (written in `D-11`). They record the decisions in the [decision log](../plans/decision-log.md).
 
-| ADR                              | Topic                                                                      | Decision log          | Status            |
-| -------------------------------- | -------------------------------------------------------------------------- | --------------------- | ----------------- |
-| `001-monorepo.md`                | Single repository with `apps/web` and `apps/api`                           | Fixed by Assignment 2 | To write          |
-| `002-orm-prisma.md`              | Prisma as the ORM                                                          | Decision 1            | To write          |
-| `003-cart-state-zustand.md`      | Zustand with persist                                                       | Decision 2            | To write          |
-| `004-hosting-platform.md`        | Render, with a VPS fallback                                                | Decision 3            | To write (verify) |
-| `005-payment-mock-provider.md`   | Mock provider behind `PaymentProvider`                                     | Decision 4            | To write          |
-| `006-money-and-pricing.md`       | VND integers and surcharges                                                | Decisions 5 and 6     | To write          |
-| `007-stock-unit.md`              | Finished drinks per product                                                | Decision 7            | To write          |
-| `008-cancellation-and-expiry.md` | Owner cancel, simulated refund, 15-minute expiry                           | Decision 8            | To write          |
-| `009-promotion-loyalty.md`       | Promotion types and loyalty points                                         | Decision 9            | To write          |
-| `010-diagram-format.md`          | PlantUML with exported SVG                                                 | Decision 10           | To write          |
-| `011-test-tooling.md`            | Test tools, performance method, browser baseline                           | Decisions 11 to 13    | To write          |
-| `012-architecture-style.md`      | Modular monolith (section 2)                                               | New **(proposed)**    | To write          |
-| `013-auth-token-handling.md`     | JWT lifetime and storage (sections 9.1 and 11)                             | New **(proposed)**    | To write          |
-| `014-logging-and-config.md`      | Structured logging and build-time web configuration (sections 9.2 and 9.4) | New **(proposed)**    | To write          |
+| ADR                                                                    | Topic                                                                      | Decision log               | Status                             |
+| ---------------------------------------------------------------------- | -------------------------------------------------------------------------- | -------------------------- | ---------------------------------- |
+| [`001-monorepo.md`](adr/001-monorepo.md)                               | Single repository with `apps/web` and `apps/api`                           | Fixed by Assignment 2      | Accepted                           |
+| [`002-orm-prisma.md`](adr/002-orm-prisma.md)                           | Prisma as the ORM                                                          | Decision 1                 | Accepted                           |
+| [`003-cart-state-zustand.md`](adr/003-cart-state-zustand.md)           | Zustand with persist                                                       | Decision 2                 | Accepted                           |
+| [`004-hosting-platform.md`](adr/004-hosting-platform.md)               | Render, with a VPS fallback                                                | Decision 3                 | Proposed (verify)                  |
+| [`005-payment-mock-provider.md`](adr/005-payment-mock-provider.md)     | Mock provider behind `PaymentProvider`                                     | Decision 4                 | Accepted                           |
+| [`006-money-and-pricing.md`](adr/006-money-and-pricing.md)             | VND integers and surcharges                                                | Decisions 5 and 6          | Accepted                           |
+| [`007-stock-unit.md`](adr/007-stock-unit.md)                           | Finished drinks per product                                                | Decision 7                 | Accepted                           |
+| [`008-cancellation-and-expiry.md`](adr/008-cancellation-and-expiry.md) | Owner cancel, simulated refund, 15-minute expiry                           | Decision 8                 | Accepted                           |
+| [`009-promotion-loyalty.md`](adr/009-promotion-loyalty.md)             | Promotion types and loyalty points                                         | Decision 9                 | Accepted                           |
+| [`010-diagram-format.md`](adr/010-diagram-format.md)                   | PlantUML with exported SVG                                                 | Decision 10                | Accepted (confirm with instructor) |
+| [`011-test-tooling.md`](adr/011-test-tooling.md)                       | Test tools, performance method, browser baseline                           | Decisions 11 to 13         | Accepted (browser list to verify)  |
+| [`012-architecture-style.md`](adr/012-architecture-style.md)           | Modular monolith (section 2)                                               | New **(proposed)**         | Proposed                           |
+| [`013-auth-token-handling.md`](adr/013-auth-token-handling.md)         | JWT lifetime and storage (sections 9.1 and 11)                             | New **(proposed)**         | Proposed                           |
+| [`014-logging-and-config.md`](adr/014-logging-and-config.md)           | Structured logging and build-time web configuration (sections 9.2 and 9.4) | New **(proposed)**         | Proposed                           |
+| [`015-test-runner-vitest.md`](adr/015-test-runner-vitest.md)           | Vitest as the API test runner                                              | Decision 14 **(proposed)** | Proposed                           |
 
 ## 13. Traceability from architecture to code
 
