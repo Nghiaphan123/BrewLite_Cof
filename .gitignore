@@ -1,12 +1,28 @@
-@"
+# Dependencies
 node_modules/
+
+# Build output
 dist/
 .next/
 build/
 coverage/
+*.tsbuildinfo
+
+# Generated Prisma client (rebuilt by `npm run db:generate` or `npm run build`)
+apps/api/src/generated/
+
+# Test reports
+playwright-report/
+test-results/
+
+# Logs
 *.log
+
+# Environment files: keep only the template
 .env
 .env.*
 !.env.example
+
+# OS files
 .DS_Store
-"@ | Set-Content -Encoding utf8 .gitignore
+Thumbs.db
