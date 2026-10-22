@@ -388,5 +388,3 @@ Recorded so the team can say "no" without debate:
 6. **§14's dependency graph and §15's cross-reference table are the two things that make this doc useful during Sprints, not just at Task 2.0 close.** The graph is how you decide what can run in parallel; the table is how you find the spreadsheet rows when you mark something `● Xong`. Without both, this doc is a one-time artifact.
 
 7. **One forward reference to watch:** §17 says "add auth screens to `docs/design/wireframes.md`" — that doc (Task 5.0) is next in Phase 1 order, and the PDF's 5 wireframes don't include auth screens. Either the wireframes doc adds a 6th/7th screen for login/register, or Task 7's frontend acceptance criteria are weakened. I put it in the open items rather than silently expanding the wireframe scope — your call at Task 5.0 time.
-
-Next in Phase 1 order: **`docs/requirements/scenarios.md`** (Task 4.0) — it's referenced by this doc's "Related" line and by Task 4.0's evidence, and it's the doc that turns the PDF's happy-path flowchart into main/error/cancel scenarios with testable outcomes. Want that next?

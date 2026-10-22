@@ -254,5 +254,3 @@ Deferred, with the task that will decide them:
 6. **§6 (UI states) is written as a four-row table with a rule that "no screen may render a blank area during loading."** That's the strongest phrasing I could use while staying true to the PDF's "loading/empty state" acceptance criteria. It's also the most common review comment on student projects — making it a numbered convention means a reviewer can cite "§6" instead of explaining it again.
 
 7. **One inconsistency to check:** §2's route table lists `/orders/[id]/confirmation` while `scenarios.md` S-MAIN-1 step 10 and `product-backlog.md` Task 9 both say `/orders/[id]/confirmation` — good, they agree. But D3 in `scenarios.md` §13 says the route might be keyed by code instead of id. If D3 resolves to "code," update §2 here, `scenarios.md` §12, and `product-backlog.md` §12 in the same PR. That's three docs — which is exactly why D3 is an open item rather than a silent default.
-
-Next in Phase 1 order: **`docs/design/wireframes.md`** — it embeds the five wireframe images (from PDF §7 plus the auth screens), assigns routes, and links each screen to its acceptance criteria in `product-backlog.md`. Want that next?

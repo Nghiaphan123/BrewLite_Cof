@@ -421,5 +421,3 @@ Each of these blocks a scenario from being fully testable; resolve before the sc
 6. **S-CANCEL-1 is honest about its dependency on D1.** Whether abandoning a `PENDING` order affects stock depends on whether stock decrements at creation or at payment. I did not invent an answer; I wrote the scenario against both branches and put the decision in §13. If you decide D1 at ADR 0004 time, trim S-CANCEL-1 to the chosen branch.
 
 7. **Two forward references to honor:** §12's "Playwright spec" column names files that don't exist yet (they're Phase 2+ `tests/e2e/`); that's intentional, it's the spec's target. And §13's D2/D3 must be resolved before `api-contract.md` (Task 7.0) closes — otherwise the scenarios and the contract will disagree on status codes and route keys.
-
-Next in Phase 1 order: **`docs/design/ui-decisions.md`** and **`docs/design/wireframes.md`** (Task 5.0), which together close the design deliverable and resolve several scenarios' UI-facing details (confirmation route copy, cart-empty state, retry affordance). Want the UI decisions doc next?

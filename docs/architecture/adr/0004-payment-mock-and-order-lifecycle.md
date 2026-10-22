@@ -217,5 +217,3 @@ D1 (stock timing) is the load-bearing decision. If it changes, D4 and D5 must be
 7. **D7 (loyalty column, not ledger) is a deliberate MVP simplification**, and the open-questions table flags it for the Task 1.0 ERD. If you later add refunds, the ledger becomes necessary; the ADR's "When to revisit" says so. The rule itself (1 point per 1,000 VND, floor) is simple enough that the unit tests in Task 10d can be exhaustive (0, 999, 1000, 1999, 2000 VND → 0, 0, 1, 1, 2 points).
 
 8. **The "same PR" open item for D3 is the one coordination risk.** When this ADR is accepted, the PR that flips it to `Accepted` must also update the three docs. If it doesn't, `wireframes.md` will say `[id]` while the API returns `code`, and the e2e test will target the wrong route. That's why it's an explicit open question with an owner, not an implicit expectation.
-
-Next: **ADR 0005 (API contract conventions)** — it closes `config.md` §7's error envelope and `Idempotency-Key` spelling items, and it's the doc that `api-contract.md` (Task 7.0) depends on. Want 0005 next, or `api-contract.md` directly (with 0005 folded in as its "decisions" section)?

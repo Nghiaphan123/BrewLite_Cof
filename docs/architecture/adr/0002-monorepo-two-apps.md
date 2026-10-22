@@ -126,5 +126,3 @@ Until then, the current layout stands.
 6. **One forward reference to honor:** the "CI version-drift check" in the open-questions table is a Phase 2+ item. It's named here so that when the first CI workflow lands, someone remembers to check it — but it's explicitly *not* a Phase 1 requirement. Don't let it creep into Phase 1 scope; the ADR says "not a Phase 1 requirement" in the Negative/costs section too, twice for safety.
 
 7. **A small thing to verify:** `project-structure.md` says "The root currently has no npm workspace package." This ADR says the same thing in rule 1. If a teammate has already created a root `package.json` (e.g. to run `concurrently`), this ADR is now describing something that doesn't exist. The first open question is the check for exactly that — worth doing at the next standup, before Task 6.0's evidence note is re-verified.
-
-Next: **ADR 0003 (PostgreSQL + Prisma)** — it's the one `config.md` §7 and Task 1.0 both block on, and it's the first ADR that records a choice the team could plausibly have made differently (TypeORM is the assignment's stated alternative). Want 0003 next?

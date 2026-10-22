@@ -172,5 +172,3 @@ These are recorded here because the spreadsheet is a working artifact that canno
 5. **§7 (open items) is the section that keeps this doc from rotting.** Every 🟡 in the doc has a row here with an owner and a closing condition, so "provisional" can't become "permanent by neglect." When you ratify the API port, you delete its row — the doc shrinks as decisions land.
 
 6. **One thing to fix in `setup.md` after this:** it has four `<API_PORT>` placeholders and two `<port>` references. With this doc written, replace them with `3001` and add "(see [Configuration §1.2](config.md#12-api-port-risk-and-fix--provisional--locked) if your machine needs a different port)". I left them as placeholders in the previous turn precisely so this turn could resolve them in one pass.
-
-Next in Phase 1 order: **`docs/working-agreement.md`** — it's referenced by both `setup.md` and `config.md` for the evidence-note format and the commit convention, so writing it now closes those forward references. Want that next?

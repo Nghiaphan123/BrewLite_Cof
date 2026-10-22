@@ -218,5 +218,3 @@ Switch to Node 22 or 24 LTS (`nvm use 22` or `fnm use 22`). Check with `node --v
 5. **Windows-first commands.** Your spreadsheet and structure doc use PowerShell (`cd apps/api; npm install`), so the examples use `Copy-Item` and PowerShell syntax. I added a one-line note rather than duplicating every command in bash.
 
 6. **Two forward references you should honor when writing the next docs:** `config.md` must define `WEB_ORIGIN`, `JWT_SECRET`, `PORT`, `DATABASE_URL`, `NEXT_PUBLIC_API_URL`, and the chosen ports; `working-agreement.md` must define the exact `[DoD]` evidence line and the `feat(<scope>): ... (Task <stt>)` commit format referenced in §10. If either drifts, this doc breaks.
-
-Next up, if you're following the Phase 1 order: **`docs/config.md`** — it's the doc that unblocks replacing every `<API_PORT>` placeholder above. Want me to write that one next?
