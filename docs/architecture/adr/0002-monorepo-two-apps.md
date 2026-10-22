@@ -97,8 +97,8 @@ Until then, the current layout stands.
 | Question                                                                                    | Owner | Closes when                                                                                    |
 | ------------------------------------------------------------------------------------------- | ----- | ---------------------------------------------------------------------------------------------- |
 | Confirm no root `package.json` exists in the repo at handover                               | Nghĩa | Task 6.0 evidence note re-checked; add a `.gitignore` guard for `/package-lock.json` if needed |
-| Decide whether to add a CI version-drift check (`typescript`/`eslint`/`vitest` across apps) | H.Tài | First CI workflow (Phase 2+)                                                                   |
-| Record the two-terminal dev workflow in `setup.md` as the official cross-app run method     | Nghĩa | Already written in `setup.md` §7; confirm at first Sprint Review                               |
+| Decide whether to add a CI version-drift check (`typescript`/`eslint`/`vitest` across apps) | -     | First CI workflow (Phase 2+)                                                                   |
+| Record the two-terminal dev workflow in `setup.md` as the official cross-app run method     | H.Tài | Already written in `setup.md` §7; confirm at first Sprint Review                               |
 
 ## References
 

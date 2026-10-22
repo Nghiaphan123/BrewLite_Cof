@@ -91,9 +91,10 @@ All filenames are `kebab-case`. No spaces, no Vietnamese diacritics, no mixed ca
 
 Mermaid renders in GitHub, VS Code (with the Markdown Preview Mermaid Support extension), and most CI doc viewers. For the committed `.svg`:
 
-- Use the Mermaid CLI (`npx @mermaid-js/mermaid-cli -i erd-core-v1.mmd -o erd-core-v1.svg`) or a VS Code "Export diagram" action.
-- Commit both the `.mmd` and the `.svg`. The `.svg` is what docs embed; the `.mmd` is what gets edited.
-- Do not commit `.png` exports of Mermaid diagrams — SVG is smaller and scales.
+> [!NOTE]
+> - Use the Mermaid CLI (`npx @mermaid-js/mermaid-cli -i erd-core-v1.mmd -o erd-core-v1.svg`) or a VS Code "Export diagram" action.
+> - Commit both the `.mmd` and the `.svg`. The `.svg` is what docs embed; the `.mmd` is what gets edited.
+> - Do not commit `.png` exports of Mermaid diagrams — SVG is smaller and scales.
 
 ## 6. Definition of done for a diagram
 
@@ -116,7 +117,7 @@ What exists or is expected by Phase 1 close:
 
 | File                                     | Status                              | Owner doc                             | Task       |
 | ---------------------------------------- | ----------------------------------- | ------------------------------------- | ---------- |
-| `erd/erd-core-v1.mmd` + `.svg`           | ⬜ expected by Task 1.0 close        | ADR 0003, `product-backlog.md` Task 1 | 1.0        |
+| `erd/erd-core-v1.mmd` + `.svg`           | ✅ expected by Task 1.0 close        | ADR 0003, `product-backlog.md` Task 1 | 1.0        |
 | `flows/flow-main-v1.mmd` + `.svg`        | ⬜ expected by Task 4.0 close        | `scenarios.md` §3                     | 4.0        |
 | `flows/flow-payment-v1.mmd` + `.svg`     | ⬜ expected by Task 4.0 close        | `scenarios.md` §7                     | 4.0        |
 | `flows/flow-order-state-v1.mmd` + `.svg` | ⬜ expected by Task 4.0 / 44.0 close | ADR 0004, `scenarios.md` §9           | 4.0 / 44.0 |

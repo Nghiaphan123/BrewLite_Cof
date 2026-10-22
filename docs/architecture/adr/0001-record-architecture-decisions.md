@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-10-22
-- **Deciders:** H.Tài, Nghĩa, Luân (full team at kickoff)
+- **Deciders:** H.Tài, Nghĩa
 - **Related:** [Working Agreement](../../working-agreement.md), [Project Structure](../../project-structure.md), [Configuration](../../config.md)
 
 ## Context

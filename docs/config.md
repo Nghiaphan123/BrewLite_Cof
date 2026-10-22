@@ -106,19 +106,32 @@ A PR that touches env vars without touching this doc fails review. This is the e
 
 Some values are project decisions, not per-environment settings. They live in code, and this table is their source of truth.
 
-| Constant                          | Value                                                                   | Status | Where                          | Why a doc and not a comment                                          |
-| --------------------------------- | ----------------------------------------------------------------------- | ------ | ------------------------------ | -------------------------------------------------------------------- |
-| Project start date                | `2026-10-26` (Mon)                                                      | 🔒      | spreadsheet `Cấu hình!B3`      | Drives all schedule math; see §5.                                    |
-| Working days                      | Mon–Fri                                                                 | 🔒      | spreadsheet `Cấu hình!B4`      | No holidays in the plan.                                             |
-| Max hours/day: H.Tài, Nghĩa, Luân | `5.0`                                                                   | 🔒      | spreadsheet `Cấu hình!E8:E10`  | Team capacity assumption.                                            |
-| Max hours/day: P.Tài, Trí         | `3.0`                                                                   | 🔒      | spreadsheet `Cấu hình!E11:E12` | Part-time capacity assumption.                                       |
-| Standard task size                | `6.0` points                                                            | 🔒      | spreadsheet `Cấu hình!B5`      | Calibration anchor for effort estimates.                             |
-| Order states                      | `PENDING, PAID, PAYMENT_FAILED, PREPARING, READY, COMPLETED, CANCELLED` | 🔒      | ADR 0004 + `orders.service.ts` | State Machine vocabulary; must match PDF §9.1.                       |
-| Idempotency header                | `Idempotency-Key`                                                       | 🟡      | `api-contract.md`              | Header name for `POST /payments`. Provisional until Task 7.0 closes. |
-| Currency                          | VND, integer minor-unit-free                                            | 🔒      | Prisma schema (`price Int`)    | No floating point for money.                                         |
-| API error envelope                | `{ "statusCode", "message", "error" }`                                  | 🟡      | `api-contract.md`              | Nest default; may be extended with `code`.                           |
+| Constant                          | Value                                                                   | Status | Where                                                                   | Why a doc and not a comment                                                                                                       |
+| --------------------------------- | ----------------------------------------------------------------------- | ------ | ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Project start date                | `2026-10-26` (Mon)                                                      | 🔒      | spreadsheet `Cấu hình!B3`                                               | Drives all schedule math; see §5.                                                                                                 |
+| Working days                      | Mon–Fri                                                                 | 🔒      | spreadsheet `Cấu hình!B4`                                               | No holidays in the plan.                                                                                                          |
+| Max hours/day: H.Tài, Nghĩa, Luân | `5.0`                                                                   | 🔒      | spreadsheet `Cấu hình!E8:E10`                                           | Team capacity assumption.                                                                                                         |
+| Max hours/day: P.Tài, Trí         | `3.0`                                                                   | 🔒      | spreadsheet `Cấu hình!E11:E12`                                          | Part-time capacity assumption.                                                                                                    |
+| Standard task size                | `6.0` points                                                            | 🔒      | spreadsheet `Cấu hình!B5`                                               | Calibration anchor for effort estimates.                                                                                          |
+| Order states                      | `PENDING, PAID, PAYMENT_FAILED, PREPARING, READY, COMPLETED, CANCELLED` | 🔒      | ADR 0004 + `orders.service.ts` + `OrderStatus` enum in `schema.prisma`  | State Machine vocabulary; must match PDF §9.1. The full enum is in the Task 1.0 ERD (ADR 0003 D-ERD-scope), not added in Phase 5. |
+| Idempotency header                | `Idempotency-Key`                                                       | 🟡      | `api-contract.md`                                                       | Header name for `POST /payments`. Provisional until Task 7.0 closes.                                                              |
+| Currency                          | VND, integer, no minor units                                            | 🔒      | Prisma schema (`price Int`, `total Int`, `lineTotal Int`, `amount Int`) | No floating point for money. See ADR 0003 D-ERD-scope.                                                                            |
+| API error envelope                | `{ "statusCode", "message", "error" }`                                  | 🟡      | `api-contract.md`                                                       | Nest default; may be extended with `code`.                                                                                        |
 
 If a value here must change, change it here **and** in its code/spreadsheet home in the same PR. Do not let the two drift.
+
+### 3.1 Schema decisions recorded in ADR 0003 (batch, Task 1.0 + Task 10)
+
+The Task 1.0 ERD batches the five-entity design with Task 10's schema needs. The following fields are in the schema from the first migration, not added later:
+
+| Field                                                                | Entity    | Task | Why batched                                                                 |
+| -------------------------------------------------------------------- | --------- | ---- | --------------------------------------------------------------------------- |
+| `stock Int`, `version Int @default(0)`                               | `Product` | 10c  | Enum and version backfills are awkward after seed; see ADR 0003 D-ERD-scope |
+| `idempotencyKey String @unique`, `requestHash String`, `status` enum | `Payment` | 10b  | Unique constraint must exist before the first payment row                   |
+| `loyaltyPoints Int @default(0)`                                      | `User`    | 10d  | One column; free to batch                                                   |
+| `status` enum (7 values)                                             | `Order`   | 10a  | Enum alteration is the most awkward Postgres migration                      |
+
+**Deferred** (new tables, not columns): `Promotion` (Phase 5), `LoyaltyLedger` (Phase 2+), `OrderItemTopping` join table (Phase 2+). Each gets its own ERD version (`erd-core-v2`) when its phase arrives.
 
 ## 4. Secrets and local development
 
@@ -149,13 +162,15 @@ These are recorded here because the spreadsheet is a working artifact that canno
 
 ## 7. Open items (tracked here until closed)
 
-| Item                                            | Status | Owner | Closes when                                                           |
-| ----------------------------------------------- | ------ | ----- | --------------------------------------------------------------------- |
-| Ratify API port (`3001` vs `4000` vs runtime)   | 🟡      | Nghĩa | ADR recorded; Task 11.0 `● Xong` evidence cites the bound port        |
-| Ratify `JWT_SECRET` placeholder policy          | 🟡      | Nghĩa | Recorded in ADR 0005 or a one-line decision in `working-agreement.md` |
-| Ratify error envelope (`code` field or not)     | 🟡      | H.Tài | `api-contract.md` Task 7.0 closes                                     |
-| Ratify `Idempotency-Key` header spelling/casing | 🟡      | H.Tài | Same as above                                                         |
-| Ratify `PAYMENT_MOCK_MODE` values               | 🟡      | H.Tài | ADR 0004 closes                                                       |
+| Item                                                                       | Status | Owner | Closes when                                                           |
+| -------------------------------------------------------------------------- | ------ | ----- | --------------------------------------------------------------------- |
+| Ratify API port (`3001` vs `4000` vs runtime)                              | 🟡      | Nghĩa | ADR recorded; Task 11.0 `● Xong` evidence cites the bound port        |
+| Ratify `JWT_SECRET` placeholder policy                                     | 🟡      | Nghĩa | Recorded in ADR 0005 or a one-line decision in `working-agreement.md` |
+| Ratify error envelope (`code` field or not)                                | 🟡      | H.Tài | `api-contract.md` Task 7.0 closes                                     |
+| Ratify `Idempotency-Key` header spelling/casing                            | 🟡      | H.Tài | `api-contract.md` Task 7.0 closes                                     |
+| Ratify `PAYMENT_MOCK_MODE` values                                          | 🟡      | H.Tài | ADR 0004 closes                                                       |
+| **Batch decision: Task 1.0 ERD includes Task 10's columns**                | ✅      | H.Tài | Closed: ADR 0003 D-ERD-scope                                          |
+| **Task 1.0 ERD scope (5 entities + Task 10 columns, new tables deferred)** | ✅      | H.Tài | Closed: `erd-core-v1` committed                                       |
 
 ---
 

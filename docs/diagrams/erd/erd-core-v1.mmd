@@ -1,0 +1,79 @@
+%% --- BrewLite - Core ERD (Task 1.0) ---
+%% Owner: H.Tài (backup: Nghĩa)
+%% Status: Accepted 2026-10-22
+%% Related: ADR 0003 (D-ERD-scope), ADR 0004 (D1, D4, D5, D7)
+%% .
+%% Scope: five MVP entities with Task 10's columns included (ADR 0003 D-ERD-scope).
+%% Deferred (new tables): Promotion (Phase 5), LoyaltyLedger (Phase 2+),
+%% OrderItemTopping join table (Phase 2+).
+%% .
+%% Money: Int, VND, no minor units.
+%% Timestamps: DateTime, ISO 8601 UTC at the API boundary.
+%% IDs: uuid for all primary keys.
+%% .
+%% OrderStatus: PENDING | PAID | PAYMENT_FAILED | PREPARING | READY | COMPLETED | CANCELLED
+%% PaymentMethod: WALLET | CARD
+%% PaymentStatus: SUCCESS | FAILED
+%% .
+%% State machine (ADR 0004): PENDING -> PAID -> PREPARING -> READY -> COMPLETED
+%% PENDING -> PAYMENT_FAILED -> PAID (retry); PENDING -> CANCELLED (explicit).
+%% .
+%% Payment cardinality: Order ||--o{ Payment (many attempts; ADR 0004 D5).
+%% "At most one SUCCESS per order" is a service rule, not a DB constraint.
+
+erDiagram
+    USER ||--o{ ORDER : "places"
+    ORDER ||--o{ ORDER_ITEM : "contains"
+    PRODUCT ||--o{ ORDER_ITEM : "appears in"
+    ORDER ||--o{ PAYMENT : "attempts"
+
+    USER {
+        uuid id PK
+        string email UK "unique, lowercase"
+        string passwordHash "bcrypt, BCRYPT_ROUNDS"
+        int loyaltyPoints "default 0; Task 10d"
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    PRODUCT {
+        uuid id PK
+        string name
+        int price "VND integer; base (size S)"
+        string imageUrl
+        int stock "default 0; decrement at PAID; Task 10c"
+        int version "default 0; optimistic lock"
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    ORDER {
+        uuid id PK
+        string code UK "BL-YYYY-NNNN; ADR 0004 D3"
+        uuid userId FK
+        OrderStatus status "default PENDING; 7 values"
+        int total "VND integer; server-computed"
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    ORDER_ITEM {
+        uuid id PK
+        uuid orderId FK
+        uuid productId FK
+        string size "S | M | L"
+        string[] toppingIds "topping ids; String[] on Postgres"
+        int qty "1..99"
+        int lineTotal "VND integer; server-computed"
+    }
+
+    PAYMENT {
+        uuid id PK
+        uuid orderId FK
+        string idempotencyKey UK "Task 10b"
+        string requestHash "Task 10b; same-body vs different-body"
+        PaymentMethod method "WALLET | CARD"
+        int amount "VND integer"
+        PaymentStatus status "SUCCESS | FAILED"
+        datetime createdAt
+    }

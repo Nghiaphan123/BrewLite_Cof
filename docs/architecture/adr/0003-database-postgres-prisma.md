@@ -1,8 +1,8 @@
 # ADR 0003 — PostgreSQL + Prisma as the data layer
 
-- **Status:** Proposed → Accepted when Task 1.0 (ERD) closes
+- **Status:** Accepted (2026-10-22; accepted when Task 1.0 ERD closed — see D-ERD-scope)
 - **Date:** 2026-10-22
-- **Deciders:** H.Tài, Nghĩa
+- **Deciders:** H.Tài
 - **Related:** [ADR 0001](0001-record-architecture-decisions.md), [ADR 0002](0002-monorepo-two-apps.md), [Configuration](../../config.md) §2.1, §3, [Product Backlog](../../requirements/product-backlog.md) Task 1, Task 10c, [Scenarios](../../requirements/scenarios.md) S-ORD-6
 
 ## Context
@@ -39,7 +39,33 @@ Rules that follow from this:
 7. **The connection string is `DATABASE_URL`** in `apps/api/.env` (`config.md` §2.1). No connection parameters are hard-coded in code.
 8. **Prisma Studio is the dev DB inspector.** `npx prisma studio` (port `5555`) is the documented way to inspect seeded data (`setup.md` §8). A direct `psql` client is optional.
 
-The choice is conditional on Task 1.0's ERD confirming that the five entities plus Task 10's additions fit the relational model without surprises (they do, per PDF §12.2). If the ERD reveals a requirement that Prisma cannot express cleanly (e.g. a composite foreign key with a custom name that Prisma's migration output mangles), the team reopens this ADR **before** Task 1.0 closes — not after Phase 2 has written schema-dependent code.
+### D-ERD-scope — The Task 1.0 ERD includes Task 10's columns; new tables are deferred
+
+The ERD for the five MVP entities (`docs/diagrams/erd/erd-core-v1.mmd`) includes the columns Task 10 requires on those entities:
+
+| Entity    | Task 10 column                                                                                                            | Task                |
+| --------- | ------------------------------------------------------------------------------------------------------------------------- | ------------------- |
+| `Product` | `stock Int`, `version Int @default(0)`                                                                                    | 10c (stock locking) |
+| `Payment` | `idempotencyKey String @unique`, `requestHash String`, `status` enum (`SUCCESS`/`FAILED`)                                 | 10b (idempotency)   |
+| `User`    | `loyaltyPoints Int @default(0)`                                                                                           | 10d (loyalty)       |
+| `Order`   | `status` enum with all seven values (`PENDING`, `PAID`, `PAYMENT_FAILED`, `PREPARING`, `READY`, `COMPLETED`, `CANCELLED`) | 10a (state machine) |
+
+This is a deliberate batching decision: Task 1.0 (ERD) and Task 10 (backend business rules) are designed together, not sequentially. The alternative — ERD five entities now, add Task 10's columns as migrations in Phases 3–5 — was rejected because:
+
+1. **Enum alterations are the most awkward Postgres migration.** Adding `PREPARING`/`READY`/`COMPLETED`/`CANCELLED` to `OrderStatus` later is a migration every test fixture written in Phase 3 must account for.
+2. **`Payment.idempotencyKey @unique` needs a backfill** if added after payment rows exist. In dev, `migrate reset` masks it; in the demo DB, it is a data problem.
+3. **`Product.version` needs a backfill** to `0` on every existing product if added after the seed.
+4. **`User.loyaltyPoints` is cheap to defer**, but it is one column and batching it is free.
+
+The five-entity count satisfies the assignment's §12.2 requirement; the extra columns satisfy the spreadsheet's "chốt schema" for row 1.0. The batch is recorded here (not in ADR 0004) because it is a schema-scope decision.
+
+**What is not in the Task 1.0 ERD** (deferred to their own ERD version when their phase arrives):
+
+- `Promotion` — a 6th entity (Phase 5, Task 10d; `product-backlog.md` §13 10d). Added in `erd-core-v2`.
+- `LoyaltyLedger` — a 6th table (Phase 2+, if refunds are added; ADR 0004 D7). Not a Task 1.0 concern.
+- `OrderItemTopping` join table — Phase 2+, only if topping-price audit per order line is needed. Phase 1 uses `OrderItem.toppingIds String[]`.
+
+**The rule:** columns on the five entities → batch in Task 1.0. New tables → defer to a later ERD version.
 
 ## Consequences
 
@@ -92,15 +118,21 @@ A switch to TypeORM after Phase 2 would require re-writing the schema, migration
 
 ## Open questions
 
-| Question                                                                                             | Owner | Closes when                                                        |
-| ---------------------------------------------------------------------------------------------------- | ----- | ------------------------------------------------------------------ |
-| Confirm the five entities plus Task 10 additions fit the relational model without Prisma limitations | H.Tài | Task 1.0 `● Xong`; this ADR moves to `Accepted`                    |
-| Decide the exact optimistic-lock form (interactive `$transaction` vs. `$queryRaw` with `version`)    | H.Tài | ADR 0004 (payment/state machine) is `Accepted`                     |
-| Decide whether `loyaltyPoints` is a `User` column or a separate `LoyaltyLedger` table                | H.Tài | Task 1.0 ERD; record in this ADR or a new one                      |
-| Decide whether `Promotion` is in the Task 1.0 ERD or added in Phase 5                                | Nghĩa | Task 1.0 `● Xong`; if added later, `prisma migrate dev` in Phase 5 |
-| Confirm Prisma version pin (6.x) in `apps/api/package.json`                                          | Nghĩa | Task 1.0 or Task 11.0 PR                                           |
-| Add a "Prisma generate" step to CI (Phase 2+)                                                        | H.Tài | First CI workflow                                                  |
-| Review the generated migration for the first `Order`/`OrderItem` change before merging               | H.Tài | Task 22.0 / Task 14.0 PR                                           |
+| Question                                                                                          | Owner | Closes when                                    |
+| ------------------------------------------------------------------------------------------------- | ----- | ---------------------------------------------- |
+| Decide the exact optimistic-lock form (interactive `$transaction` vs. `$queryRaw` with `version`) | H.Tài | ADR 0004 (payment/state machine) is `Accepted` |
+| Confirm Prisma version pin (6.x) in `apps/api/package.json`                                       | Nghĩa | Task 1.0 or Task 11.0 PR                       |
+| Add a "Prisma generate" step to CI (Phase 2+)                                                     | -     | First CI workflow                              |
+| Review the generated migration for the first `Order`/`OrderItem` change before merging            | -     | Task 22.0 / Task 14.0 PR                       |
+
+**Closed by D-ERD-scope (Task 1.0, 2026-10-22):**
+
+- Five entities plus Task 10 additions fit the relational model — confirmed; schema draft validates in Prisma 6.
+- `User.loyaltyPoints` is a column, not a `LoyaltyLedger` table — column (D-ERD-1).
+- `Promotion` is deferred to Phase 5, not in the Task 1.0 ERD — deferred (D-ERD-2).
+- `Payment.requestHash` and `Payment.idempotencyKey` are in the Task 1.0 ERD — yes (D-ERD-3).
+- `Product.stock` and `Product.version` are in the Task 1.0 ERD — yes (D-ERD-4).
+- The five entities plus Task 10's columns fit Prisma 6 without limitations — confirmed via schema draft (`npx prisma validate`).
 
 ## References
 
@@ -111,12 +143,14 @@ A switch to TypeORM after Phase 2 would require re-writing the schema, migration
 - [Setup](../../setup.md) §3 (DB container), §6 (migrate + seed), §8 (Prisma Studio check), Troubleshooting (`P1001`, `P3005`, `prisma generate`).
 - [Product Backlog](../../requirements/product-backlog.md) Task 1 (ERD), Task 2 (products schema), Task 10c (stock locking).
 - [Scenarios](../../requirements/scenarios.md) S-ORD-6 (concurrent stock).
+- - ERD: [erd-core-v1.mmd](../../diagrams/erd/erd-core-v1.mmd) — the five-entity design this ADR validates against Prisma.
+- Schema draft: `apps/api/prisma/schema.prisma` (validated with `npx prisma validate`; committed by Task 14.0).
 
 ---
 
 ## Notes on choices I made (so you can accept or override)
 
-1. **This ADR is `Proposed`, not `Accepted`, and that's deliberate.** The decision is *made* (the team is using PostgreSQL + Prisma), but the ADR's job is to be the record that Task 1.0's ERD was confirmed to fit the chosen ORM. If the ERD reveals a Prisma limitation, this ADR is the place to catch it *before* Phase 2 writes schema-dependent code. Marking it `Accepted` now would skip that check. The status line says exactly what closes it: "Proposed → Accepted when Task 1.0 (ERD) closes."
+1. The decision is *made* (the team is using PostgreSQL + Prisma), but the ADR's job is to be the record that Task 1.0's ERD was confirmed to fit the chosen ORM. If the ERD reveals a Prisma limitation, this ADR is the place to catch it *before* Phase 2 writes schema-dependent code. Marking it `Accepted` now would skip that check. The status line says exactly what closes it: "Proposed → Accepted when Task 1.0 (ERD) closes."
 
 2. **The "When to revisit" section has one condition that's time-boxed** ("revisit before Task 1.0 closes"). That's unusual for an ADR — normally "when to revisit" is open-ended. But the cost of switching ORMs *after* Phase 2 is multi-day (re-write schema, migrations, seed, and every service that touches the client), and the cost *before* Phase 2 is near-zero. The time-box is the cheapest possible insurance against a mid-project ORM migration.
 

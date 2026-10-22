@@ -41,6 +41,8 @@ Rationale:
 
 Consequence: a `PENDING` order with a stock-available product can be paid later even if another customer buys the last unit in between. The payment transaction re-checks stock under the lock; if stock is gone, the payment fails with a specific `OUT_OF_STOCK` error, and the order goes to `PAYMENT_FAILED`. This is the correct behavior — "you can start an order, but you can only pay for what's still available."
 
+**Schema:** `Product.stock Int` and `Product.version Int @default(0)` are in the Task 1.0 ERD (ADR 0003 D-ERD-scope), not added in Phase 5. The lock form (interactive `$transaction` vs. `$queryRaw` with `version`) is still open — see Open questions.
+
 ### D2 — `POST /payments` returns `200` with a status field, not `402`
 
 A failed payment returns HTTP `200` with body `{ "orderId": ..., "status": "PAYMENT_FAILED", "reason": ... }`. It does not return `402 Payment Required`.
@@ -84,6 +86,8 @@ Implementation: a `Payment` row stores `idempotencyKey` (unique). Inside `prisma
 
 Consequence: `Payment` needs a `requestHash` column (or stores the canonical body) to distinguish "same request" from "different request." Recorded in the ERD (Task 1.0) and in `api-contract.md`.
 
+**Schema:** `Payment.idempotencyKey String @unique` and `Payment.requestHash String` are in the Task 1.0 ERD (ADR 0003 D-ERD-scope), so the unique constraint exists from the first payment row. The request-hash canonicalization (which fields, sorted) is a Task 25.0/46.0 implementation detail.
+
 ### D5 — A `PAYMENT_FAILED` order can be retried; the retry creates a new payment attempt against the same order
 
 When a payment fails, the order transitions to `PAYMENT_FAILED`. A retry is a **new** `POST /payments` with a **new** `Idempotency-Key` against the **same** order. On success, the order transitions `PAYMENT_FAILED → PAID`.
@@ -121,6 +125,8 @@ Rationale:
 Implementation: the accrual happens inside the same `prisma.$transaction` that transitions the order to `PAID` (D1), so a successful payment and its points are atomic. The `User.loyaltyPoints` update is part of the transaction; if the points update fails, the payment fails.
 
 Consequence: `User` has a `loyaltyPoints` column (integer, default 0). The ERD (Task 1.0) records it. A future `LoyaltyLedger` table (for auditability and refunds) is a Phase 2+ item; Phase 1 uses a column.
+
+**Schema:** `User.loyaltyPoints Int @default(0)` is in the Task 1.0 ERD (ADR 0003 D-ERD-scope). The `LoyaltyLedger` table is a Phase 2+ addition, not in the Task 1.0 ERD.
 
 ## Consequences
 
@@ -182,8 +188,10 @@ D1 (stock timing) is the load-bearing decision. If it changes, D4 and D5 must be
 | Confirm `PAYMENT_FAILED → PAID` is legal per the team's reading of PDF §9.1                            | H.Tài | This ADR `Accepted`                        |
 | Decide the order code format (e.g. `BL-YYYY-NNNN`)                                                     | Nghĩa | `api-contract.md` final; D3 implementation |
 | Decide the canonical body hash for idempotency (which fields, sorted)                                  | H.Tài | Task 25.0/46.0 PR                          |
-| Confirm `requestHash` column is in the Task 1.0 ERD                                                    | H.Tài | Task 1.0 `● Xong`                          |
-| Confirm `User.loyaltyPoints` is a column, not a table, in the Task 1.0 ERD                             | H.Tài | Task 1.0 `● Xong`                          |
+| Confirm `requestHash` column is in the Task 1.0 ERD                                                    | H.Tài | **Closed:** yes, ADR 0003 D-ERD-scope      |
+| Confirm `User.loyaltyPoints` is a column, not a table, in the Task 1.0 ERD                             | H.Tài | **Closed:** yes, ADR 0003 D-ERD-scope      |
+| Confirm `Product.version` is in the Task 1.0 ERD                                                       | H.Tài | **Closed:** yes, ADR 0003 D-ERD-scope      |
+| Confirm the Task 1.0 ERD includes Task 10's columns per ADR 0003 D-ERD-scope                           | H.Tài | **Closed:** Task 1.0 `● Xong`              |
 | Confirm no TTL job in Phase 1 (D6) is acceptable to the PO                                             | H.Tài | Sprint 3 Planning                          |
 | Update `ui-decisions.md` §2, `wireframes.md` §8, `product-backlog.md` §12 for D3 (`[code]` not `[id]`) | Nghĩa | Same PR that accepts this ADR              |
 | Record `PAYMENT_MOCK_MODE` values (`success`/`failure`/`random`) in `api-contract.md`                  | H.Tài | Task 7.0 `● Xong`                          |
@@ -197,6 +205,7 @@ D1 (stock timing) is the load-bearing decision. If it changes, D4 and D5 must be
 - [Scenarios](../../requirements/scenarios.md) §7 (payment flows), §9 (state machine), §10 (concurrent stock), §13 (D1–D6 closed here).
 - [Product Backlog](../../requirements/product-backlog.md) Task 8 (mock payment), Task 10 (business rules, graded tests).
 - [API Contract](../api-contract.md) — the endpoint shapes for `POST /payments` and `GET /orders/:code`.
+- ERD: [erd-core-v1.mmd](../../diagrams/erd/erd-core-v1.mmd) — the schema that implements D1, D4, and D7's storage consequences.
 
 ---
 
