@@ -8,13 +8,43 @@ This is the Product Backlog for the BrewLite MVP. It is the authoritative list o
 
 > **Scope:** MVP from product selection to payment and confirmation, per assignment PDF §4.1. Out of scope: barista/back-office order management, real payment gateway integration, multi-store support, loyalty redemption (accrual only).
 
-## 1. How to read this document
+## 1. Product Vision and stakeholders
+
+This section records the two context items the assignment requires before the backlog itself: the Product Vision (PDF §3.1) and the stakeholders (PDF §3.2). They are repeated here — not in a separate file — because Task 2.0's reviewer should see them next to the tasks they justify. Task 3.0 (kickoff) may refine the vision and the role assignments; the backlog's tasks do not change when it does.
+
+### 1.1 Product Vision
+
+> **BrewLite giúp khách hàng đặt và thanh toán đồ uống không dùng tiền mặt chỉ trong vài chạm, giảm thời gian xếp hàng và nhận đơn nhanh tại quầy.**
+
+In English, for the reviewers who read the code and docs in English:
+
+> BrewLite lets customers order and pay for drinks cashlessly in a few taps, reducing queue time and speeding up pickup at the counter.
+
+The vision scopes the MVP: **order → pay → confirm**, not back-office, not delivery, not loyalty redemption. Every task in §4–§13 traces to one of those three steps; anything that doesn't is listed as out of scope in §16.
+
+### 1.2 Stakeholders
+
+The six stakeholders from PDF §3.2, and what each expects from the MVP:
+
+| Stakeholder                              | What they expect                                                                 | Where it shows up in this backlog                                                                                                                                                              |
+| ---------------------------------------- | -------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Khách hàng (customer)**                | Order a drink, choose size/topping, pay cashlessly, see order status and history | Tasks 3–9; every User Story is written from this stakeholder's point of view                                                                                                                   |
+| **Nhân viên quầy / Barista**             | Receive orders and update preparation status                                     | **Out of MVP scope** (PDF §3.2: "nằm ngoài phạm vi MVP"). The `OrderStatus` enum reserves `PREPARING`/`READY`/`COMPLETED` for a future barista UI, but no screen is built in Phase 1. See §16. |
+| **Quản lý cửa hàng / Product Owner**     | Define requirements, prioritize the backlog, accept each increment               | This document (the backlog itself) + the Sprint Review acceptance in `working-agreement.md` §2. The PO role is assigned at Task 3.0.                                                           |
+| **Giảng viên nghiệm thu (lecturer)**     | Evaluate process, product, and acceptance criteria                               | The graded tests in Task 10 (PDF §9), the DoD in `working-agreement.md` §5, the evidence notes in the spreadsheet, and this backlog's traceability to the PDF's 10 tasks.                      |
+| **Nhóm phát triển (dev team)**           | Analyze, design, build, test, hand over                                          | The backlog's task assignments, the `Owner` column in §3, and the spreadsheet's `Người làm` column.                                                                                            |
+| **Đơn vị thanh toán (payment provider)** | Provide or be simulated as the payment gateway                                   | Task 8 (mock payment, ADR 0004). The mock is in-process; no external integration in MVP.                                                                                                       |
+
+**Roles vs. stakeholders:** `working-agreement.md` §1 defines the team's *roles* (PO, SM, Dev Team) — who does the work. This table defines the *stakeholders* — who cares about the outcome. The customer and the barista are stakeholders, not team roles; the PO is both a role and a stakeholder.
+
+### 1.3 How to read this document
 
 - One section per backlog item, numbered `Task 1` … `Task 10` to match the assignment PDF §8. This is the **scoring** numbering (1 point each, 10 total).
 - Each task lists: the User Story, Acceptance Criteria (testable), scope boundary (what is *not* included), the spreadsheet rows that implement it, the Sprint/Phase, owner, and evidence docs.
-- The **spreadsheet STT** (e.g. `1.0`, `10.0`) is the **scheduling** numbering and does not match the task number. A single backlog task can span many spreadsheet rows (e.g. Task 9 spans rows 38.0–43.0, 57.0–61.0). The mapping table in §13 is the cross-reference.
+- The **spreadsheet STT** (e.g. `1.0`, `10.0`) is the **scheduling** numbering and does not match the task number. A single backlog task can span many spreadsheet rows (e.g. Task 9 spans rows 38.0–43.0, 57.0–61.0). The mapping table in §15 is the cross-reference.
 - Acceptance criteria are written as Given/When/Then where the behavior is testable, and as a checklist where it is structural (scaffolding, docs).
 - **Priority:** `P0` = required for MVP demo, `P1` = required for scoring but not demo-blocking, `P2` = stretch. All 10 tasks are P0 by assignment.
+- **Traceability:** each task's "Traces to" line points at the scenarios in `scenarios.md` (Task 4.0) that exercise it. The scenarios are the *how*; this doc is the *what*.
 
 ## 2. Definition of Ready
 
