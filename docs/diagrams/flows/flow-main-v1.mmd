@@ -1,0 +1,28 @@
+%% --- flow-main-v1 ---
+%% Source: scenarios.md S-MAIN-1
+%% Owner: H.Tài (Task 4.0)
+%% Status: Accepted 2026-10-22
+%% Related: ADR 0004 D1, D3, D7; api-contract.md §8-§9, §11
+%% .
+%% Covers: happy path from app open to confirmation.
+%% Error/cancel branches are in flow-payment-v1.mmd and flow-order-state-v1.mmd.
+%% Route key: /orders/[code]/confirmation (ADR 0004 D3).
+%% Step 9: stock decrement + loyalty accrual in the same transaction (ADR 0004 D1, D7).
+%% Step 10 failure: 200 with body status PAYMENT_FAILED (ADR 0004 D2).
+
+flowchart TD
+    A([Mở app]) --> B[Xem menu]
+    B --> C[Chọn sản phẩm]
+    C --> D[Chọn size và topping]
+    D --> E[Thêm vào giỏ hàng]
+    E --> F[Xem giỏ và tổng tiền]
+    F --> G{Đã đăng nhập?}
+    G -- Chưa --> H[Đăng nhập]
+    H --> I[Thanh toán]
+    G -- Rồi --> I
+    I --> J{Thanh toán thành công?}
+    J -- Có --> K[Xác nhận đơn: mã đơn, PAID]
+    J -- Không --> L[PAYMENT_FAILED; giỏ được giữ]
+    L -. Thử lại với key mới .-> I
+    K --> M([Nhận đồ uống])
+    E -. Mua thêm .-> C

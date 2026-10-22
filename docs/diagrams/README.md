@@ -118,9 +118,9 @@ What exists or is expected by Phase 1 close:
 | File                                     | Status                              | Owner doc                             | Task       |
 | ---------------------------------------- | ----------------------------------- | ------------------------------------- | ---------- |
 | `erd/erd-core-v1.mmd` + `.svg`           | ✅ expected by Task 1.0 close        | ADR 0003, `product-backlog.md` Task 1 | 1.0        |
-| `flows/flow-main-v1.mmd` + `.svg`        | ⬜ expected by Task 4.0 close        | `scenarios.md` §3                     | 4.0        |
-| `flows/flow-payment-v1.mmd` + `.svg`     | ⬜ expected by Task 4.0 close        | `scenarios.md` §7                     | 4.0        |
-| `flows/flow-order-state-v1.mmd` + `.svg` | ⬜ expected by Task 4.0 / 44.0 close | ADR 0004, `scenarios.md` §9           | 4.0 / 44.0 |
+| `flows/flow-main-v1.mmd` + `.svg`        | ✅ expected by Task 4.0 close        | `scenarios.md` §3                     | 4.0        |
+| `flows/flow-payment-v1.mmd` + `.svg`     | ✅ expected by Task 4.0 close        | `scenarios.md` §7                     | 4.0        |
+| `flows/flow-order-state-v1.mmd` + `.svg` | ✅ expected by Task 4.0 / 44.0 close | ADR 0004, `scenarios.md` §9           | 4.0 / 44.0 |
 | `wireframes/wf-menu-v1.png`              | ⬜ expected by Task 5.0 close        | `wireframes.md` §4                    | 5.0        |
 | `wireframes/wf-product-detail-v1.png`    | ⬜                                   | `wireframes.md` §5                    | 5.0        |
 | `wireframes/wf-cart-v1.png`              | ⬜                                   | `wireframes.md` §6                    | 5.0        |

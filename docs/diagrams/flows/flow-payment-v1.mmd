@@ -1,0 +1,27 @@
+%% --- flow-payment-v1 ---
+%% Source: scenarios.md S-PAY-1..6
+%% Owner: H.Tài (Task 4.0)
+%% Status: Accepted 2026-10-22
+%% Related: ADR 0004 D1, D2, D4, D5; api-contract.md §9
+%% .
+%% Covers: success, failure, idempotency replay, conflict,
+%% retry, out-of-stock. All status codes are HTTP 200 for payment
+%% failure (ADR 0004 D2); 409 for conflicts and state errors.
+%% Stock decrements at PAID only (ADR 0004 D1).
+%% Retry uses a new Idempotency-Key against the same order (ADR 0004 D5).
+
+flowchart TD
+    A[POST /api/v1/payments<br/>with Idempotency-Key] --> B{Key đã tồn tại?}
+    B -- Có, cùng body --> C[Trả lại response đã lưu]
+    B -- Có, khác body --> D[409 IDEMPOTENCY_CONFLICT]
+    B -- Chưa --> E{Order ở PENDING<br/>hoặc PAYMENT_FAILED?}
+    E -- Không --> F[409 INVALID_STATE_TRANSITION]
+    E -- Có --> G{Còn đủ stock?}
+    G -- Không --> H[409 OUT_OF_STOCK<br/>order vẫn PENDING]
+    G -- Có --> I[Gọi mock gateway]
+    I --> J{Kết quả?}
+    J -- Success --> K[Trừ stock, order PAID,<br/>cộng điểm trong cùng transaction]
+    K --> L[200 status PAID]
+    J -- Fail --> M[Order PAYMENT_FAILED<br/>không trừ stock, không cộng điểm]
+    M --> N[200 status PAYMENT_FAILED<br/>retryable: true]
+    N -. Retry với Idempotency-Key mới .-> A

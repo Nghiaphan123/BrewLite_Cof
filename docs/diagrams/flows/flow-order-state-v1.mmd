@@ -1,0 +1,24 @@
+%% --- flow-order-state-v1 ---
+%% Source: ADR 0004 D1, D5, D6; PDF §9.1
+%% Owner: H.Tài (Task 4.0 / Task 44.0)
+%% Status: Accepted 2026-10-22
+%% Related: scenarios.md S-ORD-5, S-CANCEL-1; api-contract.md §9
+%% .
+%% Covers: legal transitions; invalid transitions rejected by
+%% assertTransition (throws; API returns 409 INVALID_STATE_TRANSITION).
+%% COMPLETED and CANCELLED are terminal.
+%% PAYMENT_FAILED -> PAID is the retry edge (ADR 0004 D5).
+%% PREPARING/READY/COMPLETED edges are reserved for a future barista
+%% UI; not exercised in Phase 1.
+
+stateDiagram-v2
+    [*] --> PENDING : POST /api/v1/orders
+    PENDING --> PAID : payment success
+    PENDING --> PAYMENT_FAILED : payment failed
+    PAYMENT_FAILED --> PAID : retry success
+    PAID --> PREPARING : (future, barista)
+    PREPARING --> READY : (future, barista)
+    READY --> COMPLETED : (future, barista)
+    PENDING --> CANCELLED : explicit cancel (Phase 2+)
+    COMPLETED --> [*]
+    CANCELLED --> [*]

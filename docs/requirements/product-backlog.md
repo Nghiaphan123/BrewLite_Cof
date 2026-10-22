@@ -1,7 +1,7 @@
 # BrewLite - Product Backlog
 
 **Status:** Phase 1 deliverable  
-**Owner:** Nghĩa (Task 2.0)  
+**Owner:** H.Tài (Task 2.0)  
 **Related:** [Working Agreement](../working-agreement.md), [Scenarios](scenarios.md), [API Contract](../architecture/api-contract.md), [Design: Wireframes](../design/wireframes.md), Task spreadsheet `BrewLite-DanhSachTask.xlsx`
 
 This is the Product Backlog for the BrewLite MVP. It is the authoritative list of *what* the team is building, in priority order, with acceptance criteria that make "done" testable. The spreadsheet is the schedule and status view; this document is the requirement view.
