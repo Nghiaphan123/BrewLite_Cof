@@ -1,7 +1,7 @@
 # BrewLite - Project Structure
 
 **Status:** Current scaffold and target structure for implementation  
-**Related:** [Architecture](architecture.md), [Implementation Plan](../plans/03-implementation-plan.md), [Testing Plan](../plans/04-testing-plan.md)
+**Related:** [Architecture](architecture.md)
 
 BrewLite is a Node.js monorepo with two independent npm applications: `apps/api` (NestJS) and `apps/web` (Next.js). Each app has its own `package.json` and `package-lock.json`; install packages from that app's directory. The root currently has no npm workspace package.
 
@@ -103,14 +103,34 @@ BrewLite/
 │   ├── e2e/                          # Playwright journeys spanning both apps
 │   └── nfr/                          # Performance and NFR checks
 ├── docs/
+│   ├── setup.md                      # Onboarding: install, run, verify
+│   ├── config.md                     # Env vars, ports, constants, planning assumptions
+│   ├── working-agreement.md          # Task evidence notes, naming, commit/PR rules
 │   ├── requirements/
-│   ├── diagrams/
+│   │   ├── product-backlog.md        # 10 backlog tasks + acceptance criteria
+│   │   └── scenarios.md              # Main and error/cancel business flows
 │   ├── architecture/
-│   │   └── adr/
-│   ├── plans/
-│   ├── testing/
-│   ├── traceability-matrix.md
-│   └── deployment.md
+│   │   ├── adr/
+│   │   │   ├── 0001-record-architecture-decisions.md
+│   │   │   ├── 0002-monorepo-two-apps.md
+│   │   │   ├── 0003-database-postgres-prisma.md
+│   │   │   ├── 0004-payment-mock-method.md
+│   │   │   └── 0005-api-contract-conventions.md
+│   │   ├── architecture.md/project-structure.md
+│   │   └── api-contract.md           # Endpoints, request/response JSON, error codes
+│   ├── design/
+│   │   ├── ui-decisions.md           # Stack, tokens, state management, states
+│   │   └── wireframes.md             # Index of the 5 MVP wireframes with routes
+│   ├── diagrams/
+│   │   ├── README.md                 # Diagram format rules and naming
+│   │   ├── erd/                      # Mermaid ER diagrams
+│   │   ├── flows/                    # Mermaid business flow diagrams
+│   │   ├── wireframes/               # Exported wireframe images
+│   │   └── raw/                      # Whiteboard/sketch sources (not referenced)
+│   ├── plans/                        # Sprint plans, burndown templates
+│   ├── testing/                      # Test plans and NFR evidence (Phase 2+)
+│   ├── traceability-matrix.md        # Task ↔ acceptance criteria ↔ evidence (Phase 2+)
+│   └── deployment.md                 # Docker, env, run instructions (Phase 2+)
 ├── .github/
 │   └── workflows/
 ├── docker-compose.yml
@@ -121,6 +141,8 @@ BrewLite/
 ```
 
 The current scaffold has the two apps, API's starter controller/service/module, API tests, Prisma files, Dockerfiles, and now the planned API and web feature directories. Empty directories contain `.gitkeep` so Git tracks the skeleton. Add implementation files when their tasks begin. Root-level cross-app tests and CI workflows remain future additions.
+
+Directories marked **(Phase 2+)** in the `docs/` tree are placeholders for now: create them with `.gitkeep` but do not populate them until their owning task starts. All other `docs/` entries are Phase 1 deliverables — see "Documentation conventions" below.
 
 ## Node.js packages and commands
 
@@ -179,3 +201,37 @@ apps/api/src/modules/orders/
 - Use root `tests/e2e/` for Playwright flows across the running web and API apps when that suite is introduced.
 - Use root `tests/nfr/` for performance scripts and NFR evidence.
 - Avoid adding a separate test directory to every feature unless the test plan needs one.
+
+## Documentation conventions
+
+The `docs/` tree is the single source of truth for decisions, run instructions, and evidence. The following rules apply to every file under `docs/`:
+
+### File naming
+
+- `kebab-case` for all filenames. No spaces, no Vietnamese diacritics, no mixed case.
+- Markdown files use `.md`. Diagram sources use `.mmd` (Mermaid). Exported diagram images use `.svg` for flows/ERDs and `.png` for wireframes.
+- ADRs follow `NNNN-slug.md` with a zero-padded four-digit number (e.g. `0003-database-postgres-prisma.md`). Numbers are never reused or reordered; a superseded ADR stays in place with its status updated to `Superseded by NNNN`.
+- Diagram files follow `<type>-<topic>-v<n>.<ext>` (e.g. `erd-core-v1.mmd`, `wf-menu-v2.png`). Bumping `v<n>` creates a new file; the old one is kept until the doc referencing it is updated.
+
+### Diagram rules
+
+- Mermaid source is the source of truth for ER diagrams and business flows. The `.mmd` file lives in `docs/diagrams/erd/` or `docs/diagrams/flows/`; a rendered `.svg` sits next to it.
+- Wireframes are drawn in Figma or Excalidraw; export a `.png` into `docs/diagrams/wireframes/` and keep the editable link in `docs/design/wireframes.md`. Do not commit binary design-tool files.
+- Whiteboard photos and sketches are allowed only under `docs/diagrams/raw/` and must never be linked from a deliverable doc.
+- Every diagram is embedded in the doc that owns it via relative link. Do not paste duplicate copies into multiple docs.
+- Entity and field labels are English; user-facing wireframe text may be Vietnamese.
+
+### Task evidence notes
+
+- The task spreadsheet (`BrewLite-DanhSachTask.xlsx`) is the tracking artifact; `docs/` holds the evidence it points to.
+- When a task's status changes to `● Xong`, its row must carry an evidence note in the form:
+  `[DoD] PR #<n> | commit <short-sha> | files: <path>, <path> | doc: <path> | demo: <date>`
+- Evidence file paths must follow the naming rules above and must point to a file that exists in the repository at the recorded commit.
+- Status glyphs are copied verbatim from the spreadsheet (`○ Chưa làm`, `◐ Đang làm`, `● Xong`); the progress formula `COUNTIF(...,"● Xong")` matches on the exact string, so retyping the glyph breaks the count.
+- The authoritative evidence format, status vocabulary, and commit/PR message convention are defined in `docs/working-agreement.md`.
+
+### Phase ownership
+
+- **Phase 1** populates `setup.md`, `config.md`, `working-agreement.md`, `requirements/`, `architecture/` (all five ADRs and `api-contract.md`), `design/`, and `diagrams/README.md` plus the `erd/`, `flows/`, and `wireframes/` subfolders.
+- **Phase 2+** populates `plans/`, `testing/`, `traceability-matrix.md`, and `deployment.md`.
+- When a Phase 1 doc introduces a new top-level `docs/` entry, update this section in the same commit so the tree and the rules never diverge.

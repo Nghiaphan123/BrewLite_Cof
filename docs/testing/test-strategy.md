@@ -1,248 +1,240 @@
-# BrewLite - Test Strategy and Test Case List
+# BrewLite - Test Strategy
 
-**Version:** 0.1  
-**Status:** Draft for team review (task T-01)  
-**Location:** `docs/testing/test-strategy.md`  
-**Replaces:** the older draft `docs/drafts/from-assistant/test-strategy-initial.md` (its `TST-*` IDs are replaced by the IDs below)  
-**Related:** [Testing plan](../plans/04-testing-plan.md), [SRS](../requirements/srs.md), [UC-01 spec](../requirements/use-case-uc01-place-and-pay.md), [ADR 011 test tooling](../architecture/adr/011-test-tooling.md), [ADR 015 Vitest](../architecture/adr/015-test-runner-vitest.md), [Class diagram and data model](../diagrams/class-domain.md), [Traceability matrix](../traceability-matrix.md)  
-**Sources:** Assignment 1 (section 4.2, Task 10) and Assignment 2 (Task 4.3, Task 5.2, section 8)
+**Status:** Phase 1 deliverable  
+**Owner:** H.Tài (SM; testing owner through Phase 6)  
+**Related:** [Scenarios](../requirements/scenarios.md), [Product Backlog](../requirements/product-backlog.md), [Working Agreement](../working-agreement.md), [API Contract](../architecture/api-contract.md), [ADR 0004](../architecture/adr/0004-payment-mock-and-order-lifecycle.md), [Traceability Matrix](../traceability-matrix.md), [Setup](../setup.md)
 
-This document defines how BrewLite is tested: the test levels, tools, environments, test data, and gates, plus the list of planned test cases with their IDs. The test IDs are the ones used in the [traceability matrix](../traceability-matrix.md) (`D-14`). It describes planned tests; a test counts as evidence only when it exists in the repository and passes in CI. Items marked **(proposed)** are team suggestions to confirm.
+This document defines BrewLite's testing strategy: what levels of testing exist, what each level is responsible for, which tool runs each, how tests map to the graded requirements, and what "test complete" means for a task. It is the strategy; the specific test cases are in `scenarios.md` (flows) and `product-backlog.md` (acceptance criteria).
 
-## 1. Scope
+> **Scope:** automated tests (unit, integration, e2e) and the manual demo checks. Non-functional testing (load, performance) is a Phase 2+ item in `docs/testing/nfr/`. Accessibility testing is a manual checklist in `ui-decisions.md` §7, not automated in Phase 1.
 
-**In scope**
+## 1. Why this doc exists
 
-- Business rules in `apps/api`: order state machine, pricing, promotion, loyalty, stock holding and release, idempotent payment.
-- The REST API: validation, JWT protection, ownership checks, status codes, and persistence.
-- Database behavior on real PostgreSQL: migrations, seed, constraints, transactions, and concurrency.
-- The web UI in `apps/web`: loading, empty, and error states; product options and price; cart; checkout retry.
-- One or more end-to-end journeys from the menu to the payment confirmation (Assignment 2, Task 5.2).
-- Non-functional checks: response time, password hashing, authorization, validation, browsers, health check, CI gate, deployment.
+Three forces shape BrewLite's testing:
 
-**Out of scope**
+1. **The assignment grades three specific tests** (PDF §9): invalid state transition, duplicate idempotency key, concurrent stock. These must exist, pass, and be demonstrable. They are not optional polish.
+2. **Every task's Definition of Done** (PDF §10) requires code that "builds and runs" and, where applicable, "API validates input; UI handles loading/error." That's a per-task testing obligation, not a project-end one.
+3. **The team is 5 students on a semester deadline.** A strategy that says "100% coverage" or "full e2e for everything" would consume the schedule and still miss the graded tests. The strategy must be proportionate: heavy where the grader looks, light where it doesn't.
 
-- Real payment providers and real money (WN-02, WN-03). The sandbox adapter (`C-22`, Could) gets a contract test only.
-- Load or stress testing beyond the performance method in decision 12.
-- Barista screens and admin screens (WN-01, WN-04).
+The strategy below is sized to those three forces. Where it's light, it says so and names the risk.
 
-## 2. Test levels, tools, and locations
+## 2. Test levels
 
-| Level          | What it proves                                                                         | Tool                                                            | Location                                      | Run with                                        |
-| -------------- | -------------------------------------------------------------------------------------- | --------------------------------------------------------------- | --------------------------------------------- | ----------------------------------------------- |
-| Unit (API)     | Pure domain rules with no network or database                                          | Vitest                                                          | `apps/api/src/**/*.spec.ts`, next to the code | `npm test` in `apps/api`                        |
-| Unit (web)     | Component states and interactions with a mocked API                                    | Vitest and React Testing Library **(proposed, chosen in T-02)** | `apps/web/src/**/*.test.tsx`                  | `npm test` in `apps/web` (added in T-02)        |
-| API            | HTTP behavior of one running NestJS app: validation, guards, status codes, persistence | Vitest and Supertest, real PostgreSQL                           | `apps/api/test/**/*.e2e-spec.ts`              | `npm run test:e2e` in `apps/api`                |
-| Integration    | Database-level guarantees: constraints, transactions, concurrency, migrations, seed    | Vitest, Prisma, real PostgreSQL                                 | `apps/api/test/integration/**/*.e2e-spec.ts`  | `npm run test:e2e` in `apps/api`                |
-| End to end     | A customer journey through the browser, web, API, and database together                | Playwright (Chromium and WebKit)                                | `tests/e2e/`                                  | `npx playwright test` against the Compose stack |
-| Non-functional | Performance, security, browsers, handover, deployment                                  | `autocannon`, scripts, manual checklists                        | `tests/nfr/` and evidence notes               | Scripts and checklists in T-10 and T-11         |
+BrewLite uses four levels. Each level has a single responsibility; a behavior should be tested at exactly one level (the lowest that can prove it), except the three graded tests, which are deliberately tested at two (unit + integration or e2e) because the grader may look at either.
 
-**Note on tools.** The test runner is Vitest, accepted in [ADR 015](../architecture/adr/015-test-runner-vitest.md) and decision 14 in the [decision log](../plans/decision-log.md). It supersedes the Jest runner chosen in [ADR 011](../architecture/adr/011-test-tooling.md); the NestJS 12 scaffold in `apps/api` already uses Vitest (`vitest.config.ts`, `vitest.config.e2e.ts`). Supertest, Playwright, React Testing Library, and real PostgreSQL stay as ADR 011 decided.
+| Level                    | Runs against                           | Tool                       | Speed           | Scope                                                                 | Owns                                                              |
+| ------------------------ | -------------------------------------- | -------------------------- | --------------- | --------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| **Unit**                 | A function or class, no I/O            | Vitest                     | ms              | API services, pricing function, state machine, formatters, cart store | Business rules, edge cases, error branches                        |
+| **Integration**          | A Nest module + real Postgres (Docker) | Vitest (`test:e2e` config) | seconds         | Service + controller + Prisma + DB                                    | Transactions, locking, idempotency, state transitions, validation |
+| **Component** (frontend) | A React component in jsdom             | Vitest + Testing Library   | ms–s            | `ProductCard`, `CartLine`, form components                            | Render states (loading/empty/error), user interaction             |
+| **E2E**                  | Running web + API + DB                 | Playwright (Phase 2+)      | seconds–minutes | The user journeys in `scenarios.md` §3–§11                            | Cross-app flows, the demo script                                  |
 
-**Note on names.** The scaffold calls its Supertest suite `test:e2e`. In this strategy those are **API** and **Integration** tests. "End to end" means only the Playwright tests in `tests/e2e/`. T-02 may rename the script to `test:api` **(proposed)**.
+**Rules:**
+- **Test at the lowest level that can prove the behavior.** A pricing rule is a unit test; a transaction is an integration test; "checkout works" is e2e. Do not e2e a pure function.
+- **Integration tests use a real Postgres, not a mock.** The graded tests (idempotency, locking) depend on real DB behavior (unique constraints, transactions); a mock would pass while the real thing fails. The test DB is the same `docker-compose` `db` service, with a separate schema or database per test run (see §6).
+- **No test hits the network.** Mock the payment gateway at the module boundary in unit tests; in integration tests, use `PAYMENT_MOCK_MODE` (`config.md` §2.1) to control success/failure deterministically.
+- **E2E is Phase 2+.** Playwright suites are written after the screens exist. Phase 1's e2e coverage is the manual demo script (§7).
 
-## 3. Test ID convention
+## 3. What each level covers (and doesn't)
 
-- Format: `<LEVEL>-T<nn>`, following the Assignment 2 example style (`API-T01`) and the level prefixes in ADR 011.
-- Prefixes: `UNIT-` unit (API and web), `API-` API tests, `INT-` integration tests on PostgreSQL, `E2E-` Playwright journeys, `NFR-` non-functional checks.
-- Numbers are never reused. A removed test keeps its ID with the status **Dropped** in this list.
-- Put the ID at the start of the test title so CI output can be matched to the matrix, for example `it('API-T07 creates a PENDING order with the server total', ...)`.
-- Every test ID appears in the [traceability matrix](../traceability-matrix.md), and every Must requirement has at least one test ID there.
+### 3.1 Unit tests (API)
 
-## 4. Environments and test data
+**Covers:**
+- `computeLineTotal` (pricing) — the shared fixture from `ui-decisions.md` §4.2. Every size, every topping combination, quantity > 1. This is the test that keeps frontend and backend prices in agreement.
+- `assertTransition(from, to)` — every valid edge in ADR 0004's state machine, and every invalid edge rejected. This is graded test (a); the unit test is the first proof, the integration test is the second.
+- Loyalty accrual function — `floor(total / 1000)` at boundaries (0, 999, 1000, 1999, 2000 VND). ADR 0004 D7.
+- `formatVnd`, `formatDateTime` — formatting edge cases (0, 1, 999, 1000, 1,000,000; UTC → local conversion).
+- Auth service — bcrypt hash + verify, duplicate-email branch, wrong-password branch.
+- Order service — server-side price recomputation, empty cart, invalid size, unknown product, tampering (`scenarios.md` S-ORD-1..3).
+- Payment service — success, failure, idempotency key replay (same body → same response; different body → conflict). Graded test (b) has a unit-level proof here and an integration-level proof in §3.2.
 
-| Environment                            | Used by                                                                    | Database                                                       | Payment provider                      |
-| -------------------------------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------- | ------------------------------------- |
-| Developer machine                      | Unit tests; API and integration tests                                      | Local PostgreSQL from Docker Compose, database `brewlite_test` | Mock, outcome controlled by the test  |
-| CI (GitHub Actions, `S-05` and `T-02`) | Lint, unit, API, integration, build; E2E on the main branch **(proposed)** | PostgreSQL service container                                   | Mock, outcome controlled by the test  |
-| Compose stack                          | E2E and performance runs                                                   | Compose `db`, migrated and seeded                              | Mock with `PAYMENT_MOCK_CONTROL=true` |
-| Production                             | Smoke test after deploy (T-11), performance check after warm-up (T-10)     | Managed PostgreSQL, not public                                 | Mock, control **off**                 |
+**Doesn't cover:** DB behavior, HTTP routing, guards, serialization. Those are integration.
 
-**Rules**
+### 3.2 Integration tests (API)
 
-1. API, integration, and E2E tests use a dedicated test database. The test setup refuses to run unless the database name ends in `_test` **(proposed)**, so a reset can never hit a developer or production database.
-2. Each test file starts from a known state: `prisma migrate reset --force` (or truncate plus seed) before the suite, and its own rows created inside the test.
-3. Integration tests that share one database run one file at a time (`--no-file-parallelism`), because concurrency tests must control their own parallelism.
-4. Concurrency, locking, and unique-constraint tests run only on real PostgreSQL, never SQLite or an in-memory substitute (ADR 011).
-5. All data is synthetic. Tests never call a real payment API or use real bank details.
-6. The mock payment outcome is set by the test (for example a test-only header or `PAYMENT_MOCK_CONTROL`, defined in `C-07`), so success, failure, and timeout are deterministic.
+**Covers:**
+- `POST /orders` end to end: controller → service → Prisma → DB. The order is persisted with the right status, items, and computed total (`scenarios.md` S-ORD-1..3).
+- `POST /payments` with the real DB:
+  - Success: order `PAID`, stock decremented, loyalty points accrued, all in one transaction (ADR 0004 D1, D7).
+  - Failure: order `PAYMENT_FAILED`, stock unchanged, no points.
+  - Idempotency replay (same key, same body) → same response, one payment row. **This is graded test (b).**
+  - Idempotency conflict (same key, different body) → `409` (`scenarios.md` S-PAY-6).
+- Concurrent stock: N parallel `POST /payments` for a product with stock 1 → exactly one `PAID`, one `OUT_OF_STOCK`, stock 0. **This is graded test (c).**
+- State machine: `assertTransition` applied at the service boundary rejects invalid transitions even if a caller bypasses the controller. **This is graded test (a).**
+- `JwtAuthGuard`: `POST /orders` and `POST /payments` return `401` without a token; `GET /orders/:code` returns `404` for a cross-user order (`scenarios.md` S-ORD-4).
+- Validation: `POST /orders` with empty `items`, invalid `size`, unknown `productId` → `400` with the documented `code` (`api-contract.md` §8).
 
-**Seed data** (`apps/api/prisma/seed.ts`, `C-03`)
+**Doesn't cover:** browser behavior, routing, UI states. Those are component/e2e.
 
-| Data       | Values                                                                                                       | Used by                                                                   |
-| ---------- | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------- |
-| Products   | 30 drinks with whole-VND prices; one product "Cà phê phin giới hạn" with stock 1                             | Menu tests, performance (decision 12), out-of-stock and concurrency tests |
-| Toppings   | 5 toppings at +5,000 VND                                                                                     | Pricing tests                                                             |
-| Users      | `customer01@brewlite.test` to `customer10@brewlite.test`, bcrypt cost 10, password from `SEED_USER_PASSWORD` | Auth, ownership, and performance tests                                    |
-| Promotions | `BREW10` (10 percent), `WELCOME20K` (20,000 VND off, minimum order 50,000 VND, decision 16)                | Promotion tests (T-08)                                                    |
+### 3.3 Component tests (frontend)
 
-The seed is repeatable: running it twice creates no duplicates (`INT-T08`).
+**Covers:**
+- `ProductCard` renders name, formatted price, image, and is a link (`wireframes.md` §4).
+- Menu grid renders loading skeleton, empty state, error state with retry (`wireframes.md` §4).
+- Cart line: quantity increment/decrement, remove, `−` disabled at 1 (`wireframes.md` §6).
+- Cart total = sum of `lineTotal`; badge = `totalQty` (`ui-decisions.md` §5.1).
+- Checkout: method selector required before confirm; confirm disabled while submitting (`wireframes.md` §7).
+- Auth forms: client validation messages, duplicate-email error rendering (`wireframes.md` §9–§10).
+- Confirmation: renders code, status badge, total; safe "not found" message (`wireframes.md` §8).
 
-## 5. Entry and exit criteria
+**Doesn't cover:** real API calls (mocked at the `api.ts` boundary), real navigation, real auth token storage. Those are e2e.
 
-| Gate                | Entry                       | Exit (must pass)                                                                                           |
-| ------------------- | --------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| Pull request        | Code compiles locally       | Lint, unit tests, API and integration tests, build (NFR-10). A failing step blocks the merge.              |
-| Database change     | Schema or migration changed | `prisma validate`, migration from an empty database, seed twice (`INT-T08`, `INT-T09`)                     |
-| Sprint 1 close (P3) | C-04, C-09, C-14 merged     | `API-T01` to `API-T03`, `UNIT-T01` to `UNIT-T03`, `UNIT-T10`                                               |
-| Sprint 2 close (P6) | C-05 to C-19 merged         | All Must tests in section 7 except T-10 and T-11 checks; `E2E-T01` and `E2E-T02` pass on the Compose stack |
-| Release (P7)        | Production deployed         | `NFR-T01` to `NFR-T09`; production smoke test                                                              |
+### 3.4 E2E (Phase 2+)
 
-## 6. Required evidence
+**Covers** the journeys in `scenarios.md` §3–§11, one Playwright spec per scenario ID (§12 of that doc names the files). The e2e suite is the demo script's automated twin: if the demo passes manually but the e2e fails, one of them is wrong.
 
-| Requirement                                                             | Evidence                                   | Test IDs                                      |
-| ----------------------------------------------------------------------- | ------------------------------------------ | --------------------------------------------- |
-| Assignment 1 Task 10 (a): invalid state transitions are blocked         | Unit tests on the transition map           | `UNIT-T01`, `UNIT-T02`, `UNIT-T03`, `API-T16` |
-| Assignment 1 Task 10 (b): the same `Idempotency-Key` gives one effect   | Integration tests, sequential and parallel | `INT-T01`, `INT-T02`, `INT-T03`               |
-| Assignment 1 Task 10 (c): concurrent orders do not exceed stock         | Integration tests on PostgreSQL            | `INT-T04`, `INT-T05`, `INT-T06`               |
-| Assignment 2 Task 5.2: unit tests for business logic                    | Unit tests                                 | `UNIT-T01` to `UNIT-T08`                      |
-| Assignment 2 Task 5.2: integration tests for order and payment APIs     | API tests                                  | `API-T07` to `API-T16`                        |
-| Assignment 2 Task 5.2: at least one E2E test from menu to confirmation  | Playwright                                 | `E2E-T01`                                     |
-| Assignment 2 Task 5.2: reproducible migration and seed, health endpoint | Integration and API tests                  | `INT-T08`, `API-T03`                          |
-| Assignment 2 Task 4.4: CI blocks a failing change                       | One passing and one failing pipeline run   | `NFR-T08`                                     |
+**Phase 1 doesn't have e2e.** The screens don't exist yet. The manual demo script (§7) is the Phase 1 substitute. When Task 9/57.0 closes, the e2e suite is written against the running stack.
 
-Keep the CI logs (or screenshots) of these tests with the release evidence (`D-18`).
+## 4. Test-to-requirement mapping
 
-## 7. Test case list
+This is the testing slice of `traceability-matrix.md`. Every graded test has two levels of proof; every functional requirement has at least one level.
 
-**Task** is the testing-plan task that writes the test. Tests marked "with C-xx" are written with that feature, as part of its Definition of Done. **AC** refers to the acceptance scenarios and flows in the [UC-01 spec](../requirements/use-case-uc01-place-and-pay.md#8-acceptance-scenarios).
+| Requirement                     | Unit                           | Integration                                | Component                 | E2E (Phase 2+)            |
+| ------------------------------- | ------------------------------ | ------------------------------------------ | ------------------------- | ------------------------- |
+| F1 menu list                    | pricing                        | `GET /products`                            | `ProductCard`             | `checkout-journey`        |
+| F2 detail + size/topping        | pricing fixture                | `GET /products/:id`                        | size/topping selector     | `checkout-journey`        |
+| F3 cart                         | store reducers                 | —                                          | cart line, badge          | `cart-mutations`          |
+| F4 auth                         | bcrypt, token                  | register/login, guard                      | auth forms                | `auth-register-login`     |
+| F5 order + pay                  | order service, payment service | `POST /orders`, `POST /payments`           | checkout form             | `checkout-journey`        |
+| F6 confirmation + history       | —                              | `GET /orders/:code`, `/orders/me`          | confirmation, history row | `orders-history-acl`      |
+| **Graded (a)** state machine    | `assertTransition`             | service-level rejection                    | —                         | `order-state-machine`     |
+| **Graded (b)** idempotency      | payment service replay         | **integration replay (primary proof)**     | —                         | `payment-idempotency`     |
+| **Graded (c)** concurrent stock | —                              | **concurrent integration (primary proof)** | —                         | `orders-concurrent-stock` |
+| NFR < 500ms                     | —                              | —                                          | —                         | Phase 2+ `tests/nfr/`     |
 
-### 7.1 Unit tests
+**Rule:** for the three graded tests, the **integration** level is the primary proof (the grader runs the API, not the unit test). The unit test is a faster, narrower guard. Both must pass. If they disagree, the integration test wins and the unit test is fixed.
 
-| Test ID  | Requirement   | UC-01         | Scenario and expected result                                                                                                                                                                  | Task             |
-| -------- | ------------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
-| UNIT-T01 | FR-09         | Main flow, A4 | The legal path is allowed: `PENDING` to `PAID` to `PREPARING` to `READY` to `COMPLETED`; `PENDING` to `PAYMENT_FAILED` to `PENDING`                                                           | T-05             |
-| UNIT-T02 | FR-09, FR-14  | AC-09         | Every other transition is rejected and leaves the order unchanged, including `PREPARING` or `READY` to `CANCELLED`, `PENDING` to `PREPARING`, and any move out of `COMPLETED` or `CANCELLED`  | T-05             |
-| UNIT-T03 | FR-09, FR-15  | AC-13         | `CANCELLED` is reachable only from `PENDING`, `PAYMENT_FAILED`, and `PAID`                                                                                                                    | T-05             |
-| UNIT-T04 | FR-02, FR-05  | AC-08         | Pricing: `lineTotal = (basePrice + sizeSurcharge + toppingCount x 5,000) x qty` with S 0, M +5,000, L +10,000; integers only (for example 29,000 size L with 2 toppings, qty 2, gives 98,000) | T-04 (with C-06) |
-| UNIT-T05 | FR-12         | AC-11         | Promotion: `PERCENT` uses `floor(subtotal x value / 100)`; `FIXED` never exceeds the subtotal; inactive, expired, not-yet-valid, below-minimum, and over-limit codes are rejected             | T-08             |
-| UNIT-T06 | FR-12         | AC-01         | Loyalty points are `floor(paidTotal / 1000)` (for example 98,000 gives 98 and 999 gives 0)                                                                                                    | T-08             |
-| UNIT-T07 | FR-06         | AC-02, E8     | The mock provider returns success, failure, or timeout as controlled by the test; the control is ignored when it is turned off (production setting)                                           | T-12             |
-| UNIT-T08 | FR-16         | A6            | The expiry rule selects only `PENDING` and `PAYMENT_FAILED` orders whose `expiresAt` has passed (Could)                                                                                       | T-05             |
-| UNIT-T10 | FR-01, NFR-07 | -             | The menu shows a loading state, an empty message for an empty list, an error message when the request fails, and the products otherwise                                                       | T-03             |
-| UNIT-T11 | FR-02         | -             | On product detail, choosing size and toppings updates the shown price by the pricing rule                                                                                                     | with C-15        |
-| UNIT-T12 | FR-03         | A1            | The cart adds, changes quantity, and removes items; the badge count and total update; the cart survives a reload (Zustand `persist`)                                                          | with C-16        |
-| UNIT-T13 | FR-06, FR-10  | A4, A5        | Checkout keeps the cart after a failure, sends a new `Idempotency-Key` on retry, and reuses the same key for a double tap                                                                     | with C-18        |
+## 5. Tooling
 
-### 7.2 API tests
+| Tool                    | Used for                       | Config                                         | Notes                                                         |
+| ----------------------- | ------------------------------ | ---------------------------------------------- | ------------------------------------------------------------- |
+| **Vitest**              | API unit tests                 | `apps/api/vitest.config.ts`                    | Already in the scaffold. Co-located `*.spec.ts`.              |
+| **Vitest (e2e config)** | API integration tests          | `apps/api/vitest.config.e2e.ts`                | Already in the scaffold. `*.e2e-spec.ts` in `apps/api/test/`. |
+| **Vitest**              | Frontend component tests       | `apps/web/vitest.config.ts` (to add in Task 3) | + `@testing-library/react`, `jsdom`.                          |
+| **Playwright**          | Cross-app e2e                  | `tests/e2e/playwright.config.ts` (Phase 2+)    | Root-level, not per-app.                                      |
+| **Prisma**              | Test DB setup                  | `apps/api/prisma/`                             | `migrate reset` per run (see §6).                             |
+| **docker-compose**      | Postgres for integration tests | root `docker-compose.yml`                      | Same `db` service; a separate database name per run.          |
 
-| Test ID | Requirement         | UC-01                | Scenario and expected result                                                                                                                                      | Task             |
-| ------- | ------------------- | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
-| API-T01 | FR-01               | -                    | `GET /products` returns 200 and the seeded list; each item has `id`, `name`, `price`, `imageUrl`                                                                  | T-03             |
-| API-T02 | FR-02               | -                    | `GET /products/:id` returns the product, and 404 for an unknown id                                                                                                | T-03             |
-| API-T03 | NFR-09              | -                    | `GET /health` returns 200 when the database answers and 503 when it does not                                                                                      | T-03 (with C-04) |
-| API-T04 | FR-04, NFR-02       | -                    | `POST /auth/register` stores a bcrypt hash, rejects a duplicate email, and never returns the password or hash                                                     | T-04             |
-| API-T05 | FR-04               | -                    | `POST /auth/login` returns a JWT for valid credentials and 401 for invalid ones                                                                                   | T-04             |
-| API-T06 | NFR-03              | AC-07, E4            | `POST /orders`, `POST /payments`, and `GET /orders/me` return 401 with no JWT, an invalid JWT, or an expired JWT                                                  | T-04             |
-| API-T07 | FR-05, FR-11        | AC-01, steps 3 to 6  | A valid order returns the order ID, status `PENDING`, and the server total; stock is held                                                                         | T-04             |
-| API-T08 | FR-05, NFR-04       | E2                   | Invalid input (quantity 0, unknown product, size, or topping) returns 400 and creates no order                                                                    | T-04             |
-| API-T09 | FR-05               | AC-08                | A lower price or total sent by the client is ignored; the order uses the server total                                                                             | T-04             |
-| API-T10 | FR-11               | AC-05, E1            | A quantity above stock returns 409 naming the item; no order is created; stock is unchanged                                                                       | T-04             |
-| API-T11 | FR-06, FR-07, FR-12 | AC-01, steps 8 to 12 | A successful payment returns `PAID`; one payment row exists; loyalty points are credited once                                                                     | T-04             |
-| API-T12 | FR-06               | AC-02, E3            | A failed payment returns the outcome with status `PAYMENT_FAILED`; no points; stock stays held                                                                    | T-04             |
-| API-T13 | FR-06, FR-11        | AC-03, A4            | A retry with a new key after a failure gives `PAID` once; stock is not held twice                                                                                 | T-04             |
-| API-T14 | FR-06, NFR-04       | -                    | `POST /payments` without an `Idempotency-Key` returns 400                                                                                                         | T-04             |
-| API-T15 | FR-06, NFR-03       | AC-10, E5            | Paying another customer's order is rejected (403 or 404, decided in API design); the order is unchanged                                                           | T-04             |
-| API-T16 | FR-09               | AC-09, E6            | Paying an order that is already `PAID`, with a new key, returns 409; no second charge                                                                             | T-04             |
-| API-T17 | FR-08, NFR-03       | -                    | `GET /orders/me` returns only the caller's orders with ID, status, total, and creation time                                                                       | T-04             |
-| API-T18 | FR-13               | -                    | `GET /orders/:id` returns the order to its owner and rejects other users (Should)                                                                                 | T-04             |
-| API-T19 | FR-14               | -                    | The internal status operation moves a `PAID` order to `PREPARING`, `READY`, `COMPLETED`, rejects illegal moves, and is not callable by a normal customer (Should) | T-05 (with C-09) |
-| API-T20 | FR-12               | AC-11, A3            | `POST /orders` with `BREW10` or `WELCOME20K` reduces the total; an invalid or expired code is rejected with a message                                             | T-08             |
-| API-T21 | FR-06               | E8                   | A mock timeout is recorded as a failed payment; the same key replays that result                                                                                  | T-12             |
-| API-T22 | FR-17               | -                    | The QR demo "simulate payment received" control uses the same confirmation path as the mock (Could)                                                               | T-12 (with C-21) |
-| API-T23 | FR-18               | -                    | The sandbox adapter passes the same provider contract tests as the mock (Could)                                                                                   | T-12 (with C-22) |
+**Why Vitest, not Jest:** the scaffold already uses Vitest (`apps/api/vitest.config.ts`), and it's faster and ESM-native. Do not add Jest. If a dependency requires it, that's an ADR.
 
-### 7.3 Integration tests (PostgreSQL)
+**Why Playwright, not Cypress:** it runs both apps in one browser context, handles multi-tab and parallel tests, and is the project-structure doc's named choice (`tests/e2e/`). Do not re-litigate.
 
-| Test ID | Requirement                 | UC-01     | Scenario and expected result                                                                                                                                                   | Task |
-| ------- | --------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---- |
-| INT-T01 | FR-10                       | AC-04, A5 | The same payment request with key K sent twice in sequence returns the same outcome; exactly one payment row and one order change exist                                        | T-06 |
-| INT-T02 | FR-10                       | AC-04     | The same key sent twice **in parallel** produces one payment row; the unique (`userId`, `idempotencyKey`) constraint stops the second, which replays or returns 409            | T-06 |
-| INT-T03 | FR-10, FR-12                | AC-12     | Replaying a successful payment does not credit loyalty points again                                                                                                            | T-06 |
-| INT-T04 | FR-11                       | AC-06, E7 | Stock is 1 and two customers order it at the same time: exactly one order succeeds; stock ends at 0                                                                            | T-07 |
-| INT-T05 | FR-11                       | E7        | N parallel orders against stock k (for example 10 against 3): accepted quantity never exceeds k; stock is never negative                                                       | T-07 |
-| INT-T06 | FR-11, FR-15                | AC-13     | Cancelling a `PENDING` order releases its stock exactly once; a second cancel changes nothing (`stockHeld`)                                                                    | T-07 |
-| INT-T07 | FR-15, FR-12                | -         | Cancelling a `PAID` order sets the payment to `REFUNDED` and adds one `REVERSAL` row with negative points; a second reversal is rejected by unique (`orderId`, `type`) (Could) | T-08 |
-| INT-T08 | NFR-12                      | -         | From an empty database, `prisma migrate deploy` and the seed succeed; running the seed again creates no duplicates                                                             | T-02 |
-| INT-T09 | FR-10, FR-11, FR-12, NFR-12 | -         | The database rejects negative stock, quantity 0, `discountAmount` above `subtotal`, a duplicate (`userId`, `idempotencyKey`), and a duplicate (`orderId`, `type`)              | T-02 |
-| INT-T10 | FR-16                       | A6        | The expiry job cancels expired `PENDING` and `PAYMENT_FAILED` orders and releases their stock once (Could)                                                                     | T-07 |
+## 6. Test data and isolation
 
-`INT-T08` and `INT-T09` only need the schema from `C-03`, so they can be written as soon as the test database exists (`T-02`).
+**Integration tests use a real database.** The rules:
 
-### 7.4 End-to-end tests
+1. **One database per test run**, named `brewlite_test_<random>`, created by the test setup and dropped on teardown. Do not run integration tests against `brewlite` (the dev database) — a failed test can corrupt dev state.
+2. **Migrations run before tests.** `prisma migrate deploy` against the test DB, then tests run. `migrate dev` is for schema changes, not for test setup.
+3. **Seed data is fixture data, not the dev seed.** The dev seed (`prisma/seed.ts`) is for `setup.md`'s local run. Test fixtures live in `apps/api/test/fixtures/` and are inserted per test or per suite. Do not depend on the dev seed's contents.
+4. **Each test cleans up its own rows** or runs in a transaction that rolls back. Prefer the transaction-rollback pattern for speed; use per-test cleanup for tests that must commit (the concurrency test needs real committed transactions).
+5. **The concurrency test (graded c) uses real parallel connections.** It must not be run inside a single transaction, or the race is serialized away. It creates stock 1, fires N requests in parallel with `Promise.all`, and asserts exactly one success. This is the one test that's slow and must not be mocked.
 
-| Test ID | Requirement            | UC-01            | Scenario and expected result                                                                                                                                                | Task |
-| ------- | ---------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
-| E2E-T01 | FR-01 to FR-07, NFR-14 | AC-01, main flow | Open the menu, choose a drink with size and topping, add it to the cart, sign in, pay by Wallet, and see the confirmation with the order ID and `PAID`; the cart is cleared | T-09 |
-| E2E-T02 | FR-06, FR-08           | AC-02, AC-03     | The first payment fails: the error is shown and the cart is kept; the retry succeeds and the order appears in the order history                                             | T-09 |
-| E2E-T03 | FR-03, FR-05           | AC-07, A1        | A signed-out customer taps Pay, is sent to sign in, and returns to checkout with the cart unchanged                                                                         | T-09 |
-| E2E-T04 | NFR-08                 | -                | On a phone-sized viewport the main screens are usable and the web manifest is served                                                                                        | T-09 |
+**Component tests** use jsdom and mock `apps/web/src/lib/api.ts`; they never hit a real network. **Unit tests** have no I/O at all.
 
-### 7.5 Non-functional checks
+## 7. Manual demo script (Phase 1 substitute for e2e)
 
-| Test ID | Requirement | Scenario and expected result                                                                                                                                                                                           | Task             |
-| ------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
-| NFR-T01 | NFR-01      | Decision 12 method: about 30 products and 10 users, 20 warm-up requests, then 200 requests per endpoint at 10 connections with `autocannon` on the six listed endpoints; p95 under 500 ms; the environment is recorded | T-10             |
-| NFR-T02 | NFR-02      | A database query shows bcrypt hashes (`$2a$`/`$2b$`, cost 10) and no plaintext passwords                                                                                                                               | T-10             |
-| NFR-T03 | NFR-03      | Every protected endpoint rejects a missing JWT (401) and another user's resource (403 or 404)                                                                                                                          | T-10             |
-| NFR-T04 | NFR-04      | Every write endpoint rejects invalid input with a 4xx and a consistent error body                                                                                                                                      | T-10             |
-| NFR-T05 | NFR-05      | Manual smoke test on the browser list in decision 13, plus Playwright on Chromium and WebKit                                                                                                                           | T-11             |
-| NFR-T06 | NFR-06      | A non-team member follows the README from a clean clone and reaches the confirmation screen with `docker compose up --build`                                                                                           | T-11             |
-| NFR-T07 | NFR-07      | Manual check of loading, empty, and error states on the menu, checkout, and history screens                                                                                                                            | T-11             |
-| NFR-T08 | NFR-10      | One CI run passes and one run that breaks lint, a test, or the build is blocked from merging; links or screenshots are kept                                                                                            | T-02 (with S-05) |
-| NFR-T09 | NFR-11      | Production: the web URL uses HTTPS, `GET /health` answers, the database has no public address, no secret appears in the repository or CI logs                                                                          | T-11             |
-| NFR-T10 | NFR-09      | The API writes one log line per request and one per error, without passwords or tokens                                                                                                                                 | T-10             |
-| NFR-T11 | NFR-15      | Manual check that interactive controls have visible labels and keyboard focus (Could)                                                                                                                                  | T-11             |
+Until Playwright exists, the Phase 1 demo is manual and follows `scenarios.md` S-MAIN-1 verbatim. The demo script is:
 
-## 8. Coverage summary
+1. Reset DB (`prisma migrate reset`) and start both apps (`setup.md` §6–§7).
+2. Open `/`, confirm menu renders (loading → success).
+3. Open a product, select size M + 2 toppings, confirm price updates, add to cart.
+4. Add a second product; open `/cart`, change quantity, confirm total.
+5. Log in (or register then log in).
+6. Checkout: select Wallet, confirm; confirm route shows code + `PAID`.
+7. Open `/orders`; the order appears with the same code.
+8. Run the failure path: set `PAYMENT_MOCK_MODE=failure`, place a new order, confirm `PAYMENT_FAILED` and cart preserved; set back to `success`, retry with a new key, confirm `PAID`.
+9. (If Task 10 is merged) Double-submit the same payment key; confirm one order. Run the invalid-transition and concurrent-stock checks from `scenarios.md` S-ORD-5/6.
 
-| Requirement | Priority | Test IDs                                                          |
-| ----------- | -------- | ----------------------------------------------------------------- |
-| FR-01       | Must     | API-T01, UNIT-T10, E2E-T01                                        |
-| FR-02       | Must     | API-T02, UNIT-T04, UNIT-T11, E2E-T01                              |
-| FR-03       | Must     | UNIT-T12, E2E-T01, E2E-T03                                        |
-| FR-04       | Must     | API-T04, API-T05                                                  |
-| FR-05       | Must     | API-T07, API-T08, API-T09, UNIT-T04, E2E-T01                      |
-| FR-06       | Must     | API-T11 to API-T15, API-T21, UNIT-T07, UNIT-T13, E2E-T01, E2E-T02 |
-| FR-07       | Must     | API-T11, E2E-T01                                                  |
-| FR-08       | Must     | API-T17, E2E-T02                                                  |
-| FR-09       | Must     | UNIT-T01, UNIT-T02, UNIT-T03, API-T16                             |
-| FR-10       | Must     | INT-T01, INT-T02, INT-T03, INT-T09, UNIT-T13                      |
-| FR-11       | Must     | INT-T04, INT-T05, INT-T06, API-T07, API-T10, API-T13              |
-| FR-12       | Must     | UNIT-T05, UNIT-T06, API-T20, INT-T03                              |
-| FR-13       | Should   | API-T18                                                           |
-| FR-14       | Should   | API-T19, UNIT-T02                                                 |
-| FR-15       | Could    | UNIT-T03, INT-T06, INT-T07                                        |
-| FR-16       | Could    | UNIT-T08, INT-T10                                                 |
-| FR-17       | Could    | API-T22                                                           |
-| FR-18       | Could    | API-T23                                                           |
-| NFR-01      | Must     | NFR-T01                                                           |
-| NFR-02      | Must     | API-T04, NFR-T02                                                  |
-| NFR-03      | Must     | API-T06, API-T15, API-T17, NFR-T03                                |
-| NFR-04      | Must     | API-T08, API-T14, NFR-T04                                         |
-| NFR-05      | Must     | NFR-T05                                                           |
-| NFR-06      | Must     | NFR-T06                                                           |
-| NFR-07      | Must     | UNIT-T10, NFR-T07                                                 |
-| NFR-08      | Must     | E2E-T04                                                           |
-| NFR-09      | Must     | API-T03, NFR-T10                                                  |
-| NFR-10      | Must     | NFR-T08                                                           |
-| NFR-11      | Must     | NFR-T09                                                           |
-| NFR-12      | Must     | INT-T08, INT-T09                                                  |
-| NFR-13      | Must     | UNIT-T01 to UNIT-T03, INT-T01, INT-T02, INT-T04, INT-T05, E2E-T01 |
-| NFR-14      | Should   | E2E-T01                                                           |
-| NFR-15      | Could    | NFR-T11                                                           |
+**Rule:** the demo script is run at the end of each Sprint and its pass/fail is recorded in the Retro note (`docs/plans/`). A demo that fails step 6 is a Sprint Review blocker, not a "we'll fix it next week."
 
-## 9. Defects and reporting
+## 8. Test definition of done (per task)
 
-- A failing test in CI blocks the merge (NFR-10). Fix the code or the test in the same pull request; do not skip a failing test without an issue that names it.
-- A defect found outside CI becomes a GitHub issue with the label `bug`, the test ID if one exists, the steps, and the expected and actual result. Add a test that reproduces it before the fix **(proposed)**.
-- Coverage is reported with `npm run test:cov` in `apps/api`. There is no coverage target; the required tests in section 6 matter more than a percentage.
+A task's tests are complete when:
 
-## 10. Points to confirm
+- [ ] The behaviors in its `product-backlog.md` acceptance criteria have tests at the level(s) named in §4.
+- [ ] The tests pass locally (`npm test` in the owning app; integration tests against the test DB).
+- [ ] No test is skipped or `test.todo` without a linked follow-up in the open-items table.
+- [ ] The test file naming follows §9.
+- [ ] The task's evidence note (`working-agreement.md` §4) cites the test files.
 
-1. **Web test runner:** Vitest with React Testing Library is proposed; decide in `T-02`.
-2. **Mock outcome control:** the exact mechanism (test header, test amount, or `PAYMENT_MOCK_CONTROL`) is decided in `C-07`; `UNIT-T07`, `API-T12`, and `API-T21` depend on it.
-3. **Status codes:** 403 or 404 for another user's order (`API-T15`) and 409 for an order that is not payable (`API-T16`) are proposals from the UC-01 spec.
-4. **Expiry start** (ADR 008): `UNIT-T08` and `INT-T10` assume the window starts at order creation unless the team decides it restarts on retry.
-5. **Promotion usage count** (ADR 009): when `usedCount` goes up affects `UNIT-T05` and `API-T20`.
-6. **E2E in CI:** run Playwright on every pull request, or only on `main` and before a release **(proposed: `main` and release)**.
+A task can close `● Xong` without 100% coverage; it cannot close without tests for its acceptance criteria. Coverage percentage is not a gate. The graded tests' presence and passing is a gate.
+
+## 9. Naming and placement
+
+| Level              | Location                   | Pattern                                               |
+| ------------------ | -------------------------- | ----------------------------------------------------- |
+| API unit           | co-located                 | `<file>.spec.ts` (e.g. `orders.service.spec.ts`)      |
+| API integration    | `apps/api/test/`           | `<feature>.e2e-spec.ts` (e.g. `payments.e2e-spec.ts`) |
+| Frontend component | co-located or `__tests__/` | `<component>.test.tsx`                                |
+| E2E (Phase 2+)     | `tests/e2e/`               | `<journey>.spec.ts` (matches `scenarios.md` §12)      |
+| Fixtures           | `apps/api/test/fixtures/`  | `<domain>.json` (e.g. `orders.json`)                  |
+
+Test names describe behavior, not implementation: `rejects COMPLETED -> PAID`, not `test assertTransition 2`. The name should read as the assertion.
+
+## 10. Known limitations and risks
+
+| Limitation                                            | Risk                                                                                              | Mitigation                                                               |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| No e2e in Phase 1                                     | The demo script is manual; a regression between Sprint Review and handover isn't caught by a test | Run the demo script at every Sprint end; e2e in Phase 2+                 |
+| No load/performance tests                             | NFR "< 500ms" is unverified until Phase 2+                                                        | Manual curl timing in Task 2 evidence; `tests/nfr/` in Phase 2+          |
+| No automated accessibility tests                      | WCAG AA is manual (`ui-decisions.md` §7)                                                          | Manual keyboard pass in demo script step 2–7                             |
+| Integration tests need Docker running                 | A teammate without Docker can't run the full suite                                                | Unit + component tests run without Docker; document in `setup.md` §9     |
+| Concurrency test is slow and flaky-prone              | A flaky graded test is worse than no test                                                         | Retry once on failure in CI; if it flakes twice, investigate, don't skip |
+| Frontend component tests added in Task 3, not Phase 1 | UI regressions before Task 3 aren't caught                                                        | Phase 1 has no screens; this is expected                                 |
+
+## 11. CI (Phase 2+)
+
+CI is not in Phase 1 (`.github/workflows/` is empty). When it lands:
+
+- **Job 1 — API:** `cd apps/api && npm ci && npx prisma generate && npm test && npm run test:e2e` against a Postgres service container.
+- **Job 2 — Web:** `cd apps/web && npm ci && npm test`.
+- **Job 3 — E2E (Phase 2+):** bring up `docker compose`, run Playwright.
+- **No root job** (ADR 0002: per-app install).
+- The graded tests (a), (b), (c) must pass in Job 1 before merge.
+
+## 12. Open items
+
+| Item                                                               | Owner | Closes when                              |
+| ------------------------------------------------------------------ | ----- | ---------------------------------------- |
+| Add `apps/web/vitest.config.ts` and `@testing-library/react`       | Nghĩa | Task 3 `● Xong`                          |
+| Write the pricing fixture (`tests/fixtures/pricing-cases.json`)    | H.Tài | Task 4 or 6 `● Xong`                     |
+| Decide test DB naming/isolation in CI                              | H.Tài | First CI workflow                        |
+| Write Playwright config and first journey                          | H.Tài | Task 9 `● Xong` (Phase 2+)               |
+| Confirm the concurrency test's retry policy                        | H.Tài | First CI run                             |
+| Add the manual demo script result to the Retro note template       | H.Tài | First Sprint Review                      |
+| Update `traceability-matrix.md` §4 with this doc's test references | H.Tài | Same PR that creates the matrix skeleton |
+
+## 13. References
+
+- Assignment PDF §9 (three graded tests), §10 (DoD), §4.2 (NFR).
+- [Scenarios](../requirements/scenarios.md) §12 (scenario → test traceability), §9–§10 (graded test scenarios).
+- [Product Backlog](../requirements/product-backlog.md) (acceptance criteria per task).
+- [Working Agreement](../working-agreement.md) §4 (evidence notes cite tests), §9 (review checklist).
+- [API Contract](../architecture/api-contract.md) (endpoint shapes the integration tests assert).
+- [ADR 0004](../architecture/adr/0004-payment-mock-and-order-lifecycle.md) (state machine, idempotency, stock timing the graded tests prove).
+- [Setup](../setup.md) §9 (how to run tests locally).
+- [UI Decisions](../design/ui-decisions.md) §4.2 (pricing fixture), §6 (UI states), §7 (accessibility checklist).
+- 
+---
+
+## Notes on choices I made (so you can accept or override)
+
+1. **The doc is organized by *level* first (§2–§3), then by *requirement mapping* (§4), then *tooling/data/manual* (§5–§7).** That order matches how a reader uses it: "what levels exist?" → "what does each prove?" → "which test proves requirement X?" → "how do I run it?" A doc organized by requirement first would answer "is F3 covered?" faster but wouldn't tell you *what kind* of test to write for a new behavior. The §4 table bridges the two, and it's the table that updates when `traceability-matrix.md` is written.
+
+2. **The three graded tests are called out as "primary proof at integration level" and "unit as faster narrower guard."** This is the most important judgment in the doc. A student team's instinct is to write the graded tests as unit tests (fast, easy) and call it done. But the grader runs the API — if the unit test passes and the integration test doesn't exist, the graded behavior is unproven. Naming the integration level as primary, and requiring both, is what makes the graded tests real.
+
+3. **"No test hits the network" and "integration tests use a real Postgres, not a mock" are stated together, and they look contradictory until you read the boundary.** The rule is: no *external* network (no real payment gateway), but the *database* is real in integration tests because the graded tests depend on real constraints and transactions. A mock DB would pass idempotency and locking tests that the real DB fails. The distinction is in §2's rules and §3.2's list; if it's still confusing, the sentence to add is "mock at the payment gateway boundary, never at the DB boundary."
+
+4. **The concurrency test is the one test the doc says "must not be mocked" and "must not run inside a single transaction."** That's specific because it's the test most likely to be written wrong — a `Promise.all` inside one transaction serializes the race away and passes trivially while the real system oversells. §6 rule 5 states it, §10 lists "flaky" as a risk, §12 has a retry-policy open item. If only one paragraph of this doc is read, it should be that one.
+
+5. **§7 (manual demo script) is the Phase 1 substitute for e2e, and it's numbered 1–9 to mirror `scenarios.md` S-MAIN-1.** That's deliberate: when Playwright is written in Phase 2+, the spec's steps are the same numbers, and the reviewer can diff "manual step 6" against "e2e step 6." A demo script that diverged from the scenario would be a second source of truth.
+
+6. **§8's "a task can close without 100% coverage; it cannot close without tests for its acceptance criteria" is the proportionate-testing rule.** Student teams oscillate between "no tests" and "coverage gate at 80%." Both are wrong for this project. The rule is: acceptance criteria get tests; other code gets tests when the risk justifies it; coverage percentage is informational. The graded tests are the one hard gate, stated in §8 and §11.
+
+7. **§10 (known limitations) is where the doc is honest about what it doesn't do.** No e2e, no load tests, no automated a11y, Docker dependency for integration tests, flaky concurrency. Each has a mitigation, and the mitigation is either "manual at Sprint end" or "Phase 2+." A test strategy that claims to cover everything would be lying; this one says what's covered and what's deferred, which is more useful to a reviewer.
+
+8. **One forward reference to honor:** §12's "Update `traceability-matrix.md` §4 with this doc's test references" means the matrix skeleton's §4 (graded tests) should cite this doc's §4 table rather than duplicating it. If you write the matrix skeleton first, add a row pointing here; if you write this doc first (which you did), the matrix's §4 is already structured to accept the reference. Either order works; just don't let the two §4 tables drift.
+
+9. **The doc lives at `docs/testing/test-strategy.md`, not `docs/test-strategy.md`.** `project-structure.md` reserves `docs/testing/` for "Test plans and NFR evidence (Phase 2+)." This is the strategy that goes in that folder, written in Phase 1 because it shapes what gets tested in Phase 2+. The "Phase 2+" comment in the structure doc is slightly inaccurate now — worth a one-line update to say `docs/testing/` holds the Phase 1 strategy and Phase 2+ plans/evidence.
+
+This closes the last Phase 1 doc that was referenced-but-unwritten from `scenarios.md` §12 and `working-agreement.md` §9. Phase 1's `docs/` is now: `setup.md`, `config.md`, `working-agreement.md`, `requirements/` (2), `design/` (2), `architecture/` (5 ADRs + contract), `testing/test-strategy.md`, and pending: `diagrams/README.md` and the `traceability-matrix.md` skeleton. Want `diagrams/README.md` next (last un-written Phase 1 doc), or the matrix skeleton (the one that catches scope gaps)?
