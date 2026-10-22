@@ -11,7 +11,7 @@ Covers the repository, tooling, Docker Compose, CI, CD, and production deploymen
 
 | ID | Task | Output | Phase | Needs | Priority | Owner | Status |
 |---|---|---|---|---|---|---|---|
-| S-01 | Create the repository with `apps/web`, `apps/api`, `docs`, `tests`, `.github/workflows`; branch and pull-request strategy; commit convention; Definition of Done; instructor access (A1-T1, A2-T4.1) | Repository; `CONTRIBUTING` or README section | P0 | - | Must | | Todo |
+| S-01 | Create the repository with `apps/web`, `apps/api`, `docs`, `tests`, `.github/workflows`; branch and pull-request strategy; commit convention; Definition of Done; instructor access (A1-T1, A2-T4.1) | Repository; [`CONTRIBUTING.md`](../../CONTRIBUTING.md); [PR template](../../.github/pull_request_template.md) | P0 | - | Must | | Todo |
 | S-02 | Issue board and Product Backlog for Sprint 1 and Sprint 2, populated from [00-overview.md](00-overview.md) (A2-T4.1) | Board with all work items | P0 | S-01 | Must | | Todo |
 | S-03 | Shared tooling: lint, format, TypeScript config, `.gitignore`, `.env.example` with placeholders only | Config files in repo | P1 | S-01 | Must | | Todo |
 | S-04 | `docker-compose.yml` for `web`, `api`, `db`: health checks, named volume, backend waits for healthy database (A1-T9, A2-T5.2) | [`docker-compose.yml`](../../docker-compose.yml), `apps/api/Dockerfile`, `apps/web/Dockerfile` | P2 | C-01, C-02 | Must | | Review |

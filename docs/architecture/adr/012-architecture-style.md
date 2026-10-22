@@ -7,7 +7,7 @@
 
 ## Context
 
-Order creation, stock changes, and payment recording must commit together, and the team has five people and limited time. The assignment requires a single NestJS backend.
+Order creation, stock changes, and payment recording must commit together, and the team has six people and limited time. The assignment requires a single NestJS backend.
 
 ## Options considered
 

@@ -7,7 +7,7 @@
 
 ## Context
 
-The assignment requires one repository with `apps/web`, `apps/api`, `docs`, `tests`, and `.github/workflows`. A team of five works on documents, two applications, tests, and pipelines at the same time, and Assignment 2 only accepts later tasks when earlier artifacts are in the repository with clear history.
+The assignment requires one repository with `apps/web`, `apps/api`, `docs`, `tests`, and `.github/workflows`. A team of six works on documents, two applications, tests, and pipelines at the same time, and Assignment 2 only accepts later tasks when earlier artifacts are in the repository with clear history.
 
 ## Options considered
 

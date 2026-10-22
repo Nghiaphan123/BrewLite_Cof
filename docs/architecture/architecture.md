@@ -2,7 +2,7 @@
 
 **Version:** 2.0  
 **Status:** Draft for team review (task D-10); replaces the earlier flat `architecture.md`  
-**Related:** [SRS](../requirements/srs.md), [UC-01 spec](../requirements/use-case-uc01-place-and-pay.md), [Decision log](../plans/decision-log.md), [Class diagram and data model](../diagrams/class-domain.md), [Sequence diagram](../diagrams/sequence-checkout.md), [Activity diagram](../diagrams/activity-checkout.md), [Deployment guide](../deployment.md), [ADRs](adr/)
+**Related:** [SRS](../requirements/srs.md), [UC-01 spec](../requirements/use-case-uc01-place-and-pay.md), [Project Structure](project-structure.md), [Decision log](../plans/decision-log.md), [Class diagram and data model](../diagrams/class-domain.md), [Sequence diagram](../diagrams/sequence-checkout.md), [Activity diagram](../diagrams/activity-checkout.md), [Deployment guide](../deployment.md), [ADRs](adr/)
 
 This document describes how BrewLite is built (Assignment 2, Task 3.1). It uses the C4 model for the views and a layered structure inside the backend. The production deployment diagram is a separate task (`D-12`). Items marked **(proposed)** are team suggestions to confirm; items marked **(verify)** depend on facts that can go stale and must be checked before they are accepted.
 
@@ -14,7 +14,7 @@ This document describes how BrewLite is built (Assignment 2, Task 3.1). It uses 
 - Keep rules for orders, payments, and stock in one place, the backend, so the UI cannot bypass them.
 - Make payment retries safe and stock correct under concurrent orders.
 - Run the whole system locally with one command, and deploy the same images to production.
-- Keep the design small enough for a team of five to build, test, and explain.
+- Keep the design small enough for a team of six to build, test, and explain.
 
 ### 1.2 Quality drivers
 

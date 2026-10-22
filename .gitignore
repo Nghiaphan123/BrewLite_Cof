@@ -1,28 +1,54 @@
-# Dependencies
-node_modules/
+# Dependencies and package-manager caches
+**/node_modules/
+.npm/
+.pnpm-store/
+.yarn/cache/
 
-# Build output
-dist/
-.next/
-build/
-coverage/
+# Build output and tool caches
+**/dist/
+**/.next/
+**/build/
+**/coverage/
+**/.turbo/
+**/.vercel/
 *.tsbuildinfo
 
 # Generated Prisma client (rebuilt by `npm run db:generate` or `npm run build`)
 apps/api/src/generated/
 
-# Test reports
-playwright-report/
-test-results/
+# Test reports and local coverage artifacts
+**/playwright-report/
+**/test-results/
+**/coverage/
 
-# Logs
+# Logs and debug output
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
-# Environment files: keep only the template
+# Environment files and secrets: keep only committed examples
 .env
 .env.*
 !.env.example
 
-# OS files
+# Local databases, exports, and temporary files
+*.sqlite
+*.sqlite3
+*.db
+*.dump
+*.backup
+*.tmp
+
+# Private keys and certificates
+*.pem
+*.key
+
+# Editor and operating-system files
+.idea/
+.vscode/*
+!.vscode/extensions.json
 .DS_Store
 Thumbs.db
+Desktop.ini

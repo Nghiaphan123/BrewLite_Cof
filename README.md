@@ -24,21 +24,17 @@ Decisions and their reasons are in the [decision log](docs/plans/decision-log.md
 ```text
 BrewLite/
 |-- apps/
-|   |-- api/                 # NestJS REST API, port 3001
-|   |   `-- prisma/          # schema.prisma, migrations, seed.ts
-|   `-- web/                 # Next.js web app, port 3000
-|-- docs/
-|   |-- requirements/        # context and scope, SRS, UC-01 spec
-|   |-- diagrams/            # use-case, activity, sequence, class, C4
-|   |-- architecture/        # architecture.md and adr/
-|   |-- plans/               # plan overview, task lists, decision log
-|   |-- testing/             # test strategy
-|   |-- traceability-matrix.md
-|   `-- deployment.md
+|   |-- api/                 # NestJS API, Prisma schema/migrations, port 3001
+|   `-- web/                 # Next.js App Router, port 3000
+|-- tests/                   # E2E and NFR tests as implementation tasks are added
+|-- docs/                    # requirements, diagrams, architecture, plans, testing
+|-- .github/                 # PR template and CI/CD workflows
 |-- docker-compose.yml
 |-- .env.example
 `-- README.md
 ```
+
+This is the monorepo layout. The detailed target tree and conventions for NestJS modules, DTOs, Next.js features, and test placement are in [Project Structure](docs/architecture/project-structure.md). Some target folders are not present until their implementation tasks begin.
 
 ## Prerequisites
 
@@ -134,9 +130,10 @@ To be completed in Phase 7 (`D-15`, `D-16`, `S-07` to `S-09`). Planned target: R
 | Testing                      | [docs/testing/test-strategy.md](docs/testing/test-strategy.md), [testing plan](docs/plans/04-testing-plan.md)                                                 |
 | Traceability                 | [docs/traceability-matrix.md](docs/traceability-matrix.md)                                                                                                    |
 | Deployment                   | [docs/deployment.md](docs/deployment.md)                                                                                                                      |
+| Contributing                 | [CONTRIBUTING.md](CONTRIBUTING.md) and [.github/pull_request_template.md](.github/pull_request_template.md)                                                  |
 
 ## Working rules
 
-- Every branch, commit, and pull request names its task ID, for example `feat/C-06-create-order` and `C-06: validate order DTO`.
-- Changes go through pull requests with a teammate review; lint, test, or build failures block the merge.
+- Branch, commit, and PR naming rules and review checklists are in [CONTRIBUTING.md](CONTRIBUTING.md). The PR description template is in [.github/pull_request_template.md](.github/pull_request_template.md).
+- All changes go through pull requests with a teammate review; lint, test, or build failures block the merge.
 - The Definition of Done is in the [plan overview](docs/plans/00-overview.md#41-definition-of-done-assignment-1-section-10).

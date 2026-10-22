@@ -1,11 +1,11 @@
 # BrewLite - Implementation Plan
 
 **Version:** 1.0  
-**Status:** Draft for team review (detailed codebase design to follow)  
+**Status:** Draft for team review; code layout is described in [Project Structure](../architecture/project-structure.md)
 **Back to:** [Overview](00-overview.md)  
 **Related plans:** [Documentation](01-documentation-plan.md), [Setup and DevOps](02-setup-devops-plan.md), [Testing](04-testing-plan.md), [Payment](05-payment-plan.md)
 
-Covers code in `apps/api` (NestJS) and `apps/web` (Next.js). Column meanings are in the [overview](00-overview.md#2-how-to-read-a-plan). The internal code structure will be detailed in a later document; this plan lists tasks and dependencies only.
+Covers code in `apps/api` (NestJS) and `apps/web` (Next.js). Column meanings are in the [overview](00-overview.md#2-how-to-read-a-plan). Follow [Project Structure](../architecture/project-structure.md) for the target folders and module boundaries; this plan lists implementation tasks and dependencies.
 
 ## 1. Backend tasks (`apps/api`)
 
