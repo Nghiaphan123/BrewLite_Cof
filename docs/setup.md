@@ -111,10 +111,10 @@ cd apps/api
 npm run start:dev
 ```
 
-Expected: Nest logs a startup banner and listens on the API port from `apps/api/.env` (see [Configuration](config.md) for the assigned port). The default endpoint check is:
+Expected: Nest logs a startup banner and listens on the API port from `apps/api/.env` (see [Configuration](config.md) for the assigned port; `3001` is the provisional default per `config.md` §1.2). The default endpoint check is:
 
 ```powershell
-curl http://localhost:<API_PORT>/health
+curl http://localhost:3001/api/v1/health
 ```
 
 **Terminal 2 — web:**
@@ -134,7 +134,7 @@ This is the acceptance criterion for Task 1.0 and Task 12.0. All four checks mus
 | --------------- | ------------------------------------------------------------ | ---------------------------------------------------------- |
 | Web boots       | Open `http://localhost:3000`                                 | The starter page renders without console errors.           |
 | Web reaches API | Open the browser devtools Network tab while loading the page | The request to `NEXT_PUBLIC_API_URL` succeeds (200).       |
-| API responds    | `curl http://localhost:<API_PORT>/health`                    | JSON health payload.                                       |
+| API responds    | `curl http://localhost:3001/api/v1/health`                   | `{ "status": "ok", "version": "v1" }`                      |
 | DB is wired     | `cd apps/api; npx prisma studio`                             | Prisma Studio opens and shows the seeded tables with rows. |
 
 If any check fails, stop and use [Troubleshooting](#troubleshooting). A green scaffold is the exit condition for Phase 1 setup.
