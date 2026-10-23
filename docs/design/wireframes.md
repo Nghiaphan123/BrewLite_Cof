@@ -1,220 +1,201 @@
-# BrewLite - Wireframes
+# BrewLite — Đặc tả Giao diện & Wireframe (Wireframes Index)
 
-**Status:** Phase 1 deliverable  
-**Owner:** Nghĩa (Task 5.0)  
-**Related:** [UI Decisions](ui-decisions.md), [Product Backlog](../requirements/product-backlog.md), [Scenarios](../requirements/scenarios.md), [API Contract](../architecture/api-contract.md), assignment PDF §7
+**Trạng thái:** Sản phẩm bàn giao Phase 1 (Sprint 0)
+**Phụ trách:** Nghĩa (Task 5)
+**Tài liệu liên quan:** [UI Decisions](ui-decisions.md), [Product Backlog](../requirements/product-backlog.md), [Scenarios](../requirements/scenarios.md), [API Contract](../architecture/api-contract.md), [Kế hoạch 3 Sprint](../diagrams/sprint-plan.md), Đề bài PDF Mục 7
+**Bản chạy tương tác (HTML Prototype):** 👉 [Mở giao diện 5 màn hình MVP (`wireframe-5.html`)](./wireframe-5.html)
 
-This document is the index of BrewLite's wireframes. For each screen it records the route, the wireframe image, the UI states that must be handled, the acceptance criteria it serves, and the manual or e2e test that proves it. The images live in `docs/diagrams/wireframes/`; this page is the authoritative map from "screen" to "file" to "route" to "test".
+Tài liệu này là danh mục quản lý toàn bộ wireframe của dự án **BrewLite**. Với mỗi màn hình, tài liệu quy định rõ đường dẫn (route), nguồn giao diện tham chiếu, các trạng thái UI bắt buộc phải xử lý, tiêu chí chấp nhận (Acceptance Criteria) và kịch bản kiểm thử tương ứng.
 
-> **Source of the drawings:** the five MVP wireframes are adapted from assignment PDF §7. The exported images in `docs/diagrams/wireframes/` are the drawings of record. The editable source (Figma/Excalidraw) link is recorded per screen in §7. If an image and this text disagree, **this text wins** for route/state/acceptance; the image wins for layout.
+> **Quy tắc đối chiếu nguồn thiết kế:**
+> - **5 màn hình MVP cốt lõi (Màn hình 1–5):** Được chuẩn hóa từ **Mục 7 của đề bài PDF** và hiện thực hóa trực tiếp tại file **[`wireframe-5.html`](./wireframe-5.html)** (đặt cùng thư mục `docs/design/`).
+> - **Hình ảnh tĩnh & Nguồn chỉnh sửa (Figma/Excalidraw):** Lưu tại `docs/diagrams/wireframes/` và ghi nhận tại **Mục 12 (§12)**. Nếu có sự khác biệt giữa hình ảnh/HTML và văn bản đặc tả này, **văn bản này là chuẩn quyết định** về route/trạng thái/nghiệp vụ, còn hình ảnh/HTML là chuẩn tham chiếu về bố cục hiển thị.
 
-## 1. Screen inventory
+---
 
-| #   | Screen         | Route                       | Auth          | Image (of record)          | Editable source | Acceptance criteria |
-| --- | -------------- | --------------------------- | ------------- | -------------------------- | --------------- | ------------------- |
-| 1   | Menu           | `/`                         | Public        | `wf-menu-v1.png`           | §7              | Task 3              |
-| 2   | Product detail | `/products/[id]`            | Public        | `wf-product-detail-v1.png` | §7              | Task 4              |
-| 3   | Cart           | `/cart`                     | Public        | `wf-cart-v1.png`           | §7              | Task 5              |
-| 4   | Checkout       | `/checkout`                 | Authenticated | `wf-checkout-v1.png`       | §7              | Task 8              |
-| 5   | Confirmation   | `/orders/[id]/confirmation` | Authenticated | `wf-confirmation-v1.png`   | §7              | Task 9              |
-| 6   | Login          | `/auth/login`               | Public        | `wf-login-v1.png`          | §7              | Task 7              |
-| 7   | Register       | `/auth/register`            | Public        | `wf-register-v1.png`       | §7              | Task 7              |
-| 8   | Order history  | `/orders`                   | Authenticated | `wf-history-v1.png`        | §7              | Task 9              |
+## 1. Danh mục màn hình (Screen inventory)
 
-Rows 1–5 are the five MVP wireframes from PDF §7. Rows 6–8 are the screens the backlog requires (Task 7, Task 9) that the PDF does not draw; they are added here so no screen ships without a wireframe. Header/footer, empty/error states, and the promo/points affordance (Task 10d) are cross-cutting and described in §4–§6, not drawn per screen.
+| # | Màn hình (Screen) | Route (Next.js) | Quyền truy cập (Auth) | Tên file ảnh chuẩn | Nguồn chạy thử / Chỉnh sửa | Tiêu chí chấp nhận |
+| :-: | :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | **Menu** | `/` | Public | `wf-menu-v1.png` | [`wireframe-5.html`](./wireframe-5.html) (§12) | Task 3 |
+| 2 | **Chi tiết sản phẩm** | `/products/[id]` | Public | `wf-product-detail-v1.png` | [`wireframe-5.html`](./wireframe-5.html) (§12) | Task 4 |
+| 3 | **Giỏ hàng (Cart)** | `/cart` | Public | `wf-cart-v1.png` | [`wireframe-5.html`](./wireframe-5.html) (§12) | Task 5 |
+| 4 | **Thanh toán (Checkout)** | `/checkout` | Authenticated | `wf-checkout-v1.png` | [`wireframe-5.html`](./wireframe-5.html) (§12) | Task 8 |
+| 5 | **Xác nhận đơn** | `/orders/[id]/confirmation` | Authenticated | `wf-confirmation-v1.png` | [`wireframe-5.html`](./wireframe-5.html) (§12) | Task 9 |
+| 6 | **Đăng nhập (Login)** | `/auth/login` | Public | `wf-login-v1.png` | *Chờ bổ sung Figma (§12)* | Task 7 |
+| 7 | **Đăng ký (Register)** | `/auth/register` | Public | `wf-register-v1.png` | *Chờ bổ sung Figma (§12)* | Task 7 |
+| 8 | **Lịch sử đơn hàng** | `/orders` | Authenticated | `wf-history-v1.png` | *Chờ bổ sung Figma (§12)* | Task 9 |
 
-## 2. Export rules
+* **Hàng 1–5:** Là 5 màn hình cốt lõi trong luồng MVP từ chọn món đến thanh toán theo Mục 7 đề bài PDF (đã có sẵn trong [`wireframe-5.html`](./wireframe-5.html)).
+* **Hàng 6–8:** Là 3 màn hình bổ sung theo yêu cầu của Product Backlog (Task 7 và Task 9) để đảm bảo mọi tính năng khi lập trình đều có đặc tả giao diện rõ ràng.
 
-- **Format:** PNG, 2× scale, white background, no device frame. One image per screen, not a combined board.
-- **Filename:** `wf-<screen>-v<n>.png` in `docs/diagrams/wireframes/`. Bumping the design creates `v2`; the old file stays until every doc that links it is updated (see `project-structure.md` § "Diagram rules").
-- **Source:** Figma or Excalidraw; the editable link is recorded in §7. Do not commit `.fig` or `.excalidraw` binaries.
-- **Annotations:** state annotations (loading, empty, error) are drawn as separate frames inside the same image with a caption, or listed in the screen's "States" block below — not left implicit.
-- **Language:** user-facing labels are Vietnamese (matching the assignment and the UI text); structural labels (`Header`, `Primary`, `Card`) are English.
+---
 
-## 3. Cross-cutting layout
+## 2. Quy ước xuất file & Phối hợp tài liệu
 
-Every screen shares a header and page container.
+* **Sự bổ trợ giữa `wireframes.md` và `wireframe-5.html`:**
+  * Mở [`wireframe-5.html`](./wireframe-5.html) trên trình duyệt để xem **Chế độ 1 (Xem toàn bộ 5 màn hình ngang chuẩn PDF)** hoặc **Chế độ 2 (Bấm tương tác từng bước từ chọn món đến thanh toán)**.
+  * Đọc `wireframes.md` (tài liệu này) để nắm rõ các ràng buộc kỹ thuật, xử lý lỗi và trạng thái tải dữ liệu khi dựng UI bằng Next.js.
+* **Định dạng ảnh xuất (khi cập nhật vào `docs/diagrams/wireframes/`):** PNG, tỷ lệ 2x, nền trắng, đặt tên theo mẫu `wf-<screen>-v<n>.png`. Khi thay đổi thiết kế sẽ tăng phiên bản lên `v2` và cập nhật lại bảng ở §1 và §12.
+* **Ngôn ngữ hiển thị:** Toàn bộ nhãn hiển thị cho người dùng cuối (user-facing labels) sử dụng tiếng Việt đúng theo đề bài PDF.
 
-- **Header:** BrewLite wordmark (links to `/`), cart badge (hidden at 0), auth entry (login/register or user email + logout). Sticky on scroll.
-- **Page container:** `max-w-5xl mx-auto px-4` for menu/cart/history; `max-w-3xl` for checkout/confirmation/auth. Centered, vertical rhythm from `ui-decisions.md` §3.3.
-- **Footer:** minimal — project name and a link to the repo README. No social links.
-- **Responsive:** all screens usable at 360 px and 1280 px. The menu grid is `grid-cols-2` at base, `md:grid-cols-3 md:grid-cols-4` at `md`+.
+---
 
-Wireframe images in §7 show the header/footer on one representative screen (Menu); other screens omit them to reduce noise but must include them in implementation.
+## 3. Bố cục dùng chung & Sơ đồ luồng 5 màn hình MVP
 
-## 4. Screen 1 — Menu (`/`)
+### 3.1. Thành phần bố cục dùng chung (Cross-cutting layout)
+* **Header:** Logo/Chữ `BrewLite` (bấm vào về `/`), nút/badge giỏ hàng (hiển thị số lượng món), và mục tài khoản (Đăng nhập/Đăng ký hoặc Email + Đăng xuất). Cố định khi cuộn trang (sticky).
+* **Page container:** `max-w-5xl mx-auto px-4` cho trang Menu, Giỏ hàng, Lịch sử đơn; `max-w-3xl` cho trang Thanh toán, Xác nhận, Đăng nhập/Đăng ký.
+* **Footer:** Tối giản — hiển thị tên dự án BrewLite và liên kết tới README.
+* **Responsive:** Tương thích tốt ở cả màn hình di động (`360px`) và máy tính (`1280px`). Lưới sản phẩm hiển thị `grid-cols-2` trên mobile và `md:grid-cols-3` / `md:grid-cols-4` trên desktop.
 
-**Goal:** browse the drinks menu and start an order.  
-**Traces to:** `product-backlog.md` Task 3; `scenarios.md` S-MAIN-1 steps 1–2.
+### 3.2. Sơ đồ trực quan 5 màn hình MVP (Chuẩn Mục 7 đề bài PDF & `wireframe-5.html`)
 
-**Layout:** header → page title ("Menu") → responsive grid of `ProductCard` → footer.  
-**ProductCard contents:** image, name, base price (`formatVnd`), and a subtle "from" hint if the size affects price (size pricing is shown on detail, per `ui-decisions.md` §9). The whole card is a link to `/products/[id]`; the card body is not a `<button>` (accessibility, `ui-decisions.md` §7).
+```text
++--------------------+    +--------------------+    +--------------------+    +--------------------+    +--------------------+
+|    BrewLite  ≡     |    |   <- Cappuccino    |    |      Giỏ hàng      |    |     Thanh toán     |    |         ✓          |
+|                    |    |                    |    |                    |    |                    |    | Đặt hàng thành công|
+| [Cà phê sữa   35k] |    |   Giá: 45.000đ     |    | [Cappuccino M  x1] |    |  Tổng: 123.000đ    |    |                    |
+| [Americano    40k] | -> |       Size         | -> | [Trà đào L     x2] | -> |    Phương thức     | -> |  [Mã đơn: #1042]   |
+| [Cappuccino   45k] |    |   [ S   M   L ]    |    |  ----------------  |    |  [(o) Ví điện tử]  |    | [Trạng thái: PAID] |
+| [Trà đào      39k] |    |      Topping       |    |  Tổng: 123.000đ    |    |  [( ) Thẻ NH    ]  |    |                    |
+|                    |    | [Trân châu / Kem]  |    |                    |    | Không dùng tiền mặt|    | Mời tới quầy lấy   |
+| [Xem giỏ hàng (0)] |    |  [ Thêm vào giỏ ]  |    |   [ Thanh toán ]   |    |  [ Xác nhận trả ]  |    |  [ Về trang chủ ]  |
++--------------------+    +--------------------+    +--------------------+    +--------------------+    +--------------------+
+       (1) Menu                (2) Chi tiết              (3) Giỏ hàng             (4) Thanh toán             (5) Xác nhận
+```
 
-**States:**
+---
 
-| State   | Rendering                                                                                       | Test                                 |
-| ------- | ----------------------------------------------------------------------------------------------- | ------------------------------------ |
-| Loading | `MenuSkeleton` — 6 card-shaped skeletons in the same grid                                       | —                                    |
-| Empty   | `<EmptyState>` "Menu đang cập nhật" with no action (menu is server-managed; user cannot fix it) | —                                    |
-| Error   | `<ErrorState>` with retry; retry re-issues `GET /products`                                      | `scenarios.md` S-MAIN-1 (retry path) |
-| Success | Grid of cards; badge reflects `totalQty()`                                                      | `scenarios.md` S-MAIN-1 step 1       |
+## 4. Màn hình 1 — Menu (`/`)
 
-**Notes:**
-- The cart badge is hidden at 0, shown at ≥ 1 (`ui-decisions.md` §9).
-- Clicking a card navigates to detail; no add-to-cart on the menu (size/toppings are chosen on detail).
+* **Mục tiêu:** Duyệt danh sách đồ uống và bắt đầu luồng đặt hàng.
+* **Truy vết:** `product-backlog.md` Task 3; `scenarios.md` S-MAIN-1 (bước 1–2); Màn hình `(1) Menu` trong `wireframe-5.html`.
+* **Bố cục:** Header $\rightarrow$ Tiêu đề "Menu" $\rightarrow$ Lưới sản phẩm (`ProductCard` gồm ảnh, tên, giá cơ bản như *Cà phê sữa 35k, Americano 40k, Cappuccino 45k, Trà đào 39k*) $\rightarrow$ Nút/thanh "Xem giỏ hàng (0)". Bấm vào thẻ sản phẩm sẽ chuyển sang `/products/[id]`.
 
-## 5. Screen 2 — Product detail (`/products/[id]`)
+| Trạng thái (State) | Cách hiển thị (Rendering) | Kịch bản kiểm thử (Test) |
+| :--- | :--- | :--- |
+| **Loading** | Hiển thị `MenuSkeleton` gồm 6 khung thẻ xám trên lưới | — |
+| **Empty** | Hiển thị `<EmptyState>` *"Menu đang cập nhật"* | — |
+| **Error** | Hiển thị `<ErrorState>` kèm nút *"Thử lại"* (gọi lại `GET /products`) | `scenarios.md` S-MAIN-1 (nhánh retry) |
+| **Success** | Hiển thị lưới sản phẩm; badge giỏ hàng phản ánh đúng `totalQty()` | `scenarios.md` S-MAIN-1 bước 1 |
 
-**Goal:** choose size and toppings, see the live price, add to cart.  
-**Traces to:** `product-backlog.md` Task 4; `scenarios.md` S-MAIN-1 steps 2–4.
+---
 
-**Layout:** header → two-column at `md`+ (image left, options right); stacked on mobile. Options: name, base price, size selector (S/M/L, default **M**), topping checkboxes, live total, "Thêm vào giỏ" primary button, "Quay lại menu" link.
+## 5. Màn hình 2 — Chi tiết sản phẩm (`/products/[id]`)
 
-**States:**
+* **Mục tiêu:** Xem thông tin đồ uống, chọn Size (`S`/`M`/`L`), chọn Topping (`Trân châu`/`Kem`), xem giá tính tự động và thêm vào giỏ.
+* **Truy vết:** `product-backlog.md` Task 4; `scenarios.md` S-MAIN-1 (bước 2–4); Màn hình `(2) Chi tiết` trong `wireframe-5.html`.
+* **Bố cục:** Header / Nút quay lại (`← Cappuccino`) $\rightarrow$ Ảnh sản phẩm & Giá (`45.000đ`) $\rightarrow$ Bộ chọn Size (`S` / `M` / `L`, mặc định chọn **M**) $\rightarrow$ Checkbox chọn Topping (`Trân châu`, `Kem`) $\rightarrow$ Tổng tiền tạm tính $\rightarrow$ Nút chính *"Thêm vào giỏ"*.
 
-| State             | Rendering                                                  | Test                           |
-| ----------------- | ---------------------------------------------------------- | ------------------------------ |
-| Loading           | Skeleton for image + option block                          | —                              |
-| Empty / not found | `<EmptyState>` "Không tìm thấy sản phẩm" + "Quay lại menu" | —                              |
-| Error             | `<ErrorState>` with retry                                  | —                              |
-| Success           | Live total updates on every size/topping change            | `scenarios.md` S-MAIN-1 step 3 |
+| Trạng thái (State) | Cách hiển thị (Rendering) | Kịch bản kiểm thử (Test) |
+| :--- | :--- | :--- |
+| **Loading** | Khung skeleton cho ảnh và khối tùy chọn | — |
+| **Empty / Not found** | `<EmptyState>` *"Không tìm thấy sản phẩm"* + nút *"Quay lại menu"* | — |
+| **Error** | `<ErrorState>` kèm nút *"Thử lại"* | — |
+| **Success** | Giá tiền cập nhật tức thì mỗi khi đổi Size hoặc bật/tắt Topping | `scenarios.md` S-MAIN-1 bước 3 |
 
-**Notes:**
-- "Thêm vào giỏ" is disabled until a size is selected (default M means it is enabled immediately; the disabled state is only reachable if the product has no default — record if that changes).
-- The live total uses `computeLineTotal` from `apps/web/src/lib/pricing.ts` (`ui-decisions.md` §4.2) — **the same fixture as the backend**.
-- Toppings are checkboxes, not a `<select>` (multi-select; `ui-decisions.md` §9).
+---
 
-## 6. Screen 3 — Cart (`/cart`)
+## 6. Màn hình 3 — Giỏ hàng (`/cart`)
 
-**Goal:** review lines, adjust quantities, remove lines, proceed to checkout.  
-**Traces to:** `product-backlog.md` Task 5; `scenarios.md` S-CART-1, S-CART-2.
+* **Mục tiêu:** Kiểm tra danh sách món đã chọn, tăng/giảm số lượng, xóa món và chuyển sang bước thanh toán.
+* **Truy vết:** `product-backlog.md` Task 5; `scenarios.md` S-CART-1, S-CART-2; Màn hình `(3) Giỏ hàng` trong `wireframe-5.html`.
+* **Bố cục:** Header $\rightarrow$ Danh sách các dòng sản phẩm (ví dụ: *Cappuccino M x1*, *Trà đào L x2*, mỗi dòng có tên, size, topping, nút `- qty +`, thành tiền, nút xóa) $\rightarrow$ Đường kẻ phân cách $\rightarrow$ Tổng tiền (`Tổng: 123.000đ`) $\rightarrow$ Nút chính *"Thanh toán"* & liên kết *"Tiếp tục mua"*.
 
-**Layout:** header → line list (each: name, size, toppings, `− qty +`, line total, remove link) → summary (subtotal, total) → "Thanh toán" primary button → "Tiếp tục mua" secondary link.
+| Trạng thái (State) | Cách hiển thị (Rendering) | Kịch bản kiểm thử (Test) |
+| :--- | :--- | :--- |
+| **Empty** | `<EmptyState>` *"Giỏ hàng trống"* + nút *"Xem menu"* | `scenarios.md` S-CART-1 bước 3 |
+| **Non-empty** | Hiển thị danh sách món + tổng tiền; nút `-` vô hiệu hóa khi số lượng = 1 | `scenarios.md` S-CART-1 bước 1–2 |
+| **Invalid selection** | Nếu món trong giỏ không còn tồn tại trong menu, hiển thị cảnh báo kèm nút *"Xóa"* | — |
 
-**States:**
+* **Lưu ý:** Nếu người dùng chưa đăng nhập mà bấm *"Thanh toán"*, hệ thống điều hướng sang `/auth/login?next=/checkout`.
 
-| State             | Rendering                                                                                                                   | Test                              |
-| ----------------- | --------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
-| Empty             | `<EmptyState>` "Giỏ hàng trống" + "Xem menu" action                                                                         | `scenarios.md` S-CART-1 step 3    |
-| Non-empty         | Lines + summary; `−` disabled at qty 1; remove is a separate action                                                         | `scenarios.md` S-CART-1 steps 1–2 |
-| Invalid selection | If a stored line references a product no longer in the menu, show a warning row with "Xóa" only (do not silently recompute) | —                                 |
+---
 
-**Notes:**
-- "Thanh toán" when anonymous navigates to `/auth/login?next=/checkout` (`ui-decisions.md` §2, route table) rather than failing at the API.
-- The total is `totalPrice()` from the store; it is a display value — the backend recomputes on `POST /orders` (`scenarios.md` S-ORD-1).
-- Cart does not survive full reload in Phase 1 (`scenarios.md` S-CART-2) — the empty state is what a reload shows.
+## 7. Màn hình 4 — Thanh toán (`/checkout`)
 
-## 7. Screen 4 — Checkout (`/checkout`)
+* **Mục tiêu:** Chọn phương thức thanh toán không tiền mặt (`Ví điện tử` / `Thẻ ngân hàng`), kiểm tra tổng tiền và xác nhận thanh toán.
+* **Truy vết:** `product-backlog.md` Task 8; Đề bài PDF Mục 4.3 (US-05); `scenarios.md` S-MAIN-1 (bước 7–10), S-PAY-1..4; Màn hình `(4) Thanh toán` trong `wireframe-5.html`.
+* **Bố cục:** Header $\rightarrow$ Tóm tắt đơn hàng (`Tổng: 123.000đ`) $\rightarrow$ Bộ chọn phương thức gồm 2 thẻ radio lớn (*"Ví điện tử"*, *"Thẻ ngân hàng"*) $\rightarrow$ Ghi chú *"Không dùng tiền mặt"* $\rightarrow$ Nút chính *"Xác nhận trả"* (hoặc *"Xác nhận thanh toán"*) $\rightarrow$ Liên kết *"Quay lại giỏ"*.
 
-**Goal:** choose a payment method, see the total, confirm, and reach confirmation.  
-**Traces to:** `product-backlog.md` Task 8; `scenarios.md` S-MAIN-1 steps 7–10, S-PAY-1..4.
+| Trạng thái (State) | Cách hiển thị (Rendering) | Kịch bản kiểm thử (Test) |
+| :--- | :--- | :--- |
+| **Unauthenticated** | Tự động chuyển hướng sang `/auth/login?next=/checkout` | `scenarios.md` S-AUTH-1 |
+| **Loading (Submit)** | Nút bấm hiện vòng xoay (spinner) và bị khóa để chống bấm đúp | `scenarios.md` S-PAY-4 |
+| **Payment failure** | Hiển thị lỗi `<ErrorState>` (`PAYMENT_FAILED`) + nút *"Thử lại"*; **giỏ hàng được giữ nguyên** | `scenarios.md` S-PAY-2, S-PAY-3 |
+| **Success** | Đơn chuyển sang `PAID`, điều hướng sang màn hình Xác nhận | `scenarios.md` S-MAIN-1 bước 10 |
 
-**Layout:** header → order summary (lines collapsed, total) → method selector: two large radio cards ("Ví điện tử", "Thẻ ngân hàng") → "Xác nhận thanh toán" primary button → "Quay lại giỏ" link.
+---
 
-**States:**
+## 8. Màn hình 5 — Xác nhận đơn hàng (`/orders/[id]/confirmation`)
 
-| State                        | Rendering                                                                          | Test                                    |
-| ---------------------------- | ---------------------------------------------------------------------------------- | --------------------------------------- |
-| Unauthenticated              | Redirect to `/auth/login?next=/checkout`                                           | `scenarios.md` S-AUTH-1 (redirect path) |
-| Loading (submit)             | Button shows spinner and is disabled; selector is disabled                         | —                                       |
-| Payment failure              | Inline `<ErrorState>` with the failure reason + "Thử lại" (retry) — cart preserved | `scenarios.md` S-PAY-2, S-PAY-3         |
-| Success                      | Navigate to confirmation route                                                     | `scenarios.md` S-MAIN-1 step 10         |
-| Double-submit (pre-Task 10b) | Button disabled while in flight; documented gap                                    | `scenarios.md` S-PAY-4                  |
+* **Mục tiêu:** Hiển thị xác nhận đặt hàng thành công kèm mã đơn, trạng thái đơn và hướng dẫn nhận nước.
+* **Truy vết:** `product-backlog.md` Task 9; `scenarios.md` S-MAIN-1 bước 10, S-ORD-4; Màn hình `(5) Xác nhận` trong `wireframe-5.html`.
+* **Bố cục:** Header $\rightarrow$ Biểu tượng hoàn thành (`✓`) & Tiêu đề *"Đặt hàng thành công"* $\rightarrow$ Khung thông tin gồm Mã đơn (`#1042`) và Badge trạng thái (`PAID`) $\rightarrow$ Lời nhắc *"Mời tới quầy lấy nước"* $\rightarrow$ Nút chính *"Về trang chủ"* & liên kết *"Xem lịch sử đơn"*.
 
-**Notes:**
-- Method is required before "Xác nhận" is enabled (default: none selected; user must choose). This is a deliberate friction — the assignment's US-05 says "chọn phương thức rồi xác nhận."
-- The mock mode is not exposed to the user; `PAYMENT_MOCK_MODE` is server-side (`config.md` §2.1, ADR 0004).
-- No promo/points UI here — Task 10d adds a promo field and a points-earned preview; that addition is drawn as `wf-checkout-v2.png` when Task 10d lands, and this table is updated.
+| Trạng thái (State) | Cách hiển thị (Rendering) | Kịch bản kiểm thử (Test) |
+| :--- | :--- | :--- |
+| **Success (`PAID`)** | Banner thành công, badge xanh `PAID`, mã đơn, tổng tiền, thời gian | `scenarios.md` S-MAIN-1 bước 10 |
+| **Not found / Not yours** | `<EmptyState>` *"Không tìm thấy đơn hàng"* + nút *"Về trang chủ"* | `scenarios.md` S-ORD-4 bước 2 |
+| **Error** | `<ErrorState>` kèm nút *"Thử lại"* | — |
 
-## 8. Screen 5 — Confirmation (`/orders/[id]/confirmation`)
+---
 
-**Goal:** confirm the order, show the code and status, and offer a way back.  
-**Traces to:** `product-backlog.md` Task 9; `scenarios.md` S-MAIN-1 step 10, S-ORD-4.
+## 9. Màn hình 6 — Đăng nhập (`/auth/login`)
 
-**Layout:** header → success/failed banner → order code (large, monospace), status badge (`PAID` / `PENDING` / `PAYMENT_FAILED`), total, timestamp → "Về trang chủ" primary button → "Xem lịch sử đơn" secondary link.
+* **Mục tiêu:** Xác thực người dùng (JWT) trước khi đặt đơn/thanh toán hoặc xem lịch sử đơn hàng.
+* **Truy vết:** `product-backlog.md` Task 7; `scenarios.md` S-AUTH-1, S-AUTH-3.
+* **Bố cục:** Khung thẻ căn giữa (`max-w-md`) $\rightarrow$ Tiêu đề *"Đăng nhập"* $\rightarrow$ Ô nhập Email $\rightarrow$ Ô nhập Mật khẩu $\rightarrow$ Nút chính *"Đăng nhập"* $\rightarrow$ Liên kết *"Chưa có tài khoản? Đăng ký"*.
 
-**States:**
+| Trạng thái (State) | Cách hiển thị (Rendering) | Kịch bản kiểm thử (Test) |
+| :--- | :--- | :--- |
+| **Default** | Biểu mẫu trống | — |
+| **Submitting** | Nút bấm hiện spinner và tạm khóa | — |
+| **Invalid credentials** | Báo lỗi chung trên biểu mẫu (không tiết lộ email đã tồn tại hay chưa) | `scenarios.md` S-AUTH-3 |
+| **Success** | Điều hướng về đường dẫn tại tham số `?next=` (nếu hợp lệ) hoặc về `/` | `scenarios.md` S-AUTH-1 |
 
-| State            | Rendering                                                 | Test                            |
-| ---------------- | --------------------------------------------------------- | ------------------------------- |
-| Success (`PAID`) | Success banner, green badge, code, total, timestamp       | `scenarios.md` S-MAIN-1 step 10 |
-| Not found        | `<EmptyState>` "Không tìm thấy đơn hàng" + "Về trang chủ" | `scenarios.md` S-ORD-4 step 2   |
-| Not yours        | Same as not found (no information leakage)                | `scenarios.md` S-ORD-4 step 2   |
-| Error            | `<ErrorState>` with retry                                 | —                               |
+---
 
-**Notes:**
-- The route key is D3 (`scenarios.md` §13): `[id]` vs `[code]`. This wireframe assumes `[id]`; if D3 resolves to code, update this section, the route table in `ui-decisions.md` §2, and `product-backlog.md` §12 in the same PR.
-- The order code is displayed in a monospace font and is copyable (a "copy" icon is optional; if added, it needs an accessible label).
-- The status badge is color + text, never color-only (`ui-decisions.md` §7).
+## 10. Màn hình 7 — Đăng ký (`/auth/register`)
 
-## 9. Screen 6 — Login (`/auth/login`)
+* **Mục tiêu:** Tạo tài khoản khách hàng mới.
+* **Truy vết:** `product-backlog.md` Task 7; `scenarios.md` S-AUTH-1, S-AUTH-2.
+* **Bố cục:** Khung thẻ căn giữa $\rightarrow$ Tiêu đề *"Đăng ký"* $\rightarrow$ Ô nhập Email $\rightarrow$ Ô nhập Mật khẩu $\rightarrow$ Ô Xác nhận mật khẩu $\rightarrow$ Nút chính *"Đăng ký"* $\rightarrow$ Liên kết *"Đã có tài khoản? Đăng nhập"*.
 
-**Goal:** authenticate so checkout and history are available.  
-**Traces to:** `product-backlog.md` Task 7; `scenarios.md` S-AUTH-1, S-AUTH-3.
+| Trạng thái (State) | Cách hiển thị (Rendering) | Kịch bản kiểm thử (Test) |
+| :--- | :--- | :--- |
+| **Default** | Biểu mẫu trống | — |
+| **Client validation** | Cảnh báo định dạng email, độ dài mật khẩu và khớp mật khẩu trước khi gửi | — |
+| **Duplicate email** | Báo lỗi trực tiếp khi API trả về mã `409 Conflict` | `scenarios.md` S-AUTH-2 |
+| **Success** | Chuyển sang trang đăng nhập (hoặc tự động đăng nhập) và giữ nguyên `?next=` | `scenarios.md` S-AUTH-1 |
 
-**Layout:** centered card (`max-w-md`) → title "Đăng nhập" → email input → password input → "Đăng nhập" primary button → "Chưa có tài khoản? Đăng ký" link → back link.
+---
 
-**States:**
+## 11. Màn hình 8 — Lịch sử đơn hàng (`/orders`)
 
-| State               | Rendering                                                      | Test                    |
-| ------------------- | -------------------------------------------------------------- | ----------------------- |
-| Default             | Empty form                                                     | —                       |
-| Submitting          | Button spinner + disabled                                      | —                       |
-| Invalid credentials | Inline form error, generic message (no user enumeration)       | `scenarios.md` S-AUTH-3 |
-| Success             | Redirect to `?next=` if present and same-origin; otherwise `/` | `scenarios.md` S-AUTH-1 |
+* **Mục tiêu:** Xem danh sách các đơn hàng đã đặt (`GET /orders/me`) và bấm vào xem chi tiết từng đơn.
+* **Truy vết:** `product-backlog.md` Task 9; `scenarios.md` S-ORD-4.
+* **Bố cục:** Header $\rightarrow$ Tiêu đề *"Đơn hàng của tôi"* $\rightarrow$ Danh sách đơn hàng xếp từ mới nhất đến cũ nhất (mỗi dòng gồm mã đơn, ngày đặt, tổng tiền, badge trạng thái) $\rightarrow$ Nút *"Về trang chủ"*.
 
-**Notes:**
-- `?next=` must be validated as a same-origin path; open redirect is an error.
-- The "Chưa có tài khoản?" link preserves `?next=`.
-- Password visibility toggle is optional; if added, needs an accessible label.
+| Trạng thái (State) | Cách hiển thị (Rendering) | Kịch bản kiểm thử (Test) |
+| :--- | :--- | :--- |
+| **Unauthenticated** | Tự động chuyển hướng sang `/auth/login?next=/orders` | `scenarios.md` S-ORD-4 bước 3 |
+| **Loading** | Các dòng skeleton | — |
+| **Empty** | `<EmptyState>` *"Chưa có đơn hàng"* + nút *"Xem menu"* | — |
+| **Error** | `<ErrorState>` kèm nút *"Thử lại"* | — |
+| **Success** | Hiển thị danh sách đơn hàng theo thứ tự `createdAt` giảm dần | `scenarios.md` S-ORD-4 bước 1 |
 
-## 10. Screen 7 — Register (`/auth/register`)
+---
 
-**Goal:** create an account.  
-**Traces to:** `product-backlog.md` Task 7; `scenarios.md` S-AUTH-1, S-AUTH-2.
+## 12. Thư viện hình ảnh và Nguồn chỉnh sửa (Image gallery & Editable sources)
 
-**Layout:** centered card → title "Đăng ký" → email → password → confirm password → "Đăng ký" primary button → "Đã có tài khoản? Đăng nhập" link.
-
-**States:**
-
-| State             | Rendering                                                                         | Test                    |
-| ----------------- | --------------------------------------------------------------------------------- | ----------------------- |
-| Default           | Empty form                                                                        | —                       |
-| Client validation | Field-level messages (email format, password length, confirm match) before submit | —                       |
-| Duplicate email   | Inline error from `409`                                                           | `scenarios.md` S-AUTH-2 |
-| Success           | Redirect to login with a success hint, or auto-login then redirect to `?next=`    | `scenarios.md` S-AUTH-1 |
-
-**Notes:**
-- Password policy (length, characters) is enforced both client-side and server-side; the client message and `class-validator` message must agree.
-- Auto-login on register is allowed but not required; if implemented, it reuses the login flow and must not skip the JWT path.
-
-## 11. Screen 8 — Order history (`/orders`)
-
-**Goal:** see past orders and open one.  
-**Traces to:** `product-backlog.md` Task 9; `scenarios.md` S-ORD-4.
-
-**Layout:** header → page title "Đơn hàng của tôi" → list of rows (code, date, total, status badge) → each row links to its confirmation/detail route → "Về trang chủ" link.
-
-**States:**
-
-| State           | Rendering                                      | Test                          |
-| --------------- | ---------------------------------------------- | ----------------------------- |
-| Unauthenticated | Redirect to `/auth/login?next=/orders`         | `scenarios.md` S-ORD-4 step 3 |
-| Loading         | Skeleton rows                                  | —                             |
-| Empty           | `<EmptyState>` "Chưa có đơn hàng" + "Xem menu" | —                             |
-| Error           | `<ErrorState>` with retry                      | —                             |
-| Success         | Rows newest-first                              | `scenarios.md` S-ORD-4 step 1 |
-
-**Notes:**
-- Rows are sorted by `createdAt` descending; the sort is server-side, not client-side, so pagination can be added later without reworking the UI.
-- Status badges reuse the confirmation badge component so `PAID`/`PENDING`/`PAYMENT_FAILED` styling is identical across screens.
-
-## 12. Image gallery and editable sources
-
-The images below are the drawings of record. Replace each `wf-*-v1.png` when the design changes and bump the version in both the filename and the screen's "Image" cell in §1.
+> **Lưu ý quan trọng (Trạng thái hình ảnh `.png` và link Figma ở Sprint 0):**
+> - **Đã có bản mẫu HTML tương tác:** Toàn bộ 5 màn hình MVP cốt lõi (Màn hình 1–5 theo Mục 7 đề bài PDF) đã được xây dựng hoàn chỉnh trong file **[`wireframe-5.html`](./wireframe-5.html)**. Giảng viên và các thành viên trong nhóm có thể mở trực tiếp file này để đối chiếu bố cục hoặc chạy thử luồng thao tác.
+> - **Hình ảnh cắt rời (`wf-*-v1.png`) và Link Figma:** Các file ảnh tĩnh `.png` trong thư mục `docs/diagrams/wireframes/` và link thiết kế Figma hiện **chưa khởi tạo** ở Sprint 0. Danh sách thẻ ảnh bên dưới được giữ ở dạng khung chờ (placeholder) và sẽ được cập nhật khi nhóm xuất ảnh chi tiết ở các Sprint tiếp theo.
 
 ```markdown
-<!-- Embed when the PNGs are committed to docs/diagrams/wireframes/ -->
+<!-- Nhúng trực tiếp khi các file PNG được commit vào docs/diagrams/wireframes/ -->
 
 ### 1. Menu
 ![Menu wireframe](../diagrams/wireframes/wf-menu-v1.png)
@@ -241,70 +222,52 @@ The images below are the drawings of record. Replace each `wf-*-v1.png` when the
 ![Order history wireframe](../diagrams/wireframes/wf-history-v1.png)
 ```
 
-**Editable sources:**
+**Bảng quản lý nguồn thiết kế (Editable & Prototype sources):**
 
-| Screen         | Tool                  | Link          | Owner |
-| -------------- | --------------------- | ------------- | ----- |
-| Menu           | Figma (or Excalidraw) | *to be added* | Nghĩa |
-| Product detail | Figma                 | *to be added* | Nghĩa |
-| Cart           | Figma                 | *to be added* | Nghĩa |
-| Checkout       | Figma                 | *to be added* | Nghĩa |
-| Confirmation   | Figma                 | *to be added* | Nghĩa |
-| Login          | Figma                 | *to be added* | Nghĩa |
-| Register       | Figma                 | *to be added* | Nghĩa |
-| Order history  | Figma                 | *to be added* | Nghĩa |
-
-If the team chooses to skip a design tool, the wireframes may be Excalidraw sketches embedded as PNGs; in that case, record "Excalidraw — inline only" in the link column and keep the `.excalidraw` file in `docs/diagrams/raw/` (not committed to the main tree, per `project-structure.md` diagram rules).
-
-## 13. Traceability
-
-Every screen maps to a backlog task and to at least one scenario. This table is the checklist for Task 5.0's `● Xong` note.
-
-| Screen         | Backlog task | Scenarios            | Graded test? |
-| -------------- | ------------ | -------------------- | ------------ |
-| Menu           | Task 3       | S-MAIN-1             | —            |
-| Product detail | Task 4       | S-MAIN-1             | —            |
-| Cart           | Task 5       | S-CART-1, S-CART-2   | —            |
-| Checkout       | Task 8       | S-MAIN-1, S-PAY-1..4 | —            |
-| Confirmation   | Task 9       | S-MAIN-1, S-ORD-4    | —            |
-| Login          | Task 7       | S-AUTH-1, S-AUTH-3   | —            |
-| Register       | Task 7       | S-AUTH-1, S-AUTH-2   | —            |
-| Order history  | Task 9       | S-ORD-4              | —            |
-
-The three graded tests (`scenarios.md` §12: S-PAY-5, S-ORD-5, S-ORD-6) are not screen-level flows; they are exercised by Checkout and by the API directly, and are documented in `scenarios.md`, not here.
-
-## 14. What this document does not cover
-
-- **Visual decisions** (tokens, typography, spacing, pricing rules) — that is `ui-decisions.md`.
-- **API shapes** — that is `docs/architecture/api-contract.md`.
-- **Component implementation** — that is the feature code in `apps/web/src/features/`.
-- **Promo/points UI** (Task 10d) — added as a `v2` of Checkout and a `v1` of a "points earned" row on Confirmation when Task 10d lands.
-- **Barista/back-office screens** — out of MVP (`product-backlog.md` §16).
-
-## 15. Open items
-
-| Item                                                                 | Owner | Closes when                                                                                  |
-| -------------------------------------------------------------------- | ----- | -------------------------------------------------------------------------------------------- |
-| Commit the 8 PNGs to `docs/diagrams/wireframes/`                     | Nghĩa | Task 5.0 `● Xong`                                                                            |
-| Record Figma/Excalidraw links in §12                                 | Nghĩa | Same                                                                                         |
-| Resolve D3 (confirmation route key: id vs code)                      | Nghĩa | `api-contract.md` final; update §1, `ui-decisions.md` §2, `product-backlog.md` §12 in one PR |
-| Add promo/points UI as Checkout `v2`                                 | H.Tài | Task 10d lands                                                                               |
-| Add empty/error state frames to the exported images if reviewers ask | Nghĩa | First Sprint Review                                                                          |
+| Màn hình | Công cụ / Định dạng | Liên kết / Trạng thái nguồn | Phụ trách |
+| :--- | :--- | :--- | :---: |
+| **1. Menu** | HTML Prototype / Figma | [`wireframe-5.html`](./wireframe-5.html) *(Link Figma cập nhật sau)* | Nghĩa |
+| **2. Product detail** | HTML Prototype / Figma | [`wireframe-5.html`](./wireframe-5.html) *(Link Figma cập nhật sau)* | Nghĩa |
+| **3. Cart** | HTML Prototype / Figma | [`wireframe-5.html`](./wireframe-5.html) *(Link Figma cập nhật sau)* | Nghĩa |
+| **4. Checkout** | HTML Prototype / Figma | [`wireframe-5.html`](./wireframe-5.html) *(Link Figma cập nhật sau)* | Nghĩa |
+| **5. Confirmation** | HTML Prototype / Figma | [`wireframe-5.html`](./wireframe-5.html) *(Link Figma cập nhật sau)* | Nghĩa |
+| **6. Login** | Figma / Excalidraw | *Chưa có (bổ sung ở Sprint 2 — Task 7)* | Nghĩa |
+| **7. Register** | Figma / Excalidraw | *Chưa có (bổ sung ở Sprint 2 — Task 7)* | Nghĩa |
+| **8. Order history** | Figma / Excalidraw | *Chưa có (bổ sung ở Sprint 3 — Task 9)* | Nghĩa |
 
 ---
 
-## Notes on choices I made (so you can accept or override)
+## 13. Ma trận truy vết (Traceability)
 
-1. **I expanded the screen inventory from 5 to 8, and I flagged why.** The PDF draws five wireframes (Menu, Detail, Cart, Checkout, Confirmation) but `product-backlog.md` Task 7 requires login/register pages and Task 9 requires order history. If this doc only indexes the PDF's five, three screens ship without a wireframe and Task 7/9's acceptance criteria lose their design reference. Rows 6–8 are drawn as part of Task 5.0, not deferred to Task 7/9, so the design deliverable is complete in Phase 1 and the later tasks implement against it. If you'd rather defer auth/history wireframes to their tasks, move rows 6–8 to a "deferred" table and note the trade-off.
+| Màn hình | Task trong Backlog | Kịch bản kiểm thử (Scenarios) | Kiểm thử chấm điểm nâng cao? |
+| :--- | :--- | :--- | :---: |
+| **Menu** | Task 3 (Sprint 1) | `S-MAIN-1` | — |
+| **Chi tiết sản phẩm** | Task 4 (Sprint 1) | `S-MAIN-1` | — |
+| **Giỏ hàng** | Task 5 (Sprint 2) | `S-CART-1`, `S-CART-2` | — |
+| **Thanh toán** | Task 8 (Sprint 3) | `S-MAIN-1`, `S-PAY-1..4` | — |
+| **Xác nhận đơn** | Task 9 (Sprint 3) | `S-MAIN-1`, `S-ORD-4` | — |
+| **Đăng nhập** | Task 7 (Sprint 2) | `S-AUTH-1`, `S-AUTH-3` | — |
+| **Đăng ký** | Task 7 (Sprint 2) | `S-AUTH-1`, `S-AUTH-2` | — |
+| **Lịch sử đơn hàng** | Task 9 (Sprint 3) | `S-ORD-4` | — |
 
-2. **The images are placeholders in §12, and that's honest.** I can't generate PNGs, and the PDF's images are copyrighted assignment material you'd re-draw anyway. The section gives the exact `![...](...)` lines and the editable-source table so the moment you export from Figma, you paste the images and fill three columns — no restructuring needed. The doc is useful *now* (it's the screen-to-route-to-test map) and becomes complete when the PNGs land.
+*(Ba kịch bản chấm điểm backend ở Task 10 gồm `S-PAY-5`, `S-ORD-5`, `S-ORD-6` được kiểm thử ở tầng API/Integration test và mô tả trong `scenarios.md`).*
 
-3. **§2 export rules are copied in spirit from `project-structure.md`'s diagram rules, deliberately.** The structure doc says diagrams use Mermaid for ER/flows and exported PNG for wireframes; this doc says PNG/2×/no-device-frame/naming. The duplication is intentional: a designer exporting a wireframe shouldn't have to read the repo-wide diagram rules to know the filename. They must be kept in sync — if you change one, change the other in the same PR (noted in the previous turn's `project-structure.md` review note).
+---
 
-4. **§4–§11 each have a States table with a "Test" column.** That column is what makes this doc more than a picture index: every state names the scenario it serves. When someone asks "does the cart need an invalid-selection state?", the table answers with the scenario, not an opinion. The invalid-selection row on Cart is the one state that isn't in `scenarios.md` — it's the "product removed from menu while in cart" edge case, which I added here rather than silently omitting; it may deserve a scenario ID in a future `scenarios.md` revision.
+## 14. Phạm vi không nằm trong tài liệu này
 
-5. **§7's "method required before confirm" is a deliberate friction call.** The PDF's US-05 says "chọn phương thức rồi xác nhận" — choose, then confirm. Defaulting to Wallet would be smoother but wouldn't match the acceptance criterion. Recording it as a note means a reviewer who wants a default can see the trade-off and override it explicitly.
+* **Quy ước màu sắc, font chữ, khoảng cách, công thức tính giá:** Quy định tại `ui-decisions.md`.
+* **Cấu trúc JSON Request/Response và mã lỗi API:** Quy định tại `docs/architecture/api-contract.md`.
+* **Giao diện nhập mã khuyến mãi & điểm thưởng (Task 10):** Sẽ được bổ sung vào bản `v2` của màn hình Thanh toán và Xác nhận ở Sprint 3.
+* **Giao diện dành cho nhân viên pha chế (Barista):** Nằm ngoài phạm vi MVP (theo Mục 3.2 đề bài PDF).
 
-6. **The D3 forward reference appears three times** (§1, §8, §15) because the route key (id vs code) touches the screen inventory, the confirmation layout, and the open-items table. That's a lot of repetition for one decision — but it's the decision most likely to silently drift across `wireframes.md`, `ui-decisions.md`, and `product-backlog.md`. Repeating it in each affected doc is cheaper than discovering the drift at Task 9.
+---
 
-7. **One thing to fix in `ui-decisions.md` after this:** its §2 route table lists `/orders/[id]/confirmation` and this doc agrees, so no conflict — good. But `ui-decisions.md` §9 says "the confirmation route key is D3... the route shape above uses `[id]`" while this doc's §8 repeats the same. When D3 resolves, update both. I kept the duplication because a reader of either doc should see the open decision, not have to cross-reference to find it.
+## 15. Các hạng mục mở (Open items)
+
+| Hạng mục | Phụ trách | Thời điểm đóng (Closes when) |
+| :--- | :---: | :--- |
+| Xuất và commit 8 ảnh `.png` (`wf-*-v1.png`) vào `docs/diagrams/wireframes/` | Nghĩa | Khi dựng UI chi tiết ở từng Sprint (Sprint 0 dùng `wireframe-5.html`) |
+| Cập nhật link Figma/Excalidraw vào bảng ở §12 | Nghĩa | Khi nhóm khởi tạo xong workspace Figma |
+| Chốt tham số D3 (dùng `[id]` hay `[code]` cho route màn hình Xác nhận) | Nghĩa | Khi chốt `api-contract.md`; cập nhật đồng bộ tại §1, `ui-decisions.md` và `product-backlog.md` |
+| Bổ sung ô nhập mã giảm giá & điểm tích lũy (Checkout `v2`) | H.Tài | Khi thực hiện Task 10 ở Sprint 3 |
