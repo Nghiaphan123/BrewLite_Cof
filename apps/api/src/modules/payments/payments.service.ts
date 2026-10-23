@@ -42,6 +42,7 @@ import { PrismaService } from '../../common/prisma.service.js';
 import { assertTransition } from '../orders/order-state-machine.js';
 import { hashPaymentRequest } from './payment-hash.js';
 import { PaymentMethod, PaymentStatus } from '../../generated/prisma/enums.js';
+import { loyaltyPointsFor } from './loyalty.js';
 
 export interface ProcessPaymentInput {
   userId: string;
@@ -185,7 +186,7 @@ export class PaymentsService {
             }
           }
 
-          const pointsEarned = Math.floor(order.total / 1000);
+          const pointsEarned = loyaltyPointsFor(order.total);
           if (pointsEarned > 0) {
             await tx.user.update({
               where: { id: userId },
