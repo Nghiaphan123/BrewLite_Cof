@@ -1,16 +1,18 @@
-// BrewLite - Prisma schema (C-03)
+// BrewLite - Prisma schema
 //
-// Source of truth for the model: docs/diagrams/class-domain.puml and
-// docs/diagrams/class-domain.md (D-09). Decisions: ADR 002 (Prisma),
-// ADR 006 (whole-VND integers), ADR 007 (stock in finished drinks),
-// ADR 008 (cancellation and 15-minute expiry), ADR 009 (promotion and loyalty).
+// Source of truth for domain model and conventions:
+// - ADR 0003 (PostgreSQL via Prisma 7, schema conventions)
+// - ADR 0004 (Payment mock, order lifecycle, stock at PAID, idempotency)
+// - ADR 0005 (API contract conventions, whole-VND integers, ISO 8601 UTC)
+// - docs/architecture/api-contract.md
 //
-// Conventions
+// Conventions:
 // - Money is whole VND stored as Int. No Decimal, no Float.
-// - Ids are UUID strings. DateTime values are stored in UTC.
-// - Model names are PascalCase; table names are snake_case through @@map (decision 18).
-// - Checks that Prisma cannot express (stock >= 0, qty > 0, ...) are added by
-//   hand in the migration SQL (see prisma/migrations/*/migration.sql).
+// - IDs are UUID strings. DateTime values are stored in UTC.
+// - Model names are PascalCase; table names are snake_case through @@map.
+// - Stock decrements at payment success (PAID) under optimistic lock on version.
+// - Stale PENDING orders do not hold stock and have no background auto-cancel in Phase 1 (ADR 0004 D1, D6).
+// - Checks that Prisma cannot express directly (stock >= 0, qty > 0) are enforced in migration SQL.
 //
 // The connection URL is not set here: Prisma 7 reads it from prisma.config.ts.
 
@@ -98,7 +100,7 @@ model Product {
   @@map("products")
 }
 
-/// An available topping (+5,000 VND each per decision 6). `active` hides it without deleting it.
+/// An available topping (+5,000 VND each per menu/contract). `active` hides it without deleting it.
 model Topping {
   id     String  @id @default(uuid()) @db.Uuid
   name   String  @unique
@@ -120,9 +122,9 @@ model Order {
   discountAmount Int         @default(0) @map("discount_amount")
   total          Int
   promotionId    String?     @map("promotion_id") @db.Uuid
-  /// True while stock is held; set to false in the same transaction that releases it.
+  /// Reserved for stock reservation tracking if needed; stock decrements under lock at PAID (ADR 0004 D1).
   stockHeld      Boolean     @default(true) @map("stock_held")
-  /// End of the 15-minute payment window for PENDING and PAYMENT_FAILED orders.
+  /// Payment window expiry timestamp (Phase 2+ background cleanup; no auto-cancel cron in Phase 1 per ADR 0004 D6).
   expiresAt      DateTime    @map("expires_at") @db.Timestamptz(3)
   createdAt      DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt      DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
@@ -135,7 +137,7 @@ model Order {
 
   /// GET /orders/me lists a user's orders newest first.
   @@index([userId, createdAt(sort: Desc)])
-  /// The expiry job looks up unpaid orders whose window has passed.
+  /// Expiry index for Phase 2+ unpaid order lookups.
   @@index([status, expiresAt])
   @@map("orders")
 }
@@ -182,6 +184,8 @@ model Payment {
   /// Copied from the order so the database can enforce key uniqueness per user.
   userId         String        @map("user_id") @db.Uuid
   idempotencyKey String        @map("idempotency_key")
+  /// SHA-256 hash of the canonical request payload to detect idempotency conflicts (ADR 0004 D4).
+  requestHash    String        @map("request_hash")
   /// Equals Order.total at the moment of the attempt, whole VND.
   amount         Int
   method         PaymentMethod
@@ -233,7 +237,7 @@ model LoyaltyTransaction {
   user  User  @relation(fields: [userId], references: [id], onDelete: Restrict)
   order Order @relation(fields: [orderId], references: [id], onDelete: Restrict)
 
-  /// At most one EARN and one REVERSAL per order (ADR 009).
+  /// At most one EARN and one REVERSAL per order (ADR 0004 D7).
   @@unique([orderId, type])
   @@index([userId])
   @@map("loyalty_transactions")
