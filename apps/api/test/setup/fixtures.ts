@@ -9,7 +9,7 @@ export function hashPassword(plain: string): string {
 export async function seedUser(
   prisma: PrismaService,
   email?: string,
-  password = 'correct-horse-battery',
+  password = 'correct-horse-battery-1',
 ) {
   // Ensure email uniqueness across test runs. If an email is provided, append a UUID to the local part.
   // If no email is provided, generate a random one.

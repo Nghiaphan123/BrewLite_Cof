@@ -22,7 +22,7 @@ describe('POST /api/v1/payments idempotency (graded test b)', () => {
     ({ app, prisma } = await createE2EApp());
     const user = await seedUser(prisma, 'idem-e2e@example.com');
     userId = user.id;
-    token = await loginAs(app, 'idem-e2e@example.com');
+    token = await loginAs(app, user.email);
   });
 
   afterAll(async () => {
@@ -53,13 +53,11 @@ describe('POST /api/v1/payments idempotency (graded test b)', () => {
       request(app.getHttpServer())
         .post('/api/v1/payments')
         .set('Authorization', `Bearer ${token}`)
-        .set('X-User-Id', userId)
         .set('Idempotency-Key', key)
         .send(body),
       request(app.getHttpServer())
         .post('/api/v1/payments')
         .set('Authorization', `Bearer ${token}`)
-        .set('X-User-Id', userId)
         .set('Idempotency-Key', key)
         .send(body),
     ]);
@@ -96,7 +94,6 @@ describe('POST /api/v1/payments idempotency (graded test b)', () => {
     const res1 = await request(app.getHttpServer())
       .post('/api/v1/payments')
       .set('Authorization', `Bearer ${token}`)
-      .set('X-User-Id', userId)
       .set('Idempotency-Key', key)
       .send({ orderId: orderA.id, method: 'WALLET' });
     expect(res1.status).toBe(200);
@@ -105,7 +102,6 @@ describe('POST /api/v1/payments idempotency (graded test b)', () => {
     const res2 = await request(app.getHttpServer())
       .post('/api/v1/payments')
       .set('Authorization', `Bearer ${token}`)
-      .set('X-User-Id', userId)
       .set('Idempotency-Key', key)
       .send({ orderId: orderB.id, method: 'WALLET' });
 
@@ -128,7 +124,6 @@ describe('POST /api/v1/payments idempotency (graded test b)', () => {
     const res = await request(app.getHttpServer())
       .post('/api/v1/payments')
       .set('Authorization', `Bearer ${token}`)
-      .set('X-User-Id', userId)
       .send({ orderId: order.id, method: 'WALLET' });
 
     expect(res.status).toBe(400);
@@ -152,7 +147,6 @@ describe('POST /api/v1/payments idempotency (graded test b)', () => {
     const res = await request(app.getHttpServer())
       .post('/api/v1/payments')
       .set('Authorization', `Bearer ${token}`)
-      .set('X-User-Id', userId)
       .set('Idempotency-Key', key)
       .send({ orderId: order.id, method: 'WALLET' });
 

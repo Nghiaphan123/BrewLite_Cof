@@ -33,8 +33,8 @@ describe('Concurrent stock (graded test c)', () => {
     const userB = await seedUser(prisma, 'race-b@example.com');
     userAId = userA.id;
     userBId = userB.id;
-    tokenA = await loginAs(app, 'race-a@example.com');
-    tokenB = await loginAs(app, 'race-b@example.com');
+    tokenA = await loginAs(app, userA.email);
+    tokenB = await loginAs(app, userB.email);
   });
 
   afterAll(async () => {
@@ -62,13 +62,11 @@ describe('Concurrent stock (graded test c)', () => {
       request(app.getHttpServer())
         .post('/api/v1/payments')
         .set('Authorization', `Bearer ${tokenA}`)
-        .set('X-User-Id', userAId)
         .set('Idempotency-Key', randomUUID())
         .send({ orderId: orderA.id, method: 'WALLET' }),
       request(app.getHttpServer())
         .post('/api/v1/payments')
         .set('Authorization', `Bearer ${tokenB}`)
-        .set('X-User-Id', userBId)
         .set('Idempotency-Key', randomUUID())
         .send({ orderId: orderB.id, method: 'WALLET' }),
     ]);
@@ -99,21 +97,20 @@ describe('Concurrent stock (graded test c)', () => {
   it('three parallel payments for stock 2: exactly two PAID, one rejected', async () => {
     const product = await seedProduct(prisma, { stock: 2, price: 35000 });
     const userC = await seedUser(prisma, 'race-c@example.com');
-    const tokenC = await loginAs(app, 'race-c@example.com');
+    const tokenC = await loginAs(app, userC.email);
 
     const orderA = await seedOrder(prisma, userAId, product.id, { qty: 1 });
     const orderB = await seedOrder(prisma, userBId, product.id, { qty: 1 });
     const orderC = await seedOrder(prisma, userC.id, product.id, { qty: 1 });
 
     const requests = [
-      { token: tokenA, userId: userAId, order: orderA },
-      { token: tokenB, userId: userBId, order: orderB },
-      { token: tokenC, userId: userC.id, order: orderC },
-    ].map(({ token, userId, order }) =>
+      { token: tokenA, order: orderA },
+      { token: tokenB, order: orderB },
+      { token: tokenC, order: orderC },
+    ].map(({ token, order }) =>
       request(app.getHttpServer())
         .post('/api/v1/payments')
         .set('Authorization', `Bearer ${token}`)
-        .set('X-User-Id', userId)
         .set('Idempotency-Key', randomUUID())
         .send({ orderId: order.id, method: 'WALLET' }),
     );

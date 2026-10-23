@@ -129,6 +129,16 @@ export class PaymentsService {
           });
         }
 
+        // Ownership check: order must belong to the caller (api-contract.md §9)
+        if (order.userId !== userId) {
+          throw new NotFoundException({
+            statusCode: 404,
+            error: 'Not Found',
+            message: `Order ${orderId} not found`,
+            code: 'ORDER_NOT_FOUND',
+          });
+        }
+
         // If the order is already in a terminal/paid state and this is a
         // replay that slipped past the outer check, treat it as a replay
         // rather than a transition. This covers the concurrent case where

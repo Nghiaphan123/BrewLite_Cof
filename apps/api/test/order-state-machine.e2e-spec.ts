@@ -24,7 +24,7 @@ describe('Order state machine (graded test a)', () => {
   beforeAll(async () => {
     ({ app, prisma } = await createE2EApp());
     user = await seedUser(prisma, 'sm-e2e@example.com');
-    token = await loginAs(app, 'sm-e2e@example.com');
+    token = await loginAs(app, user.email);
   });
 
   afterAll(async () => {

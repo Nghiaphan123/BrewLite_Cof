@@ -9,12 +9,6 @@
  * - 200 for both success and payment failure; the body `status` distinguishes
  *   PAID from PAYMENT_FAILED. Errors (400/401/404/409) come from the service
  *   via Nest exceptions and are formatted by HttpExceptionFilter.
- *
- * Known gap (Task 7):
- * - userId is read from req.user?.id ?? headers['x-user-id'] ?? 'user-demo-001'.
- *   There is no JwtAuthGuard yet, so X-User-Id is a spoofable identity and the
- *   e2e tests rely on it. When Task 7's guard lands, delete the header fallback
- *   and derive userId from req.user only.
  */
 
 import {
@@ -25,11 +19,14 @@ import {
   Req,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
 import { PaymentsService } from './payments.service.js';
 import { CreatePaymentDto } from './dto/create-payment.dto.js';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
 
 @Controller('payments')
+@UseGuards(JwtAuthGuard)
 export class PaymentsController {
   constructor(private readonly paymentsService: PaymentsService) { }
 
@@ -40,8 +37,7 @@ export class PaymentsController {
     @Req() req: any,
     @Headers('idempotency-key') idempotencyKey: string,
   ) {
-    const headers = req.headers ?? {};
-    const userId = req.user?.id ?? headers['x-user-id'] ?? 'user-demo-001';
+    const userId = req.user.id;
 
     return this.paymentsService.processPayment({
       userId,

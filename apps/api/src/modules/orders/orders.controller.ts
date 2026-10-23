@@ -33,10 +33,12 @@ import {
   Body,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
 import { IsEnum } from 'class-validator';
 import { OrdersService } from './orders.service.js';
 import { OrderStatus } from '../../generated/prisma/enums.js';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
 
 class TransitionDto {
   @IsEnum(OrderStatus, { message: 'next must be a valid OrderStatus' })
@@ -44,6 +46,7 @@ class TransitionDto {
 }
 
 @Controller('orders')
+@UseGuards(JwtAuthGuard)
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) { }
 
