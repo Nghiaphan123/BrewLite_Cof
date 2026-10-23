@@ -72,7 +72,7 @@ describe('POST /api/v1/payments idempotency (graded test b)', () => {
 
     const payments = await prisma.payment.findMany({ where: { orderId: order.id } });
     expect(payments).toHaveLength(1);
-    expect(payments[0].status).toBe('SUCCEEDED');
+    expect(payments[0].status).toBe('SUCCESS');
 
     // Stock decremented exactly once
     const productAfter = await prisma.product.findUnique({ where: { id: product.id } });

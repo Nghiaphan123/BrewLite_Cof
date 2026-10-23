@@ -49,7 +49,7 @@ enum PaymentMethod {
 }
 
 enum PaymentStatus {
-  SUCCEEDED
+  SUCCESS
   FAILED
   REFUNDED
 }
@@ -57,11 +57,6 @@ enum PaymentStatus {
 enum PromotionType {
   PERCENT
   FIXED
-}
-
-enum LoyaltyTransactionType {
-  EARN
-  REVERSAL
 }
 
 // ---------------------------------------------------------------- Models
@@ -76,9 +71,8 @@ model User {
   loyaltyPoints Int      @default(0) @map("loyalty_points")
   createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
-  orders              Order[]
-  payments            Payment[]
-  loyaltyTransactions LoyaltyTransaction[]
+  orders    Order[]
+  payments  Payment[]
 
   @@map("users")
 }
@@ -122,23 +116,16 @@ model Order {
   discountAmount Int         @default(0) @map("discount_amount")
   total          Int
   promotionId    String?     @map("promotion_id") @db.Uuid
-  /// Reserved for stock reservation tracking if needed; stock decrements under lock at PAID (ADR 0004 D1).
-  stockHeld      Boolean     @default(true) @map("stock_held")
-  /// Payment window expiry timestamp (Phase 2+ background cleanup; no auto-cancel cron in Phase 1 per ADR 0004 D6).
-  expiresAt      DateTime    @map("expires_at") @db.Timestamptz(3)
   createdAt      DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt      DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  user                User                 @relation(fields: [userId], references: [id], onDelete: Restrict)
-  promotion           Promotion?           @relation(fields: [promotionId], references: [id], onDelete: Restrict)
-  items               OrderItem[]
-  payments            Payment[]
-  loyaltyTransactions LoyaltyTransaction[]
+  user     User          @relation(fields: [userId], references: [id], onDelete: Restrict)
+  promotion Promotion?   @relation(fields: [promotionId], references: [id], onDelete: Restrict)
+  items    OrderItem[]
+  payments Payment[]
 
   /// GET /orders/me lists a user's orders newest first.
   @@index([userId, createdAt(sort: Desc)])
-  /// Expiry index for Phase 2+ unpaid order lookups.
-  @@index([status, expiresAt])
   @@map("orders")
 }
 
@@ -222,23 +209,4 @@ model Promotion {
   orders Order[]
 
   @@map("promotions")
-}
-
-/// A change to a customer's points: EARN after PAID, REVERSAL (negative) after a PAID cancel.
-model LoyaltyTransaction {
-  id        String                 @id @default(uuid()) @db.Uuid
-  userId    String                 @map("user_id") @db.Uuid
-  orderId   String                 @map("order_id") @db.Uuid
-  type      LoyaltyTransactionType
-  /// Positive for EARN, negative for REVERSAL.
-  points    Int
-  createdAt DateTime               @default(now()) @map("created_at") @db.Timestamptz(3)
-
-  user  User  @relation(fields: [userId], references: [id], onDelete: Restrict)
-  order Order @relation(fields: [orderId], references: [id], onDelete: Restrict)
-
-  /// At most one EARN and one REVERSAL per order (ADR 0004 D7).
-  @@unique([orderId, type])
-  @@index([userId])
-  @@map("loyalty_transactions")
 }

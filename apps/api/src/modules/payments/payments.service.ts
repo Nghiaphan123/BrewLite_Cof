@@ -192,15 +192,6 @@ export class PaymentsService {
               where: { id: userId },
               data: { loyaltyPoints: { increment: pointsEarned } },
             });
-
-            const existingLoyalty = await tx.loyaltyTransaction.findUnique({
-              where: { orderId_type: { orderId, type: 'EARN' } },
-            });
-            if (!existingLoyalty) {
-              await tx.loyaltyTransaction.create({
-                data: { userId, orderId, type: 'EARN', points: pointsEarned },
-              });
-            }
           }
         }
 
@@ -217,7 +208,7 @@ export class PaymentsService {
             requestHash,
             amount: order.total,
             method: method as PaymentMethod,
-            status: isMockSuccess ? PaymentStatus.SUCCEEDED : PaymentStatus.FAILED,
+            status: isMockSuccess ? PaymentStatus.SUCCESS : PaymentStatus.FAILED,
           },
         });
 

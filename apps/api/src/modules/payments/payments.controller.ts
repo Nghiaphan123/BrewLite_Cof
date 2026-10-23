@@ -15,10 +15,6 @@
  *   There is no JwtAuthGuard yet, so X-User-Id is a spoofable identity and the
  *   e2e tests rely on it. When Task 7's guard lands, delete the header fallback
  *   and derive userId from req.user only.
- *
- * Cleanup:
- * - The manual idempotency-key lookup duplicates @Headers('idempotency-key'),
- *   which is case-insensitive. Replace with the decorator.
  */
 
 import {
@@ -42,11 +38,9 @@ export class PaymentsController {
   async createPayment(
     @Body() body: CreatePaymentDto,
     @Req() req: any,
+    @Headers('idempotency-key') idempotencyKey: string,
   ) {
-    // Extract headers case‑insensitively
     const headers = req.headers ?? {};
-    const idempotencyKey =
-      headers['idempotency-key'] || headers['Idempotency-Key'];
     const userId = req.user?.id ?? headers['x-user-id'] ?? 'user-demo-001';
 
     return this.paymentsService.processPayment({

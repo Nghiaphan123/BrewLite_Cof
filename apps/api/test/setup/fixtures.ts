@@ -50,8 +50,6 @@ export async function seedOrder(
 ) {
   const qty = overrides.qty ?? 1;
   const total = overrides.total ?? 35000 * qty;
-  const now = new Date();
-  const expiresAt = new Date(now.getTime() + 15 * 60 * 1000);
 
   return prisma.order.create({
     data: {
@@ -61,8 +59,6 @@ export async function seedOrder(
       subtotal: total,
       discountAmount: 0,
       total,
-      stockHeld: true,
-      expiresAt,
       items: {
         create: [
           {

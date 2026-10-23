@@ -1,12 +1,16 @@
 /**
- * Loyalty accrual rule (ADR 0004 D7).
+ * Loyalty points calculation — pure function for testability.
  *
- * Why a separate file:
- * - The rule is used by the payment transaction (payments.service.ts) and
- *   tested in isolation (loyalty.spec.ts). Keeping it in one place means a
- *   change to the rule (e.g. 1 point per 500 VND) updates both, and the test
- *   fails if the service is not updated with it.
+ * Why it exists:
+ * - ADR 0004 D7: loyalty points = floor(total / 1000) VND.
+ * - Extracted so the rule can be unit-tested in isolation and reused.
+ *
+ * Contract:
+ * - Input: orderTotal (whole VND, non-negative integer).
+ * - Output: number of points (non-negative integer).
+ * - Rule: floor(orderTotal / 1000).
  */
 export function loyaltyPointsFor(orderTotal: number): number {
-    return Math.floor(orderTotal / 1000);
+  if (orderTotal < 0) return 0;
+  return Math.floor(orderTotal / 1000);
 }

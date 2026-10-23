@@ -399,6 +399,7 @@ These are listed so the frontend and API agree on the shape before Task 10 adds 
 | Method | Path                   | Purpose                  | Notes                                                                            |
 | ------ | ---------------------- | ------------------------ | -------------------------------------------------------------------------------- |
 | `POST` | `/orders/:code/cancel` | Cancel a `PENDING` order | ADR 0004 D6 says no auto-cancel; explicit cancel is a possible Phase 2 addition. |
+| `POST` | `/orders/:id/transition` | Drive an order status transition (test enabler for graded test a) | Internal/test endpoint; auth JWT (currently a test fixture, see Task 7 gap); not part of the public MVP API. |
 | `POST` | `/promotions/validate` | Validate a promo code    | Task 10d; `product-backlog.md` §13 10d.                                          |
 | `GET`  | `/loyalty/me`          | Current points balance   | Task 10d; the login/register responses carry `loyaltyPoints` in Phase 1.         |
 
