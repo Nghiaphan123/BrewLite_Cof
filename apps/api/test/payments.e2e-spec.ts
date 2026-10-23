@@ -29,6 +29,20 @@ describe('POST /api/v1/payments idempotency (graded test b)', () => {
     await app.close();
   });
 
+  /**
+  * Graded test (b), case 1 — assignment PDF §9:
+  * "gửi 2 lần cùng Idempotency-Key chỉ tạo 1 đơn".
+  *
+  * Two concurrent POST /payments with the same key and the same body must:
+  * - both return 200 (the second is a replay, not an error),
+  * - share the same paymentId,
+  * - leave exactly one Payment row,
+  * - decrement stock exactly once.
+  *
+  * This is the case that races: both requests can pass the outer findUnique,
+  * and the loser either hits P2002 (unique constraint) or sees the stock
+  * already decremented (OUT_OF_STOCK). The service handles both as replays.
+  */
   it('same Idempotency-Key + same body -> one payment, same paymentId', async () => {
     const product = await seedProduct(prisma, { stock: 10 });
     const order = await seedOrder(prisma, userId, product.id);
@@ -65,6 +79,13 @@ describe('POST /api/v1/payments idempotency (graded test b)', () => {
     expect(productAfter?.stock).toBe(10 - order.items[0].qty);
   });
 
+  /**
+  * Graded test (b), case 2 — the conflict half.
+  * Same key, different body (orderA vs orderB) must return 409
+  * IDEMPOTENCY_CONFLICT, and must not create a Payment for the second order.
+  * Proves the service distinguishes "same request replayed" from "different
+  * request with the same key" (ADR 0004 D4).
+  */
   it('same Idempotency-Key + different body -> 409 IDEMPOTENCY_CONFLICT', async () => {
     const product = await seedProduct(prisma, { stock: 10 });
     const orderA = await seedOrder(prisma, userId, product.id);
@@ -95,6 +116,11 @@ describe('POST /api/v1/payments idempotency (graded test b)', () => {
     expect(paymentsForB).toHaveLength(0);
   });
 
+  /**
+  * Supporting test (not graded, but required by api-contract.md §9):
+  * POST /payments without an Idempotency-Key must be rejected with
+  * 400 IDEMPOTENCY_KEY_REQUIRED. The key is mandatory, not optional.
+  */
   it('missing Idempotency-Key -> 400 IDEMPOTENCY_KEY_REQUIRED', async () => {
     const product = await seedProduct(prisma, { stock: 10 });
     const order = await seedOrder(prisma, userId, product.id);
@@ -109,6 +135,13 @@ describe('POST /api/v1/payments idempotency (graded test b)', () => {
     expect(res.body.code).toBe('IDEMPOTENCY_KEY_REQUIRED');
   });
 
+  /**
+  * Supporting test (ADR 0004 D2):
+  * A payment failure is not an HTTP error. The response is 200 with
+  * body.status = PAYMENT_FAILED. The order moves to PAYMENT_FAILED, stock is
+  * unchanged, and no loyalty points are earned. The frontend distinguishes
+  * success from failure by reading body.status, not res.ok.
+  */
   it('payment failure returns 200 with status PAYMENT_FAILED (ADR 0004 D2)', async () => {
     const product = await seedProduct(prisma, { stock: 10 });
     const order = await seedOrder(prisma, userId, product.id);

@@ -41,6 +41,18 @@ describe('Concurrent stock (graded test c)', () => {
     await app.close();
   });
 
+  /**
+  * Graded test (c), case 1 — assignment PDF §9:
+  * "đặt đồng thời không vượt quá tồn kho".
+  *
+  * Two parallel payments for the last unit. Exactly one must succeed (PAID),
+  * the other must be rejected with 409 OUT_OF_STOCK. Final stock must be 0,
+  * and Product.version must be 1 (exactly one successful decrement).
+  *
+  * The two requests use different users and different idempotency keys, so
+  * this is a genuine race for stock, not an idempotency replay. The
+  * optimistic lock (where: { id, version }) is what serializes them.
+  */
   it('two parallel payments for stock 1: one PAID, one 409 OUT_OF_STOCK, stock 0', async () => {
     const product = await seedProduct(prisma, { stock: 1, price: 35000 });
     const orderA = await seedOrder(prisma, userAId, product.id, { qty: 1 });
@@ -78,6 +90,12 @@ describe('Concurrent stock (graded test c)', () => {
     expect(paidOrders).toHaveLength(1);
   });
 
+  /**
+  * Graded test (c), case 2 — same requirement, three-way race.
+  * Stock 2, three parallel payments: exactly two PAID, one rejected,
+  * final stock 0, version 2. Proves the lock holds under contention beyond
+  * the two-request case.
+  */
   it('three parallel payments for stock 2: exactly two PAID, one rejected', async () => {
     const product = await seedProduct(prisma, { stock: 2, price: 35000 });
     const userC = await seedUser(prisma, 'race-c@example.com');

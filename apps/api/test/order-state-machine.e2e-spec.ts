@@ -31,6 +31,14 @@ describe('Order state machine (graded test a)', () => {
     await app.close();
   });
 
+  /**
+  * Graded test (a), case 1 — assignment PDF §9:
+  * "chặn được chuyển trạng thái không hợp lệ".
+  *
+  * COMPLETED is terminal (ADR 0004 D1). A transition COMPLETED -> PAID must
+  * be rejected at the API boundary with 409 INVALID_STATE_TRANSITION, and the
+  * order's status must be unchanged. This is the exact case the grader checks.
+  */
   it('rejects COMPLETED -> PAID with 409 INVALID_STATE_TRANSITION', async () => {
     const product = await seedProduct(prisma, { stock: 1 });
     const order = await seedOrder(prisma, user.id, product.id);
