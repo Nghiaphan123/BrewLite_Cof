@@ -1,7 +1,7 @@
 # BrewLite - Wireframes
 
 **Status:** Phase 1 deliverable  
-**Owner:** Nghĩa (Task 5.0)  
+**Owner:** Luân (Task 5.0)  
 **Related:** [UI Decisions](ui-decisions.md), [Product Backlog](../requirements/product-backlog.md), [Scenarios](../requirements/scenarios.md), [API Contract](../architecture/api-contract.md), assignment PDF §7
 
 This document is the index of BrewLite's wireframes. For each screen it records the route, the wireframe image, the UI states that must be handled, the acceptance criteria it serves, and the manual or e2e test that proves it. The images live in `docs/diagrams/wireframes/`; this page is the authoritative map from "screen" to "file" to "route" to "test".
@@ -245,14 +245,14 @@ The images below are the drawings of record. Replace each `wf-*-v1.png` when the
 
 | Screen         | Tool                  | Link          | Owner |
 | -------------- | --------------------- | ------------- | ----- |
-| Menu           | Figma (or Excalidraw) | *to be added* | Nghĩa |
-| Product detail | Figma                 | *to be added* | Nghĩa |
-| Cart           | Figma                 | *to be added* | Nghĩa |
-| Checkout       | Figma                 | *to be added* | Nghĩa |
-| Confirmation   | Figma                 | *to be added* | Nghĩa |
-| Login          | Figma                 | *to be added* | Nghĩa |
-| Register       | Figma                 | *to be added* | Nghĩa |
-| Order history  | Figma                 | *to be added* | Nghĩa |
+| Menu           | Figma (or Excalidraw) | *to be added* | Luân  |
+| Product detail | Figma                 | *to be added* | Luân  |
+| Cart           | Figma                 | *to be added* | Luân  |
+| Checkout       | Figma                 | *to be added* | Luân  |
+| Confirmation   | Figma                 | *to be added* | Luân  |
+| Login          | Figma                 | *to be added* | Luân  |
+| Register       | Figma                 | *to be added* | Luân  |
+| Order history  | Figma                 | *to be added* | Luân  |
 
 If the team chooses to skip a design tool, the wireframes may be Excalidraw sketches embedded as PNGs; in that case, record "Excalidraw — inline only" in the link column and keep the `.excalidraw` file in `docs/diagrams/raw/` (not committed to the main tree, per `project-structure.md` diagram rules).
 
@@ -285,11 +285,11 @@ The three graded tests (`scenarios.md` §12: S-PAY-5, S-ORD-5, S-ORD-6) are not 
 
 | Item                                                                 | Owner | Closes when                                                                                  |
 | -------------------------------------------------------------------- | ----- | -------------------------------------------------------------------------------------------- |
-| Commit the 8 PNGs to `docs/diagrams/wireframes/`                     | Nghĩa | Task 5.0 `● Xong`                                                                            |
-| Record Figma/Excalidraw links in §12                                 | Nghĩa | Same                                                                                         |
-| Resolve D3 (confirmation route key: id vs code)                      | Nghĩa | `api-contract.md` final; update §1, `ui-decisions.md` §2, `product-backlog.md` §12 in one PR |
+| Commit the 8 PNGs to `docs/diagrams/wireframes/`                     | Luân  | Task 5.0 `● Xong`                                                                            |
+| Record Figma/Excalidraw links in §12                                 | Luân  | Same                                                                                         |
+| Resolve D3 (confirmation route key: id vs code)                      | H.Tài | `api-contract.md` final; update §1, `ui-decisions.md` §2, `product-backlog.md` §12 in one PR |
 | Add promo/points UI as Checkout `v2`                                 | H.Tài | Task 10d lands                                                                               |
-| Add empty/error state frames to the exported images if reviewers ask | Nghĩa | First Sprint Review                                                                          |
+| Add empty/error state frames to the exported images if reviewers ask | Luân  | First Sprint Review                                                                          |
 
 ---
 

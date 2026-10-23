@@ -10,29 +10,48 @@ This document is the team's process contract. It defines how we track work, what
 
 ## 1. Roles
 
-Assigned in Task 3.0 (kickoff). See the spreadsheet `Cấu hình` sheet for the current holder of each role.
+Assigned at kickoff (Task 3.0, 2026-10-22). The kickoff note is `docs/plans/kickoff-2026-10-22.md`.
 
-| Role                | Responsibility                                                             | Holder              |
-| ------------------- | -------------------------------------------------------------------------- | ------------------- |
-| Product Owner (PO)  | Owns the Product Backlog, prioritizes, accepts increments at Sprint Review | *filled at kickoff* |
-| Scrum Master (SM)   | Owns process, runs ceremonies, unblocks, guards this document              | H.Tài (proposed)    |
-| Development Team    | Builds, tests, reviews; all five members                                   | All                 |
-| Reviewer (rotating) | Reviews the PR of the member whose task is being merged                    | Named per PR        |
+| Role                | Responsibility                                                             | Holder       |
+| ------------------- | -------------------------------------------------------------------------- | ------------ |
+| Product Owner (PO)  | Owns the Product Backlog, prioritizes, accepts increments at Sprint Review | **Nghĩa**    |
+| Scrum Master (SM)   | Owns process, runs ceremonies, unblocks, guards this document              | **H.Tài**    |
+| Development Team    | Builds, tests, reviews; all five members                                   | All          |
+| Reviewer (rotating) | Reviews the PR of the member whose task is being merged                    | Named per PR |
 
-**Rule:** no one merges their own PR. If the team is down to one available reviewer, the PR waits. This is not negotiable — it is the only thing that makes the `● Xong` evidence note meaningful.
+**PO and SM are different people.** Nghĩa owns the Product Backlog and accepts increments; H.Tài runs the process and unblocks. This separation keeps the two checks independent — "is this the right thing?" (PO) and "are we doing it well?" (SM) — and matches the team's informal structure (Nghĩa is the team leader, H.Tài is the assistant; per `config.md` §8's `Cấu hình` sheet).
 
-## 2. Ceremonies
+**Backup arrangement:** if the PO is unavailable at a Sprint Review, the SM accepts against the written acceptance criteria in `product-backlog.md` §4–§13 and records it in the retro note. If the SM is unavailable, the PO runs the ceremony. Recorded here so neither role silently lapses.
+
+**Rule:** no one merges their own PR. If the team is down to one available reviewer, the PR waits. This is not negotiable — it is the only thing that makes the `● Xong` evidence note meaningful. When the author is the only available reviewer's peer, the SM (H.Tài) reviews; when the author is the SM, the PO (Nghĩa) reviews.
+
+## 2. Ceremonies and working hours
+
+### 2.1 Working window
+
+The team's working window is **09:00–22:00 HCM city (vietnam)**. Work may happen anywhere in that window; no one is expected to be online at a specific time except for the ceremonies in §2.3.
+
+### 2.2 Daily Scrum (async)
+
+- **Format:** async, in the team channel. Each member posts their three answers (what I did, what I will do, what blocks me) by **12:00 ICT** each working day.
+- **Duration:** the thread is read-only for the day after 12:00; the SM summarises blockers by 13:00.
+- **Who runs it:** the SM (§1). If the SM is unavailable, the SM names a substitute for that day.
+- **Escalation:** if a blocker cannot be resolved in the thread, the SM schedules a synchronous call that day. The thread is not a substitute for a call when a call is needed.
+- **Why async:** the team's schedules do not overlap for a reliable 15-minute sync. The 12:00 deadline keeps the standup timely without requiring simultaneity.
+
+### 2.3 Sprint ceremonies (synchronous)
 
 | Ceremony             | When                         | Duration | Output                                              |
 | -------------------- | ---------------------------- | -------- | --------------------------------------------------- |
 | Sprint Planning      | Start of each Sprint (Phase) | 30 min   | Sprint Backlog, updated spreadsheet                 |
-| Daily Scrum          | Every working day, same time | 15 min   | Blockers surfaced, spreadsheet status updated       |
 | Sprint Review        | End of each Sprint           | 20 min   | Demo, PO acceptance, backlog updated                |
 | Sprint Retrospective | After Review                 | 20 min   | Retro note in `docs/plans/`, one improvement action |
 
-**Daily Scrum rule:** each member answers three questions in ≤ 2 minutes — what I did, what I will do, what blocks me. The spreadsheet status is updated **before** the standup, not during it. A standup is not a status report meeting; if it becomes one, the SM ends it.
+If a synchronous ceremony cannot be held (e.g. a member is unavailable), it is rescheduled within 2 working days, not converted to async. The Review needs a demo; the Retro needs discussion.
 
-**Sprint boundary rule:** a Sprint ends only when every task in it is `● Xong` with an evidence note, or explicitly moved to the next Sprint by the PO with a reason recorded. "Almost done" is not a Sprint state.
+### 2.4 Sprint boundary rule
+
+A Sprint ends only when every task in it is `● Xong` with an evidence note, or explicitly moved to the next Sprint by the PO with a reason recorded. "Almost done" is not a Sprint state.
 
 ## 3. Task status vocabulary
 
