@@ -1,7 +1,7 @@
 # BrewLite - Setup and Onboarding
 
 **Status:** Phase 1 deliverable  
-**Owner:** Nghĩa (Task 1.0, Task 12.0)  
+**Owner:** Nghĩa, H.Tài (Task 1.0, Task 12.0)  
 **Related:** [Project Structure](project-structure.md), [Configuration](config.md), [Working Agreement](working-agreement.md), [README](../README.md)
 
 This guide takes a teammate from a clean machine to a running BrewLite stack: web app, API, and database, with seed data loaded. Follow it top to bottom the first time. If a step fails, check the [Troubleshooting](#troubleshooting) section before asking in the team channel.
