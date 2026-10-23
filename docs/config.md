@@ -166,8 +166,8 @@ These are recorded here because the spreadsheet is a working artifact that canno
 | -------------------------------------------------------------------------- | ------ | ----- | --------------------------------------------------------------------- |
 | Ratify API port (`3001` vs `4000` vs runtime)                              | 🟡      | Nghĩa | ADR recorded; Task 11.0 `● Xong` evidence cites the bound port        |
 | Ratify `JWT_SECRET` placeholder policy                                     | 🟡      | Nghĩa | Recorded in ADR 0005 or a one-line decision in `working-agreement.md` |
-| Ratify error envelope (`code` field or not)                                | 🟡      | H.Tài | `api-contract.md` Task 7.0 closes                                     |
-| Ratify `Idempotency-Key` header spelling/casing                            | 🟡      | H.Tài | `api-contract.md` Task 7.0 closes                                     |
+| Ratify error envelope (`code` field or not)                                | ✅      | H.Tài | Closed: ADR 0005 C3, `api-contract.md` §3                             |
+| Ratify `Idempotency-Key` header spelling/casing                            | ✅      | H.Tài | Closed: ADR 0005 C5, `api-contract.md` §9                             |
 | Ratify `PAYMENT_MOCK_MODE` values                                          | 🟡      | H.Tài | ADR 0004 closes                                                       |
 | **Batch decision: Task 1.0 ERD includes Task 10's columns**                | ✅      | H.Tài | Closed: ADR 0003 D-ERD-scope                                          |
 | **Task 1.0 ERD scope (5 entities + Task 10 columns, new tables deferred)** | ✅      | H.Tài | Closed: `erd-core-v1` committed                                       |

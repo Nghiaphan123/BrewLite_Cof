@@ -16,12 +16,12 @@ Tài liệu này chia 10 task của Product Backlog (Mục 2.3 và Mục 8 trong
 
 ## 2. Kế hoạch 3 Sprint (Theo Mục 2.3 Đề bài)
 
-| Sprint | Mục tiêu (Sprint Goal) | Task (Product Backlog) | Story Points (Ước lượng nhóm) | Điểm đề bài |
-| :--- | :--- | :--- | :---: | :---: |
-| **Sprint 1** | Nền tảng & hiển thị menu | Task 1, 2, 3, 4 | 18 | 4 |
-| **Sprint 2** | Giỏ hàng & đặt đơn & đăng nhập | Task 5, 6, 7 | 18 | 3 |
-| **Sprint 3** | Thanh toán, bàn giao & nghiệp vụ nâng cao | Task 8, 9, 10 | 18 | 3 |
-| **Tổng cộng** | **Hoàn thiện MVP BrewLite End-to-End** | **10 Task** | **54** | **10** |
+| Sprint        | Mục tiêu (Sprint Goal)                    | Task (Product Backlog) | Story Points (Ước lượng nhóm) | Điểm đề bài |
+| :------------ | :---------------------------------------- | :--------------------- | :---------------------------: | :---------: |
+| **Sprint 1**  | Nền tảng & hiển thị menu                  | Task 1, 2, 3, 4        |              18               |      4      |
+| **Sprint 2**  | Giỏ hàng & đặt đơn & đăng nhập            | Task 5, 6, 7           |              18               |      3      |
+| **Sprint 3**  | Thanh toán, bàn giao & nghiệp vụ nâng cao | Task 8, 9, 10          |              18               |      3      |
+| **Tổng cộng** | **Hoàn thiện MVP BrewLite End-to-End**    | **10 Task**            |            **54**             |   **10**    |
 
 Mỗi Sprint dự kiến kéo dài 1–2 tuần, kết thúc bằng buổi **Sprint Review (Demo)** và **Sprint Retrospective**.
 
@@ -31,28 +31,28 @@ Mỗi Sprint dự kiến kéo dài 1–2 tuần, kết thúc bằng buổi **Spr
 
 ### Sprint 1 — Nền tảng & hiển thị menu (18 Story Points)
 
-| Task | Tên Task (Story) | Yêu cầu / Tiêu chí chấp nhận chính (Theo PDF) | Story Points | Người làm | Trạng thái |
-| :--- | :--- | :--- | :---: | :---: | :--- |
-| **Task 1** | Khởi tạo dự án và cấu trúc | Tạo monorepo/2 thư mục frontend (Next.js) + backend (NestJS), chạy được "Hello", có `README`, Git, `.env.example`. | 3 | — | Chưa làm |
-| **Task 2** | API danh sách sản phẩm | NestJS `GET /products` trả về JSON menu (`id`, `name`, `price`, `imageUrl`) từ dữ liệu mẫu/CSDL. | 5 | — | Chưa làm |
-| **Task 3** | Trang Menu (Frontend) | Next.js gọi `/products`, render lưới sản phẩm, có trạng thái `loading` / `empty state` ([Màn hình 1](../design/wireframe-5.html)). | 5 | — | Chưa làm |
-| **Task 4** | Chi tiết và tùy chọn sản phẩm | Màn hình chi tiết: chọn size (`S`/`M`/`L`) và topping (`Trân châu`/`Kem`); tính giá theo tùy chọn ([Màn hình 2](../design/wireframe-5.html)). | 5 | — | Chưa làm |
+| Task       | Tên Task (Story)              | Yêu cầu / Tiêu chí chấp nhận chính (Theo PDF)                                                                                                 | Story Points | Người làm | Trạng thái |
+| :--------- | :---------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------- | :----------: | :-------: | :--------- |
+| **Task 1** | Khởi tạo dự án và cấu trúc    | Tạo monorepo/2 thư mục frontend (Next.js) + backend (NestJS), chạy được "Hello", có `README`, Git, `.env.example`.                            |      3       |     —     | Chưa làm   |
+| **Task 2** | API danh sách sản phẩm        | NestJS `GET /products` trả về JSON menu (`id`, `name`, `price`, `imageUrl`) từ dữ liệu mẫu/CSDL.                                              |      5       |     —     | Chưa làm   |
+| **Task 3** | Trang Menu (Frontend)         | Next.js gọi `/products`, render lưới sản phẩm, có trạng thái `loading` / `empty state` ([Màn hình 1](../design/wireframe-5.html)).            |      5       |     —     | Chưa làm   |
+| **Task 4** | Chi tiết và tùy chọn sản phẩm | Màn hình chi tiết: chọn size (`S`/`M`/`L`) và topping (`Trân châu`/`Kem`); tính giá theo tùy chọn ([Màn hình 2](../design/wireframe-5.html)). |      5       |     —     | Chưa làm   |
 
 ### Sprint 2 — Giỏ hàng & đặt đơn & đăng nhập (18 Story Points)
 
-| Task | Tên Task (Story) | Yêu cầu / Tiêu chí chấp nhận chính (Theo PDF) | Story Points | Người làm | Trạng thái |
-| :--- | :--- | :--- | :---: | :---: | :--- |
-| **Task 5** | Giỏ hàng (Cart) | Thêm/sửa số lượng/xóa; lưu state (Zustand/Context); tự tính tổng tiền; badge số lượng ([Màn hình 3](../design/wireframe-5.html)). | 5 | — | Chưa làm |
-| **Task 6** | API tạo đơn hàng | NestJS `POST /orders` nhận giỏ hàng, validate (`class-validator`), lưu đơn trạng thái `PENDING`, trả mã đơn. | 5 | — | Chưa làm |
-| **Task 7** | Đăng ký / Đăng nhập (JWT) | `POST /auth/register`, `/auth/login`: băm mật khẩu (`bcrypt`); phát JWT; guard bảo vệ route đặt đơn. | 8 | — | Chưa làm |
+| Task       | Tên Task (Story)          | Yêu cầu / Tiêu chí chấp nhận chính (Theo PDF)                                                                                     | Story Points | Người làm | Trạng thái |
+| :--------- | :------------------------ | :-------------------------------------------------------------------------------------------------------------------------------- | :----------: | :-------: | :--------- |
+| **Task 5** | Giỏ hàng (Cart)           | Thêm/sửa số lượng/xóa; lưu state (Zustand/Context); tự tính tổng tiền; badge số lượng ([Màn hình 3](../design/wireframe-5.html)). |      5       |     —     | Chưa làm   |
+| **Task 6** | API tạo đơn hàng          | NestJS `POST /orders` nhận giỏ hàng, validate (`class-validator`), lưu đơn trạng thái `PENDING`, trả mã đơn.                      |      5       |     —     | Chưa làm   |
+| **Task 7** | Đăng ký / Đăng nhập (JWT) | `POST /auth/register`, `/auth/login`: băm mật khẩu (`bcrypt`); phát JWT; guard bảo vệ route đặt đơn.                              |      8       |     —     | Chưa làm   |
 
 ### Sprint 3 — Thanh toán, bàn giao & nghiệp vụ nâng cao (18 Story Points)
 
-| Task | Tên Task (Story) | Yêu cầu / Tiêu chí chấp nhận chính (Theo PDF) | Story Points | Người làm | Trạng thái |
-| :--- | :--- | :--- | :---: | :---: | :--- |
-| **Task 8** | Thanh toán không tiền mặt | Tích hợp mock payment: chọn Ví/Thẻ, gọi `POST /payments`; đơn chuyển `PAID` khi thành công, `PAYMENT_FAILED` khi lỗi ([Màn hình 4](../design/wireframe-5.html)). | 5 | — | Chưa làm |
-| **Task 9** | Xác nhận, lịch sử đơn & bàn giao | Màn hình xác nhận (mã đơn, trạng thái) ([Màn hình 5](../design/wireframe-5.html)) và `GET /orders/me` (lịch sử đơn); `docker-compose` chạy cả 3 (FE, BE, DB); `README`; demo end-to-end. | 5 | — | Chưa làm |
-| **Task 10** | Nghiệp vụ backend | Order State Machine (`PENDING` $\rightarrow$ `PAID` $\rightarrow$ `PREPARING` $\rightarrow$ `READY` $\rightarrow$ `COMPLETED`), thanh toán idempotent (`Idempotency-Key`), kiểm soát tồn kho khi đặt đồng thời (transaction + optimistic locking), khuyến mãi/điểm thưởng (loyalty). | 8 | — | Chưa làm |
+| Task        | Tên Task (Story)                 | Yêu cầu / Tiêu chí chấp nhận chính (Theo PDF)                                                                                                                                                                                                                                        | Story Points | Người làm | Trạng thái |
+| :---------- | :------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------: | :-------: | :--------- |
+| **Task 8**  | Thanh toán không tiền mặt        | Tích hợp mock payment: chọn Ví/Thẻ, gọi `POST /payments`; đơn chuyển `PAID` khi thành công, `PAYMENT_FAILED` khi lỗi ([Màn hình 4](../design/wireframe-5.html)).                                                                                                                     |      5       |     —     | Chưa làm   |
+| **Task 9**  | Xác nhận, lịch sử đơn & bàn giao | Màn hình xác nhận (mã đơn, trạng thái) ([Màn hình 5](../design/wireframe-5.html)) và `GET /orders/me` (lịch sử đơn); `docker-compose` chạy cả 3 (FE, BE, DB); `README`; demo end-to-end.                                                                                             |      5       |     —     | Chưa làm   |
+| **Task 10** | Nghiệp vụ backend                | Order State Machine (`PENDING` $\rightarrow$ `PAID` $\rightarrow$ `PREPARING` $\rightarrow$ `READY` $\rightarrow$ `COMPLETED`), thanh toán idempotent (`Idempotency-Key`), kiểm soát tồn kho khi đặt đồng thời (transaction + optimistic locking), khuyến mãi/điểm thưởng (loyalty). |      8       |     —     | Chưa làm   |
 
 > **Ghi chú:**
 > - Cột **"Người làm"** và **"Trạng thái"** sẽ được nhóm cập nhật trực tiếp trong buổi họp **Sprint Planning** đầu mỗi Sprint.
@@ -77,10 +77,10 @@ xychart-beta
 
 ### Bảng dữ liệu minh họa theo ngày
 
-| Ngày làm việc | Ngày 0 | Ngày 1 | Ngày 2 | Ngày 3 | Ngày 4 | Ngày 5 | Ngày 6 | Ngày 7 | Ngày 8 | Ngày 9 | Ngày 10 |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Lý tưởng (Ideal)** | 18.0 | 16.2 | 14.4 | 12.6 | 10.8 | 9.0 | 7.2 | 5.4 | 3.6 | 1.8 | 0.0 |
-| **Thực tế (Actual)** | 18 | 18 | 16 | 16 | 13 | 13 | 10 | 8 | 4 | 2 | 0 |
+| Ngày làm việc        | Ngày 0 | Ngày 1 | Ngày 2 | Ngày 3 | Ngày 4 | Ngày 5 | Ngày 6 | Ngày 7 | Ngày 8 | Ngày 9 | Ngày 10 |
+| :------------------- | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :-----: |
+| **Lý tưởng (Ideal)** |  18.0  |  16.2  |  14.4  |  12.6  |  10.8  |  9.0   |  7.2   |  5.4   |  3.6   |  1.8   |   0.0   |
+| **Thực tế (Actual)** |   18   |   18   |   16   |   16   |   13   |   13   |   10   |   8    |   4    |   2    |    0    |
 
 *(Số liệu minh họa cho Sprint 0, không phải dữ liệu thực tế)*
 

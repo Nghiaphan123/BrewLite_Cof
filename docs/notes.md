@@ -101,3 +101,109 @@ apps/
 - **Docker is the packaging tool for the deploy boundary**, not the reason for it. The reason is "two programs, two manifests, two lifecycles, two deployables."
 
 ---
+
+question: The common/ folder
+
+answer:
+
+## The `common/` folder and the two files
+
+`apps/api/src/common/` is the folder for **cross-cutting infrastructure**. The rule of thumb: if a file is used by more than one feature module (orders, payments, auth, products), it belongs in `common/`. If it is only used by one feature, it belongs inside that feature's folder (`src/modules/<feature>/`). This is the same convention recorded in `project-structure.md`: *"Put cross-cutting behavior in `src/common/`; do not create global `BrewLite.DTO` or `BrewLite.Controller` folders."*
+
+`common/` is a sibling of `modules/`, not a feature itself. It has no controller, no route, no business logic. It exists so that `OrdersModule` and `PaymentsModule` can both depend on the same DB connection and the same error shape without duplicating code or importing from each other.
+
+The two files in it have different jobs:
+
+| File                       | Role                                                                                                            | Used by                                                                                                          |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `prisma.service.ts`        | The Nest provider that wraps `PrismaClient` and manages its lifecycle (connect on boot, disconnect on shutdown) | Every module that needs the DB (`OrdersService`, `PaymentsService`, and future `ProductsService`, `AuthService`) |
+| `http-exception.filter.ts` | The global filter that maps thrown exceptions to the response envelope in ADR 0005 C3                           | Registered once in `main.ts` and `test/setup/e2e-app.ts`; applies to every request                               |
+
+Here is a file-header doc comment for each, in the style the project uses (`working-agreement.md` §6 says files are kebab-case and headers explain *why*). These comments go at the top of each file, before the imports.
+
+---
+
+### `apps/api/src/common/prisma.service.ts` — header
+
+```typescript
+/**
+ * PrismaService — the single Prisma client provider for the API.
+ *
+ * Why it exists:
+ * - Nest injects providers into feature services. Rather than each service
+ *   constructing its own PrismaClient (which would open a connection pool
+ *   per service and never close it), the whole app shares this one instance.
+ * - It implements OnModuleInit / OnModuleDestroy so the connection is opened
+ *   when the Nest app boots and closed when it shuts down. Tests rely on this:
+ *   `e2e-app.ts` boots the app, uses the same instance for fixture setup, and
+ *   `app.close()` disconnects it.
+ *
+ * Connection string:
+ * - Reads DATABASE_URL from the environment. The `config()` call loads
+ *   `.env` from the app directory first, then the repo root, so both
+ *   `apps/api/.env` and the root `.env` work without extra setup.
+ * - The fallback URL is a local development default; it must match the
+ *   POSTGRES_* values in the root `.env` (database `brewlite`, user
+ *   `brewlite`). If they drift, Prisma connects as one role while the
+ *   container created another and you get "role does not exist".
+ * - In Docker Compose, the api container gets its own DATABASE_URL with
+ *   host `db` (see docker-compose.yml); this file does not need to know.
+ *
+ * Convention:
+ * - This file lives in `common/` because every feature module uses it.
+ *   Do not create a second PrismaService per feature.
+ */
+```
+
+---
+
+### `apps/api/src/common/http-exception.filter.ts` — header
+
+```typescript
+/**
+ * HttpExceptionFilter — the global error filter that turns thrown exceptions
+ * into the standard JSON envelope described in ADR 0005 C3.
+ *
+ * Why it exists:
+ * - Nest's default exception layer returns a shape close to C3 but not
+ *   identical: it has no `code`, no `details`, and it does not know about
+ *   domain errors such as InvalidStateTransitionError (Task 10a). Without
+ *   this filter, the same failure returns different shapes depending on
+ *   where it was thrown, and the frontend's single error parser
+ *   (apps/web/src/lib/api.ts) breaks.
+ * - It is registered once, in main.ts and in test/setup/e2e-app.ts, so every
+ *   route uses it. A feature does not register its own filter.
+ *
+ * What it maps:
+ * - InvalidStateTransitionError  -> 409, code INVALID_STATE_TRANSITION
+ * - HttpException with an object body -> status, error, message, code, details
+ * - HttpException with a string body  -> status, error, message
+ * - Anything else                     -> 500, generic message
+ *   (the real error is logged; it never reaches the client)
+ *
+ * Contract:
+ * - The envelope is ADR 0005 C3: { statusCode, error, message, code?, details? }.
+ *   Feature services throw Nest exceptions (BadRequestException,
+ *   ConflictException, NotFoundException) and pass the `code` in the
+ *   exception body; this filter copies it through. Services do not format
+ *   the HTTP response themselves.
+ *
+ * Placement:
+ * - Lives in `common/` because every module's errors flow through it.
+ */
+```
+
+---
+
+## Why these two files are in `common/` and not in a feature
+
+A quick way to see the boundary:
+
+- `order-state-machine.ts` is in `modules/orders/` because only orders use the state machine. (Payments import it, but it is conceptually an order concern; the import is the exception, not the rule.)
+- `payment-hash.ts` is in `modules/payments/` because only payments compute the idempotency hash.
+- `prisma.service.ts` is in `common/` because `OrdersService` and `PaymentsService` both need it, and future `ProductsService` and `AuthService` will too.
+- `http-exception.filter.ts` is in `common/` because it is global — it applies to every route in every module, and it is registered in `main.ts` before any module is mounted.
+
+If you ever find yourself importing `common/prisma.service` from a feature and also importing a feature service from `common/`, the boundary is wrong: `common/` should not depend on `modules/`. Right now `http-exception.filter.ts` imports `InvalidStateTransitionError` from `modules/orders/order-state-machine.js` — that is a small violation of the boundary (the filter depends on a feature). It works, but the cleaner shape would be to move `InvalidStateTransitionError` into `common/errors/` and have both the filter and the orders module import it from there. That is not blocking Task 10; note it as a follow-up.
+
+---

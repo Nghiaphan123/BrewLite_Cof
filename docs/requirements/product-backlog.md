@@ -1,7 +1,7 @@
 # BrewLite - Product Backlog
 
 **Status:** Phase 1 deliverable  
-**Owner:** H.Tài (Task 2.0)  
+**Owner:** H.Tài, Nghĩa (Task 2.0)  
 **Related:** [Working Agreement](../working-agreement.md), [Scenarios](scenarios.md), [API Contract](../architecture/api-contract.md), [Design: Wireframes](../design/wireframes.md), Task spreadsheet `BrewLite-DanhSachTask.xlsx`
 
 This is the Product Backlog for the BrewLite MVP. It is the authoritative list of *what* the team is building, in priority order, with acceptance criteria that make "done" testable. The spreadsheet is the schedule and status view; this document is the requirement view.
@@ -393,13 +393,13 @@ Recorded so the team can say "no" without debate:
 
 ## 17. Open items
 
-| Item                                                       | Owner | Closes when               |
-| ---------------------------------------------------------- | ----- | ------------------------- |
-| Confirm primary owners for Task 3 and Task 4               | H.Tài | Sprint 1 Planning         |
-| Write `docs/requirements/scenarios.md` (Task 4.0)          | H.Tài | Task 4.0 `● Xong`         |
-| Add auth screens to `docs/design/wireframes.md`            | Nghĩa | Task 7.0 `● Xong`         |
-| Ratify state-machine and idempotency decisions in ADR 0004 | H.Tài | ADR 0004 accepted         |
-| Add promo/points row to the wireframe index                | Nghĩa | Task 49.0 / 53.0 `● Xong` |
+| Item                                                                                                            | Owner | Closes when                           |
+| --------------------------------------------------------------------------------------------------------------- | ----- | ------------------------------------- |
+| Confirm primary owners for Task 3 and Task 4                                                                    | H.Tài | Sprint 1 Planning                     |
+| Confirm role assignment (PO = Nghĩa, SM = H.Tài) is reflected in `working-agreement.md` §1 and the kickoff note | H.Tài | Task 3.0 `● Xong` (closed 2026-10-22) |
+| Add auth screens to `docs/design/wireframes.md`                                                                 | Luân  | Task 7.0 `● Xong`                     |
+| Ratify state-machine and idempotency decisions in ADR 0004                                                      | H.Tài | ADR 0004 accepted                     |
+| Add promo/points row to the wireframe index                                                                     | -     | Task 49.0 / 53.0 `● Xong`             |
 
 ---
 

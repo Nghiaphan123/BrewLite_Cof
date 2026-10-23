@@ -392,10 +392,10 @@ When this document was first drafted, six decisions were open. They are now clos
 
 | #   | Decision                                                      | Closed by   | Current answer                                                               |
 | --- | ------------------------------------------------------------- | ----------- | ---------------------------------------------------------------------------- |
-| D1  | Does stock decrement at order creation or payment success?    | ADR 0004 D1 | At payment success (`PAID`), under optimistic lock on `Product.version`.     |
-| D2  | Does `POST /payments` failure return `402` or `200 + status`? | ADR 0004 D2 | `200` with body `status: "PAYMENT_FAILED"`.                                  |
-| D3  | Is the confirmation route keyed by order `id` or `code`?      | ADR 0004 D3 | By `code`: `/orders/[code]/confirmation`.                                    |
-| D4  | What is the loyalty accrual rule?                             | ADR 0004 D7 | `floor(order.total / 1000)` points per paid order; no redemption in Phase 1. |
+| D1  | Does stock decrement at order creation or payment success?    | ADR 0004 D1                        | At payment success (`PAID`), under optimistic lock on `Product.version`.     |
+| D2  | Does `POST /payments` failure return `402` or `200 + status`? | ADR 0004 D2; `api-contract.md` §9  | `200` with body `status: "PAYMENT_FAILED"`.                                  |
+| D3  | Is the confirmation route keyed by order `id` or `code`?      | ADR 0004 D3; `api-contract.md` §11 | By `code`: `/orders/[code]/confirmation`.                                    |
+| D4  | What is the loyalty accrual rule?                             | ADR 0004 D7                        | `floor(order.total / 1000)` points per paid order; no redemption in Phase 1. |
 | D5  | Does retry create a new payment or reuse the failed one?      | ADR 0004 D5 | A new payment attempt with a new `Idempotency-Key`; order stays the same.    |
 | D6  | Are stale `PENDING` orders auto-cancelled?                    | ADR 0004 D6 | No TTL in Phase 1; the order stays `PENDING`.                                |
 

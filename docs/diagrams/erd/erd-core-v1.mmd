@@ -1,11 +1,15 @@
-%% --- BrewLite - Core ERD (Task 1.0) ---
+%% --- BrewLite - Core ERD (Task 1.0, updated Task 10) ---
 %% Owner: H.Tài (backup: Nghĩa)
-%% Status: Accepted 2026-10-22
+%% Status: Accepted 2026-10-22, updated Task 10
 %% Related: ADR 0003 (D-ERD-scope), ADR 0004 (D1, D4, D5, D7)
 %% .
 %% Scope: five MVP entities with Task 10's columns included (ADR 0003 D-ERD-scope).
 %% Deferred (new tables): Promotion (Phase 5), LoyaltyLedger (Phase 2+),
 %% OrderItemTopping join table (Phase 2+).
+%% .
+%% Removed (Task 10): Order.stockHeld, Order.expiresAt, LoyaltyTransaction model.
+%% These contradicted ADR 0004 D1 (stock decrements at PAID, not held),
+%% D6 (no auto-cancel cron in Phase 1), and D7 (loyalty points without ledger table).
 %% .
 %% Money: Int, VND, no minor units.
 %% Timestamps: DateTime, ISO 8601 UTC at the API boundary.
@@ -70,7 +74,8 @@ erDiagram
     PAYMENT {
         uuid id PK
         uuid orderId FK
-        string idempotencyKey UK "Task 10b"
+        uuid userId FK
+        string idempotencyKey "composite unique with userId (Task 10b)"
         string requestHash "Task 10b; same-body vs different-body"
         PaymentMethod method "WALLET | CARD"
         int amount "VND integer"
