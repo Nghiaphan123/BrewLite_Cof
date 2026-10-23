@@ -21,12 +21,6 @@
  *    - on failure: update order to PAYMENT_FAILED, create Payment row (FAILED),
  *      no stock change, no points.
  *
- * Known issue (the failing idempotency test):
- * - The replay branch compares existingPayment.requestHash to the newly
- *   computed hash. If the stored row has a null or different requestHash,
- *   a same-body replay is misclassified as a conflict (409). Verify the
- *   Payment row's requestHash after a run; see the debug notes in the review.
- *
  * Known gap (Task 7):
  * - userId is a parameter; the controller sources it from req.user or a
  *   spoofable X-User-Id header. When JwtAuthGuard lands, the controller passes
@@ -75,7 +69,10 @@ export class PaymentsService {
 
     const requestHash = hashPaymentRequest({ orderId, method });
 
-    // Check if an existing payment with this idempotency key already exists for this user
+    // Idempotency: a row with (userId, idempotencyKey) means this request is a
+    // replay or a conflict. The comparison must be on the hash of the SAME
+    // inputs the service uses below (orderId, method), not on a stored value
+    // that may be null or stale.
     const existingPayment = await this.prisma.payment.findUnique({
       where: {
         userId_idempotencyKey: {
@@ -89,7 +86,8 @@ export class PaymentsService {
     });
 
     if (existingPayment) {
-      if (existingPayment.requestHash !== requestHash) {
+      const storedHash = existingPayment.requestHash ?? null;
+      if (storedHash !== requestHash) {
         throw new ConflictException({
           statusCode: 409,
           error: 'Conflict',
@@ -98,7 +96,9 @@ export class PaymentsService {
         });
       }
 
-      // Replay stored response
+      // Replay: return the stored response. The status is the ORDER's status,
+      // not the payment's, because a failed attempt leaves the order
+      // PAYMENT_FAILED and a successful one leaves it PAID (ADR 0004 D2).
       return {
         paymentId: existingPayment.id,
         orderId: existingPayment.orderId,
@@ -112,113 +112,165 @@ export class PaymentsService {
     const mockMode = input.mockMode ?? process.env.PAYMENT_MOCK_MODE ?? 'success';
     const isMockSuccess = mockMode !== 'failure';
 
-    return this.prisma.$transaction(async (tx) => {
-      const order = await tx.order.findUnique({
-        where: { id: orderId },
-        include: {
-          items: true,
-        },
-      });
-
-      if (!order) {
-        throw new NotFoundException({
-          statusCode: 404,
-          error: 'Not Found',
-          message: `Order ${orderId} not found`,
-          code: 'ORDER_NOT_FOUND',
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        const order = await tx.order.findUnique({
+          where: { id: orderId },
+          include: { items: true },
         });
-      }
 
-      const nextOrderStatus = isMockSuccess ? 'PAID' : 'PAYMENT_FAILED';
-      assertTransition(order.status, nextOrderStatus);
-
-      if (isMockSuccess) {
-        // Optimistic locking stock check (Task 10c)
-        for (const item of order.items) {
-          const product = await tx.product.findUnique({
-            where: { id: item.productId },
+        if (!order) {
+          throw new NotFoundException({
+            statusCode: 404,
+            error: 'Not Found',
+            message: `Order ${orderId} not found`,
+            code: 'ORDER_NOT_FOUND',
           });
+        }
 
-          if (!product || product.stock < item.qty) {
-            throw new ConflictException({
-              statusCode: 409,
-              error: 'Conflict',
-              message: `Product ${product?.name ?? item.productId} is out of stock`,
-              code: 'OUT_OF_STOCK',
-            });
-          }
-
-          const updated = await tx.product.updateMany({
-            where: {
-              id: product.id,
-              version: product.version,
-            },
-            data: {
-              stock: { decrement: item.qty },
-              version: { increment: 1 },
-            },
+        // If the order is already in a terminal/paid state and this is a
+        // replay that slipped past the outer check, treat it as a replay
+        // rather than a transition. This covers the concurrent case where
+        // another transaction committed between the outer findUnique and
+        // this one.
+        if (order.status === 'PAID') {
+          const existing = await tx.payment.findUnique({
+            where: { userId_idempotencyKey: { userId, idempotencyKey } },
           });
-
-          if (updated.count === 0) {
-            throw new ConflictException({
-              statusCode: 409,
-              error: 'Conflict',
-              message: `Concurrent update conflict on stock for product ${product.name}`,
-              code: 'OUT_OF_STOCK',
-            });
+          if (existing && existing.requestHash === requestHash) {
+            return {
+              paymentId: existing.id,
+              orderId: existing.orderId,
+              status: 'PAID',
+              method: existing.method,
+              amount: existing.amount,
+              replayed: true,
+            };
           }
         }
 
-        // Accrue loyalty points (ADR 0004 D7) – ensure idempotency
-        const pointsEarned = Math.floor(order.total / 1000);
-        if (pointsEarned > 0) {
-          // Update user loyalty points
-          await tx.user.update({
-            where: { id: userId },
-            data: { loyaltyPoints: { increment: pointsEarned } },
-          });
+        const nextOrderStatus = isMockSuccess ? 'PAID' : 'PAYMENT_FAILED';
+        assertTransition(order.status, nextOrderStatus);
 
-          // Create loyalty transaction only if not exists
-          const existingLoyalty = await tx.loyaltyTransaction.findUnique({
-            where: { orderId_type: { orderId, type: 'EARN' } },
-          });
-          if (!existingLoyalty) {
-            await tx.loyaltyTransaction.create({
-              data: { userId, orderId, type: 'EARN', points: pointsEarned },
+        if (isMockSuccess) {
+          for (const item of order.items) {
+            const product = await tx.product.findUnique({
+              where: { id: item.productId },
             });
+
+            if (!product || product.stock < item.qty) {
+              throw new ConflictException({
+                statusCode: 409,
+                error: 'Conflict',
+                message: `Product ${product?.name ?? item.productId} is out of stock`,
+                code: 'OUT_OF_STOCK',
+              });
+            }
+
+            const updated = await tx.product.updateMany({
+              where: { id: product.id, version: product.version },
+              data: {
+                stock: { decrement: item.qty },
+                version: { increment: 1 },
+              },
+            });
+
+            if (updated.count === 0) {
+              throw new ConflictException({
+                statusCode: 409,
+                error: 'Conflict',
+                message: `Concurrent update conflict on stock for product ${product.name}`,
+                code: 'OUT_OF_STOCK',
+              });
+            }
+          }
+
+          const pointsEarned = Math.floor(order.total / 1000);
+          if (pointsEarned > 0) {
+            await tx.user.update({
+              where: { id: userId },
+              data: { loyaltyPoints: { increment: pointsEarned } },
+            });
+
+            const existingLoyalty = await tx.loyaltyTransaction.findUnique({
+              where: { orderId_type: { orderId, type: 'EARN' } },
+            });
+            if (!existingLoyalty) {
+              await tx.loyaltyTransaction.create({
+                data: { userId, orderId, type: 'EARN', points: pointsEarned },
+              });
+            }
           }
         }
-      }
 
-      // Update order status
-      await tx.order.update({
-        where: { id: orderId },
-        data: {
+        await tx.order.update({
+          where: { id: orderId },
+          data: { status: nextOrderStatus },
+        });
+
+        const payment = await tx.payment.create({
+          data: {
+            orderId,
+            userId,
+            idempotencyKey,
+            requestHash,
+            amount: order.total,
+            method: method as PaymentMethod,
+            status: isMockSuccess ? PaymentStatus.SUCCEEDED : PaymentStatus.FAILED,
+          },
+        });
+
+        return {
+          paymentId: payment.id,
+          orderId: order.id,
           status: nextOrderStatus,
-        },
+          method: payment.method,
+          amount: payment.amount,
+          replayed: false,
+        };
       });
+    } catch (err: any) {
+      // Handle concurrent replay scenarios:
+      // 1. P2002: Unique constraint violation on (userId, idempotencyKey) - the other
+      //    transaction committed the Payment row first.
+      // 2. OUT_OF_STOCK: Optimistic lock conflict on product stock - both transactions
+      //    tried to decrement stock for the same order concurrently. If a payment with
+      //    the same idempotency key and hash already exists, this is a replay.
+      const errorResponse =
+        err instanceof ConflictException ? err.getResponse() : undefined;
+      const isConcurrentReplay =
+        err?.code === 'P2002' ||
+        (err instanceof ConflictException &&
+          typeof errorResponse === 'object' &&
+          errorResponse !== null &&
+          'code' in errorResponse &&
+          errorResponse.code === 'OUT_OF_STOCK');
 
-      // Create Payment record with idempotencyKey and requestHash
-      const payment = await tx.payment.create({
-        data: {
-          orderId,
-          userId,
-          idempotencyKey,
-          requestHash,
-          amount: order.total,
-          method: method as PaymentMethod,
-          status: isMockSuccess ? PaymentStatus.SUCCEEDED : PaymentStatus.FAILED,
-        },
-      });
-
-      return {
-        paymentId: payment.id,
-        orderId: order.id,
-        status: nextOrderStatus,
-        method: payment.method,
-        amount: payment.amount,
-        replayed: false,
-      };
-    });
+      if (isConcurrentReplay) {
+        const existing = await this.prisma.payment.findUnique({
+          where: { userId_idempotencyKey: { userId, idempotencyKey } },
+          include: { order: true },
+        });
+        if (existing) {
+          if (existing.requestHash !== requestHash) {
+            throw new ConflictException({
+              statusCode: 409,
+              error: 'Conflict',
+              message: 'Idempotency key was previously used with a different request payload',
+              code: 'IDEMPOTENCY_CONFLICT',
+            });
+          }
+          return {
+            paymentId: existing.id,
+            orderId: existing.orderId,
+            status: existing.order.status === 'PAID' ? 'PAID' : 'PAYMENT_FAILED',
+            method: existing.method,
+            amount: existing.amount,
+            replayed: true,
+          };
+        }
+      }
+      throw err;
+    }
   }
 }
