@@ -110,12 +110,16 @@ model Topping {
 /// A customer's order. total = subtotal - discountAmount.
 model Order {
   id             String      @id @default(uuid()) @db.Uuid
+  /// Human-readable order code (BL-YYYY-NNNN). Used in user-facing URLs.
+  code           String      @unique @map("code")
   userId         String      @map("user_id") @db.Uuid
   status         OrderStatus @default(PENDING)
   subtotal       Int
   discountAmount Int         @default(0) @map("discount_amount")
   total          Int
   promotionId    String?     @map("promotion_id") @db.Uuid
+  /// The promo code used for this order (for auditing; the FK is promotionId).
+  promoCode      String?     @map("promo_code")
   createdAt      DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt      DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
 

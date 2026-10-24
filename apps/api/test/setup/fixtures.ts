@@ -50,10 +50,15 @@ export async function seedOrder(
 ) {
   const qty = overrides.qty ?? 1;
   const total = overrides.total ?? 35000 * qty;
+  const now = new Date();
+  const year = now.getFullYear();
+  // Generate a unique code for test orders: BL-YYYY-XXXX (random 4 digits)
+  const code = `BL-${year}-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`;
 
   return prisma.order.create({
     data: {
       id: randomUUID(),
+      code,
       userId,
       status: 'PENDING',
       subtotal: total,

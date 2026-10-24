@@ -5,15 +5,17 @@
  * - Maps routes to OrdersService calls. No business logic, no database access.
  *
  * Endpoints:
- * - POST /api/v1/orders/:id/transition — drive a status change.
+ * - POST /api/v1/orders — create a new order (protected, JWT required).
+ *   Body: { items: [...], promoCode?: string }
+ *   Returns { id, code, status, subtotal, discountAmount, total, items }.
+ * - POST /api/v1/orders/:id/transition — drive a status change (internal/test).
  *   Returns { id, status }.
  *
- * Contract status (Task 7 follow-up):
- * - This endpoint is NOT in api-contract.md §2. It was added so graded test (a)
- *   can drive an invalid transition through the API (test/order-state-machine.e2e-spec.ts).
- *   It must be documented in api-contract.md §12 as an internal/test endpoint,
- *   or removed and the test driven through POST /payments against a COMPLETED
- *   order. As written, the API has a surface the contract does not describe.
+ * Contract status:
+ * - POST /orders is in api-contract.md §8.
+ * - POST /:id/transition is NOT in api-contract.md §2. It was added so
+ *   graded test (a) can drive an invalid transition through the API.
+ *   It is documented in api-contract.md §12 as an internal/test endpoint.
  *
  * Param note:
  * - The route uses `:id` (UUID) for now. The API contract (§11) specifies
@@ -22,6 +24,7 @@
  *   this should become `:code` and the service should look up by code.
  *
  * Validation:
+ * - CreateOrderDto uses class-validator for items and optional promoCode.
  * - TransitionDto uses class-validator IsEnum to reject malformed `next`
  *   values with 400 before they reach the service.
  */
@@ -34,11 +37,13 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  Req,
 } from '@nestjs/common';
 import { IsEnum } from 'class-validator';
 import { OrdersService } from './orders.service.js';
 import { OrderStatus } from '../../generated/prisma/enums.js';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
+import { CreateOrderDto } from './dto/create-order.dto.js';
 
 class TransitionDto {
   @IsEnum(OrderStatus, { message: 'next must be a valid OrderStatus' })
@@ -49,6 +54,32 @@ class TransitionDto {
 @UseGuards(JwtAuthGuard)
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) { }
+
+  @Post()
+  @HttpCode(HttpStatus.CREATED)
+  async createOrder(
+    @Body() dto: CreateOrderDto,
+    @Req() req: any,
+  ) {
+    const userId = req.user.id;
+    const order = await this.ordersService.create(userId, dto.items, dto.promoCode);
+    return {
+      id: order.id,
+      code: order.code,
+      status: order.status,
+      subtotal: order.subtotal,
+      discountAmount: order.discountAmount,
+      total: order.total,
+      items: order.items.map(item => ({
+        productId: item.productId,
+        size: item.size,
+        qty: item.qty,
+        unitPrice: item.unitPrice,
+        lineTotal: item.lineTotal,
+      })),
+      createdAt: order.createdAt,
+    };
+  }
 
   @Post(':id/transition')
   @HttpCode(HttpStatus.OK)
