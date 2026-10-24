@@ -8,6 +8,8 @@
  * - POST /api/v1/orders — create a new order (protected, JWT required).
  *   Body: { items: [...], promoCode?: string }
  *   Returns { id, code, status, subtotal, discountAmount, total, items }.
+ * - GET /api/v1/orders/me — the caller's order history, newest first.
+ * - GET /api/v1/orders/:code — owner-scoped detail. Not yours is 404.
  * - POST /api/v1/orders/:id/transition — drive a status change (internal/test).
  *   Returns { id, status }.
  *
@@ -31,6 +33,7 @@
 
 import {
   Controller,
+  Get,
   Post,
   Param,
   Body,
@@ -79,6 +82,19 @@ export class OrdersController {
       })),
       createdAt: order.createdAt,
     };
+  }
+
+  @Get('me')
+  listMine(@Req() req: { user: { id: string } }) {
+    return this.ordersService.listMine(req.user.id);
+  }
+
+  @Get(':code')
+  findByCode(
+    @Param('code') code: string,
+    @Req() req: { user: { id: string } },
+  ) {
+    return this.ordersService.findByCode(req.user.id, code);
   }
 
   @Post(':id/transition')

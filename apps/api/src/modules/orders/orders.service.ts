@@ -37,6 +37,7 @@ import { Prisma } from '../../generated/prisma/client.js';
 import { OrderStatus } from '../../generated/prisma/enums.js';
 import { assertTransition } from './order-state-machine.js';
 import { PromotionsService } from '../promotions/promotions.service.js';
+import { loyaltyPointsFor } from '../payments/loyalty.js';
 
 interface CreateOrderItemInput {
   productId: string;
@@ -195,6 +196,74 @@ export class OrdersService {
       });
     }
     return order;
+  }
+
+  /** Caller's order history, newest first. Empty history is { items: [], total: 0 }. */
+  async listMine(userId: string) {
+    const items = await this.prisma.order.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        code: true,
+        status: true,
+        total: true,
+        createdAt: true,
+      },
+    });
+    return { items, total: items.length };
+  }
+
+  /**
+   * Owner-scoped order detail keyed by BL-YYYY-NNNN.
+   * A missing code and another user's code both return 404 ORDER_NOT_FOUND.
+   */
+  async findByCode(userId: string, code: string) {
+    const order = await this.prisma.order.findUnique({
+      where: { code },
+      include: {
+        items: {
+          include: { product: { select: { name: true } } },
+        },
+        payments: {
+          where: { status: 'SUCCESS' },
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+        },
+      },
+    });
+
+    if (!order || order.userId !== userId) {
+      throw new NotFoundException({
+        statusCode: 404,
+        error: 'Not Found',
+        message: 'Order not found',
+        code: 'ORDER_NOT_FOUND',
+      });
+    }
+
+    const paid = order.payments[0];
+    return {
+      id: order.id,
+      code: order.code,
+      status: order.status,
+      total: order.total,
+      items: order.items.map((item) => ({
+        productId: item.productId,
+        name: item.product.name,
+        size: item.size,
+        qty: item.qty,
+        lineTotal: item.lineTotal,
+      })),
+      payment: paid
+        ? {
+            method: paid.method,
+            paidAt: paid.createdAt,
+            loyaltyPointsEarned: loyaltyPointsFor(paid.amount),
+          }
+        : null,
+      createdAt: order.createdAt,
+    };
   }
 
   async transition(orderId: string, nextStatus: OrderStatus) {
