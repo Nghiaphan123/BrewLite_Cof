@@ -67,6 +67,26 @@ The five-entity count satisfies the assignment's §12.2 requirement; the extra c
 
 **The rule:** columns on the five entities → batch in Task 1.0. New tables → defer to a later ERD version.
 
+### Applied migrations — do not edit `init` after it has been applied
+
+`schema.prisma` is the target shape. An already-applied migration file is history. If the two drift, add a new migration. Do not rewrite `20261019095737_init/migration.sql`: that does not change a database that already ran it, and it breaks teammates who applied the old file.
+
+Checked on the local Docker database (`localhost:5433`, database `brewlite`, user `brewlite`; inside Compose the host is `db:5432`) after `prisma migrate reset` on 2026-10-24. Five migrations are applied, in this order:
+
+| Migration | What it does |
+| --- | --- |
+| `20261019095737_init` | Creates the tables. `orders` has `stock_held` and `expires_at`, and does **not** have `code` or `promo_code`. `PaymentStatus` is `SUCCEEDED`, `FAILED`, `REFUNDED`. `payments` has no `request_hash`. |
+| `20261023115000_add_payment_request_hash` | Adds `payments.request_hash`. |
+| `20261024120000_add-order-code-sequence` | Creates sequence `order_code_seq` only. Its comment says `orders.code` already exists. That is false for a database created from `init`. |
+| `20261024133000_align_order_code_column` | Adds required unique `orders.code` and optional `promo_code`. Drops `expires_at` and `stock_held`, which the current schema no longer has. Stock is not held at order creation (ADR 0004 D1). |
+| `20261024134000_rename_payment_status_success` | Renames enum value `SUCCEEDED` to `SUCCESS`, matching `schema.prisma` and the API. |
+
+After those five, `orders` columns are `id`, `code`, `user_id`, `status`, `subtotal`, `discount_amount`, `total`, `promotion_id`, `promo_code`, `created_at`, `updated_at`. `PaymentStatus` is `SUCCESS`, `FAILED`, `REFUNDED`.
+
+A teammate who already has this database runs `npm run db:deploy` from `apps/api`. That applies only migrations not yet recorded in `_prisma_migrations`. `prisma migrate reset` is for a local or test database only. It drops every row. Do not run it against a shared or production database.
+
+Seed after a local reset (2026-10-24): 30 products, 5 toppings, 10 users (`customer01@brewlite.test`–`customer10@brewlite.test`), 2 promotions. Orders and payments are empty until the app creates them.
+
 ## Consequences
 
 ### Positive
