@@ -136,7 +136,7 @@ Pagination, filtering, search, product images upload, stock mutation. Stock is r
 
 - [ ] The menu route (`/`) renders a grid of `ProductCard` components from `GET /products`.
 - [x] Each card shows image, name, and price formatted as VND.
-- [ ] The page handles three states explicitly: **loading** (skeleton or spinner), **empty** (message), **error** (retry affordance).
+- [x] The page handles three states explicitly: **loading** (skeleton or spinner), **empty** (message), **error** (retry affordance).
 - [x] Clicking a card navigates to the product detail route.
 - [ ] Layout is responsive at 360 px and 1280 px widths.
 - [ ] A header shows the cart badge with item count (0 when empty).
@@ -147,7 +147,7 @@ Infinite scroll, filtering by category, search, favorites.
 
 ### Evidence
 
-`apps/web/src/app/page.tsx`, `apps/web/src/features/menu/ProductCard.tsx`. Wireframe: `docs/design/wireframes.md` (Menu). Spreadsheet rows 16.0, 18.0.
+`apps/web/src/app/page.tsx`, `apps/web/src/features/menu/menu-page.tsx`, `apps/web/src/features/menu/ProductCard.tsx`. Wireframe: `docs/design/wireframes.md` (Menu). Spreadsheet rows 16.0, 18.0.
 
 ## 7. Task 4 — Product detail and options
 
