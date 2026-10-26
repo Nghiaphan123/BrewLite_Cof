@@ -14,6 +14,13 @@ async function bootstrap() {
 
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
+  app.enableCors({
+    origin:
+      process.env.CORS_ORIGIN ??
+      process.env.WEB_ORIGIN ??
+      'http://localhost:3000',
+  });
+
   // API_PORT comes from .env (docs/deployment.md); PORT is set by some hosts such as Render.
   await app.listen(process.env.API_PORT ?? process.env.PORT ?? 3001);
 }

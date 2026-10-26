@@ -2,15 +2,12 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Product } from "@/types";
 
-export type MenuProduct = {
-  id: string;
-  name: string;
-  price: number;
+export type MenuProduct = Product & {
   imageUrl: string;
 };
 
 type ProductCardProps = {
-  product: Product;
+  product: MenuProduct;
 };
 
 const formatPrice = (price: number): string =>

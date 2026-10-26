@@ -33,7 +33,6 @@ function isMenuProduct(value: unknown): value is MenuProduct {
   );
 }
 
-
 function isProductsResponse(value: unknown): value is ProductsResponse {
   if (typeof value !== "object" || value === null) {
     return false;

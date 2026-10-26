@@ -1,6 +1,11 @@
 import { Order, Product, SizeOption, User } from '@/types';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+const configuredApiUrl =
+  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const normalizedApiUrl = configuredApiUrl.replace(/\/+$/, '');
+const API_BASE_URL = normalizedApiUrl.endsWith('/api/v1')
+  ? normalizedApiUrl
+  : `${normalizedApiUrl}/api/v1`;
 
 function getAuthHeaders(): HeadersInit {
   const token = typeof window !== 'undefined' ? localStorage.getItem('brewlite_token') : null;
@@ -28,7 +33,10 @@ export const apiClient = {
       headers: getAuthHeaders(),
       cache: 'no-store',
     });
-    return handleResponse<Product[]>(res);
+    const data = await handleResponse<
+      Product[] | { items: Product[]; total: number }
+    >(res);
+    return Array.isArray(data) ? data : data.items;
   },
 
   // [Task 2 & 4] GET /products/:id
