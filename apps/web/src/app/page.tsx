@@ -1,69 +1,81 @@
-import Image from "next/image";
+// apps/web/src/app/page.tsx
+'use client';
 
-export default function Home() {
+import React, { useEffect, useState } from 'react';
+import { apiClient } from '@/lib/api';
+import { Product } from '@/types';
+import { ProductCard } from '@/features/menu/ProductCard';
+
+export default function MenuPage() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchProducts = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await apiClient.getProducts();
+      setProducts(data);
+    } catch (err: any) {
+      setError(err.message || 'Không thể tải danh sách sản phẩm');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <main className="mx-auto max-w-4xl px-4 py-6">
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-stone-900">Thực đơn BrewLite</h1>
+          <p className="text-sm text-stone-500">
+            Đặt đồ uống và thanh toán không tiền mặt chỉ trong vài chạm
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </div>
+
+      {loading && (
+        <div data-testid="menu-loading" className="py-12 text-center text-stone-500">
+          Đang tải thực đơn...
         </div>
-      </main>
-    </div>
+      )}
+
+      {!loading && error && (
+        <div
+          data-testid="menu-error"
+          className="rounded-xl border border-red-200 bg-red-50 p-6 text-center text-red-700"
+        >
+          <p className="font-medium">{error}</p>
+          <button
+            onClick={fetchProducts}
+            className="mt-3 rounded-lg bg-red-600 px-4 py-2 text-sm text-white hover:bg-red-700"
+          >
+            Thử lại
+          </button>
+        </div>
+      )}
+
+      {!loading && !error && products.length === 0 && (
+        <div data-testid="menu-empty" className="py-12 text-center text-stone-500">
+          Hiện chưa có sản phẩm nào trong menu.
+        </div>
+      )}
+
+      {!loading && !error && products.length > 0 && (
+        <div
+          data-testid="menu-grid"
+          className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3"
+        >
+          {products.map((product) => (
+            <ProductCard key={product.id} product={product} />
+          ))}
+        </div>
+      )}
+    </main>
   );
 }
