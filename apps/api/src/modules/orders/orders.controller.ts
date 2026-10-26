@@ -41,7 +41,10 @@ import {
   HttpStatus,
   UseGuards,
   Req,
+  NotFoundException,
+  CanActivate,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import { IsEnum } from 'class-validator';
 import { OrdersService } from './orders.service.js';
 import { OrderStatus } from '../../generated/prisma/enums.js';
@@ -53,6 +56,19 @@ class TransitionDto {
   next!: OrderStatus;
 }
 
+class TestOnlyGuard implements CanActivate {
+  canActivate(): boolean {
+    if (process.env.NODE_ENV !== 'test') {
+      throw new NotFoundException();
+    }
+    return true;
+  }
+}
+
+type AuthenticatedRequest = Request & {
+  user: { id: string };
+};
+
 @Controller('orders')
 @UseGuards(JwtAuthGuard)
 export class OrdersController {
@@ -60,10 +76,7 @@ export class OrdersController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async createOrder(
-    @Body() dto: CreateOrderDto,
-    @Req() req: any,
-  ) {
+  async createOrder(@Body() dto: CreateOrderDto, @Req() req: AuthenticatedRequest) {
     const userId = req.user.id;
     const order = await this.ordersService.create(userId, dto.items, dto.promoCode);
     return {
@@ -73,7 +86,7 @@ export class OrdersController {
       subtotal: order.subtotal,
       discountAmount: order.discountAmount,
       total: order.total,
-      items: order.items.map(item => ({
+      items: order.items.map((item) => ({
         productId: item.productId,
         size: item.size,
         qty: item.qty,
@@ -98,6 +111,7 @@ export class OrdersController {
   }
 
   @Post(':id/transition')
+  @UseGuards(TestOnlyGuard)
   @HttpCode(HttpStatus.OK)
   async transitionOrder(
     @Param('id') id: string,

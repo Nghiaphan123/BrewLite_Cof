@@ -50,8 +50,8 @@ export class JwtAuthGuard implements CanActivate {
       payload = await this.jwt.verifyAsync(token, {
         secret: process.env.JWT_SECRET ?? 'dev-secret-change-me',
       });
-    } catch (err) {
-      if (err.name === 'TokenExpiredError') {
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name === 'TokenExpiredError') {
         throw new UnauthorizedException({
           statusCode: 401,
           error: 'Unauthorized',
