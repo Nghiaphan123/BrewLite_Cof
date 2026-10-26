@@ -80,7 +80,7 @@ No other responses. Not cached; no rate limit in Phase 1.
 - `total` is the array length in Phase 1 (C9).
 - Order of items is stable (by `name` asc, or by a `sortOrder` column if added in Task 1.0's ERD). The frontend does not re-sort.
 - Empty menu returns `{ "items": [], "total": 0 }` with `200`, not `404`. The UI shows the empty state (`wireframes.md` §4).
-- `imageUrl` is absolute; the frontend renders it directly. If seed data uses relative paths, they are served from `apps/web/public/` and the API returns the full URL.
+- `imageUrl` is absolute; the frontend renders it directly. Product photos are stored in `apps/web/public/images/products/` as `1.jpg` through `30.jpg`. In `apps/api/prisma/seed.ts`, each seeded product uses `/images/products/<n>.jpg`, where `<n>` is its 1-based position in the `products` array. Keep the seed order and filenames aligned when adding or reordering products.
 
 **Errors:** none expected for a valid request. A DB failure returns `500` (C3) with `requestId` (C10).
 
