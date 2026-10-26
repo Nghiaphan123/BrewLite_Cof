@@ -8,7 +8,7 @@
 import { Module, Global } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { AuthController } from './auth.controller.js';
-import { AuthService } from './auth.service.js';
+import { AuthService, getJwtExpiresInSeconds } from './auth.service.js';
 import { PrismaService } from '../../common/prisma.service.js';
 
 @Global()
@@ -17,7 +17,7 @@ import { PrismaService } from '../../common/prisma.service.js';
     JwtModule.register({
       global: true,
       secret: process.env.JWT_SECRET ?? 'dev-secret-change-me',
-      signOptions: { expiresIn: process.env.JWT_EXPIRES_IN ?? '1d' },
+      signOptions: { expiresIn: getJwtExpiresInSeconds() },
     }),
   ],
   controllers: [AuthController],

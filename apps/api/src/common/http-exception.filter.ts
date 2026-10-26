@@ -60,12 +60,13 @@ export class HttpExceptionFilter implements ExceptionFilter {
       const res = exception.getResponse();
 
       if (typeof res === 'object' && res !== null) {
+        const body = res as Record<string, unknown>;
         return response.status(status).json({
           statusCode: status,
-          error: (res as any).error ?? HttpStatus[status],
-          message: (res as any).message ?? exception.message,
-          code: (res as any).code,
-          details: (res as any).details,
+          error: body.error ?? HttpStatus[status],
+          message: body.message ?? exception.message,
+          code: body.code,
+          details: body.details,
         });
       }
 
@@ -81,7 +82,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
       statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
       error: 'Internal Server Error',
-      message: (exception as any)?.message ?? 'Lỗi hệ thống nội bộ',
+      message: 'Lỗi hệ thống nội bộ',
     });
   }
 }

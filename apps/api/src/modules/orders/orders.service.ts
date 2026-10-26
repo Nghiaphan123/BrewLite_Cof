@@ -70,6 +70,7 @@ export class OrdersService {
       const products = await Promise.all(items.map(i =>
         tx.product.findUnique({ where: { id: i.productId } })),
       );
+      const productPrices: number[] = [];
       for (const [idx, p] of products.entries()) {
         if (!p) {
           throw new NotFoundException({
@@ -79,6 +80,7 @@ export class OrdersService {
             code: 'PRODUCT_NOT_FOUND',
           });
         }
+        productPrices.push(p.price);
       }
 
       // 1b. Validate toppings and build price map
@@ -113,7 +115,7 @@ export class OrdersService {
 
       // Compute subtotal with topping prices
       const subtotal = items.reduce((sum, i, idx) => {
-        const productPrice = products[idx].price;
+        const productPrice = productPrices[idx];
         const toppingPrice = (i.toppingIds ?? []).reduce(
           (tSum, tid) => tSum + toppingMap.get(tid)!.price, 0);
         const unitPrice = productPrice + toppingPrice;
@@ -144,7 +146,7 @@ export class OrdersService {
           promoCode: promoCode ?? null,
           items: {
             create: items.map((i, idx) => {
-              const productPrice = products[idx].price;
+              const productPrice = productPrices[idx];
               const toppingPrice = (i.toppingIds ?? []).reduce(
                 (tSum, tid) => tSum + toppingMap.get(tid)!.price, 0);
               const unitPrice = productPrice + toppingPrice;
