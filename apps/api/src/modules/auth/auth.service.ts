@@ -16,22 +16,14 @@ import {
   ConflictException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import { JwtService, type JwtSignOptions } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../../common/prisma.service.js';
 
-type JwtExpiry = `${number}${'d' | 'h' | 'm' | 's'}` | `${number}`;
-
-function isJwtExpiry(value: string): value is JwtExpiry {
-  return /^\d+(?:[dhms])?$/.test(value);
-}
+type JwtExpiry = Exclude<NonNullable<JwtSignOptions['expiresIn']>, number>;
 
 export function jwtExpiresIn(): JwtExpiry {
-  const expiresIn = process.env.JWT_EXPIRES_IN ?? '1d';
-  if (!isJwtExpiry(expiresIn)) {
-    throw new Error('JWT_EXPIRES_IN must be a number optionally followed by d, h, m, or s.');
-  }
-  return expiresIn;
+  return (process.env.JWT_EXPIRES_IN ?? '1d') as JwtExpiry;
 }
 
 @Injectable()
