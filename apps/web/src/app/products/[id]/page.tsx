@@ -13,7 +13,7 @@ import {
 } from '@/features/product/pricing';
 import { useCartStore } from '@/store/cart.store';
 
-export default function ProductDetailPage() {
+function ProductDetailContent() {
   const params = useParams();
   const router = useRouter();
   const productId = String(params?.id || '');
@@ -185,5 +185,13 @@ export default function ProductDetailPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function ProductDetailPage() {
+  return (
+    <React.Suspense fallback={<div className="mx-auto max-w-4xl px-4 py-8 text-center text-stone-500">Đang tải sản phẩm...</div>}>
+      <ProductDetailContent />
+    </React.Suspense>
   );
 }

@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { apiClient } from '@/lib/api';
 import { useAuthStore } from '@/store/auth.store';
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectUrl = searchParams?.get('redirect') || '/';
@@ -96,5 +96,13 @@ export default function LoginPage() {
         </button>
       </div>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <React.Suspense fallback={<div className="mx-auto max-w-sm px-4 py-10 text-center text-stone-500">Đang tải...</div>}>
+      <LoginForm />
+    </React.Suspense>
   );
 }
