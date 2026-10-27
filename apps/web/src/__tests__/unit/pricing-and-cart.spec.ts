@@ -13,6 +13,7 @@ const mockCappuccino: Product = {
   id: 'prod-1',
   name: 'Cappuccino',
   price: 45000,
+  imageUrl: 'http://localhost:3000/images/products/9.jpg',
 };
 
 describe('Unit Test: Tính giá theo Size / Topping & Khuyến mãi', () => {

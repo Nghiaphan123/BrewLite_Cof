@@ -10,7 +10,8 @@ export interface Product {
   id: string;
   name: string;
   price: number;
-  imageUrl?: string;
+  /** Always present in GET /products; ProductCard (features/menu) requires it. */
+  imageUrl: string;
   description?: string;
   stock?: number;
 }

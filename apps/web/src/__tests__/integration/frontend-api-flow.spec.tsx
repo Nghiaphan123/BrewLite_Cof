@@ -30,8 +30,8 @@ describe('Integration Test: Frontend <-> Backend API', () => {
     vi.spyOn(global, 'fetch').mockResolvedValueOnce({
       ok: true,
       json: async () => [
-        { id: '1', name: 'Cà phê sữa', price: 35000 },
-        { id: '2', name: 'Cappuccino', price: 45000 },
+        { id: '1', name: 'Cà phê sữa', price: 35000, imageUrl: 'http://localhost:3000/images/products/2.jpg' },
+        { id: '2', name: 'Cappuccino', price: 45000, imageUrl: 'http://localhost:3000/images/products/9.jpg' },
       ],
     } as Response);
 
@@ -63,7 +63,7 @@ describe('Integration Test: Frontend <-> Backend API', () => {
 
   it('Luồng Thanh toán: giữ nguyên giỏ hàng nếu POST /payments trả về PAYMENT_FAILED', async () => {
     useCartStore.getState().addItem(
-      { id: 'p1', name: 'Trà đào', price: 39000 },
+      { id: 'p1', name: 'Trà đào', price: 39000, imageUrl: '/images/products/15.jpg' },
       'L',
       [],
       2
@@ -96,7 +96,7 @@ describe('Integration Test: Frontend <-> Backend API', () => {
 
   it('Luồng Thanh toán: gửi JWT + Idempotency-Key, cộng điểm thưởng và chuyển sang trang xác nhận khi PAID', async () => {
     useCartStore.getState().addItem(
-      { id: 'p1', name: 'Cappuccino', price: 45000 },
+      { id: 'p1', name: 'Cappuccino', price: 45000, imageUrl: '/images/products/9.jpg' },
       'M',
       [],
       1
