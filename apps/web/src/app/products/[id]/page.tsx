@@ -147,18 +147,20 @@ function ProductDetailContent() {
           <div className="flex items-center gap-3">
             <button
               type="button"
+              aria-label="Giảm số lượng"
               onClick={() => setQty((q) => Math.max(1, q - 1))}
-              className="h-8 w-8 rounded-full border border-stone-300 font-bold"
+              className="h-9 w-9 rounded-full border border-black bg-white text-lg font-bold text-black transition hover:bg-black hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
             >
-              -
+              −
             </button>
-            <span data-testid="detail-qty" className="font-semibold">
+            <span data-testid="detail-qty" className="min-w-6 text-center font-bold text-black">
               {qty}
             </span>
             <button
               type="button"
+              aria-label="Tăng số lượng"
               onClick={() => setQty((q) => q + 1)}
-              className="h-8 w-8 rounded-full border border-stone-300 font-bold"
+              className="h-9 w-9 rounded-full border border-black bg-white text-lg font-bold text-black transition hover:bg-black hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
             >
               +
             </button>

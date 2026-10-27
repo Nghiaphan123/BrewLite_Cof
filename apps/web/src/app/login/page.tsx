@@ -40,33 +40,33 @@ function LoginForm() {
   return (
     <main className="mx-auto max-w-sm px-4 py-10">
       <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
-        <h1 className="text-xl font-bold text-stone-900">
+        <h1 className="text-xl font-bold text-black">
           {isRegister ? 'Đăng ký tài khoản' : 'Đăng nhập BrewLite'}
         </h1>
 
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           <div>
-            <label className="block text-xs font-semibold uppercase text-stone-600">Email</label>
+            <label className="block text-sm font-bold uppercase text-black">Email</label>
             <input
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               data-testid="auth-email"
-              className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-lg border border-stone-400 bg-white px-3 py-2.5 text-sm font-medium text-black placeholder:text-stone-500 focus:border-black focus:outline-none focus:ring-2 focus:ring-stone-300"
               placeholder="ban@example.com"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase text-stone-600">Mật khẩu</label>
+            <label className="block text-sm font-bold uppercase text-black">Mật khẩu</label>
             <input
               type="password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               data-testid="auth-password"
-              className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-lg border border-stone-400 bg-white px-3 py-2.5 text-sm font-medium text-black placeholder:text-stone-500 focus:border-black focus:outline-none focus:ring-2 focus:ring-stone-300"
               placeholder="••••••••"
             />
           </div>
@@ -81,7 +81,7 @@ function LoginForm() {
             type="submit"
             disabled={loading}
             data-testid="auth-submit-btn"
-            className="w-full rounded-xl bg-emerald-700 py-2.5 font-semibold text-white hover:bg-emerald-800"
+            className="w-full rounded-xl bg-black py-3 font-bold text-white transition hover:bg-stone-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black disabled:opacity-60"
           >
             {loading ? 'Đang xử lý...' : isRegister ? 'Đăng ký' : 'Đăng nhập'}
           </button>
@@ -90,7 +90,7 @@ function LoginForm() {
         <button
           type="button"
           onClick={() => setIsRegister(!isRegister)}
-          className="mt-4 w-full text-center text-xs text-emerald-700 hover:underline"
+          className="mt-4 w-full rounded-lg py-2 text-center text-sm font-bold text-black underline-offset-4 hover:text-stone-700 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
         >
           {isRegister ? 'Đã có tài khoản? Đăng nhập' : 'Chưa có tài khoản? Đăng ký ngay'}
         </button>

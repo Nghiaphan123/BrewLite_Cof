@@ -50,6 +50,36 @@ describe('Integration Test: Frontend <-> Backend API', () => {
     expect(screen.getByText('Cappuccino')).toBeInTheDocument();
   });
 
+  it('lọc menu theo tab và thêm nhanh món vào giỏ hàng', async () => {
+    vi.spyOn(global, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        items: [
+          { id: 'coffee-1', name: 'Cà phê sữa', price: 29000, imageUrl: '' },
+          { id: 'tea-1', name: 'Trà đào cam sả', price: 39000, imageUrl: '' },
+          { id: 'blend-1', name: 'Matcha đá xay', price: 52000, imageUrl: '' },
+        ],
+        total: 3,
+      }),
+    } as Response);
+
+    render(<MenuPage />);
+    await waitFor(() => {
+      expect(screen.getByTestId('menu-grid')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('tab', { name: /Trà/ }));
+    expect(screen.getByText('Trà đào cam sả')).toBeInTheDocument();
+    expect(screen.queryByText('Cà phê sữa')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('tab', { name: /Tất cả/ }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Thêm nhanh Cà phê sữa vào giỏ' }),
+    );
+    expect(useCartStore.getState().getTotalItems()).toBe(1);
+    expect(screen.getByRole('link', { name: /Giỏ hàng, hiện có 1 sản phẩm/ })).toBeInTheDocument();
+  });
+
   it('Trang lịch sử đơn hàng lấy items từ response { items, total }', async () => {
     vi.spyOn(global, 'fetch').mockResolvedValueOnce({
       ok: true,
@@ -114,12 +144,23 @@ describe('Integration Test: Frontend <-> Backend API', () => {
     fireEvent.click(screen.getByTestId('confirm-payment-btn'));
 
     await waitFor(() => {
+      expect(screen.getByTestId('qr-payment-panel')).toBeInTheDocument();
+    });
+    expect(screen.getByTestId('payment-qr')).toHaveAttribute('src', expect.stringContaining('data:image/svg+xml'));
+    fireEvent.click(screen.getByTestId('confirm-payment-btn'));
+
+    await waitFor(() => {
       expect(screen.getByTestId('checkout-error')).toBeInTheDocument();
     });
 
     // Giỏ hàng vẫn còn nguyên 2 sản phẩm
     expect(useCartStore.getState().getTotalItems()).toBe(2);
     expect(fetchSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it('có nút quay lại giỏ hàng ở trang thanh toán', () => {
+    render(<CheckoutPage />);
+    expect(screen.getByRole('link', { name: /Quay lại giỏ hàng/ })).toHaveAttribute('href', '/cart');
   });
 
   it('Luồng Thanh toán: gửi JWT + Idempotency-Key, cộng điểm thưởng và chuyển sang trang xác nhận khi PAID', async () => {
@@ -148,6 +189,12 @@ describe('Integration Test: Frontend <-> Backend API', () => {
       } as Response);
 
     render(<CheckoutPage />);
+    fireEvent.click(screen.getByTestId('confirm-payment-btn'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('qr-payment-panel')).toBeInTheDocument();
+    });
+    expect(screen.getByText(/chưa kết nối ngân hàng hoặc cổng thanh toán thật/)).toBeInTheDocument();
     fireEvent.click(screen.getByTestId('confirm-payment-btn'));
 
     await waitFor(() => {
