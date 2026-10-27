@@ -3,6 +3,7 @@ import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import MenuPage from '@/app/page';
+import OrderHistoryPage from '@/app/orders/page';
 import CheckoutPage from '@/app/checkout/page';
 import { useCartStore } from '@/store/cart.store';
 import { useAuthStore } from '@/store/auth.store';
@@ -29,10 +30,13 @@ describe('Integration Test: Frontend <-> Backend API', () => {
   it('Trang Menu gọi GET /products hiển thị loading rồi render danh sách sản phẩm', async () => {
     vi.spyOn(global, 'fetch').mockResolvedValueOnce({
       ok: true,
-      json: async () => [
-        { id: '1', name: 'Cà phê sữa', price: 35000 },
-        { id: '2', name: 'Cappuccino', price: 45000 },
-      ],
+      json: async () => ({
+        items: [
+          { id: '1', name: 'Cà phê sữa', price: 35000, imageUrl: 'http://localhost:3000/images/products/2.jpg' },
+          { id: '2', name: 'Cappuccino', price: 45000, imageUrl: 'http://localhost:3000/images/products/9.jpg' },
+        ],
+        total: 2,
+      }),
     } as Response);
 
     render(<MenuPage />);
@@ -44,6 +48,60 @@ describe('Integration Test: Frontend <-> Backend API', () => {
 
     expect(screen.getByText('Cà phê sữa')).toBeInTheDocument();
     expect(screen.getByText('Cappuccino')).toBeInTheDocument();
+  });
+
+  it('lọc menu theo tab và thêm nhanh món vào giỏ hàng', async () => {
+    vi.spyOn(global, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        items: [
+          { id: 'coffee-1', name: 'Cà phê sữa', price: 29000, imageUrl: '' },
+          { id: 'tea-1', name: 'Trà đào cam sả', price: 39000, imageUrl: '' },
+          { id: 'blend-1', name: 'Matcha đá xay', price: 52000, imageUrl: '' },
+        ],
+        total: 3,
+      }),
+    } as Response);
+
+    render(<MenuPage />);
+    await waitFor(() => {
+      expect(screen.getByTestId('menu-grid')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('tab', { name: /Trà/ }));
+    expect(screen.getByText('Trà đào cam sả')).toBeInTheDocument();
+    expect(screen.queryByText('Cà phê sữa')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('tab', { name: /Tất cả/ }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Thêm nhanh Cà phê sữa vào giỏ' }),
+    );
+    expect(useCartStore.getState().getTotalItems()).toBe(1);
+    expect(screen.getByRole('link', { name: /Giỏ hàng, hiện có 1 sản phẩm/ })).toBeInTheDocument();
+  });
+
+  it('Trang lịch sử đơn hàng lấy items từ response { items, total }', async () => {
+    vi.spyOn(global, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        items: [
+          {
+            id: 'order-1',
+            status: 'PAID',
+            total: 35000,
+            createdAt: '2026-10-26T00:00:00.000Z',
+          },
+        ],
+        total: 1,
+      }),
+    } as Response);
+
+    render(<OrderHistoryPage />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('history-order-order-1')).toBeInTheDocument();
+    });
+    expect(screen.getByText('PAID')).toBeInTheDocument();
   });
 
   it('Trang Menu hiển thị thông báo lỗi khi API /products thất bại', async () => {
@@ -63,7 +121,7 @@ describe('Integration Test: Frontend <-> Backend API', () => {
 
   it('Luồng Thanh toán: giữ nguyên giỏ hàng nếu POST /payments trả về PAYMENT_FAILED', async () => {
     useCartStore.getState().addItem(
-      { id: 'p1', name: 'Trà đào', price: 39000 },
+      { id: 'p1', name: 'Trà đào', price: 39000, imageUrl: '/images/products/15.jpg' },
       'L',
       [],
       2
@@ -86,6 +144,12 @@ describe('Integration Test: Frontend <-> Backend API', () => {
     fireEvent.click(screen.getByTestId('confirm-payment-btn'));
 
     await waitFor(() => {
+      expect(screen.getByTestId('qr-payment-panel')).toBeInTheDocument();
+    });
+    expect(screen.getByTestId('payment-qr')).toHaveAttribute('src', expect.stringContaining('data:image/svg+xml'));
+    fireEvent.click(screen.getByTestId('confirm-payment-btn'));
+
+    await waitFor(() => {
       expect(screen.getByTestId('checkout-error')).toBeInTheDocument();
     });
 
@@ -94,9 +158,14 @@ describe('Integration Test: Frontend <-> Backend API', () => {
     expect(fetchSpy).toHaveBeenCalledTimes(2);
   });
 
+  it('có nút quay lại giỏ hàng ở trang thanh toán', () => {
+    render(<CheckoutPage />);
+    expect(screen.getByRole('link', { name: /Quay lại giỏ hàng/ })).toHaveAttribute('href', '/cart');
+  });
+
   it('Luồng Thanh toán: gửi JWT + Idempotency-Key, cộng điểm thưởng và chuyển sang trang xác nhận khi PAID', async () => {
     useCartStore.getState().addItem(
-      { id: 'p1', name: 'Cappuccino', price: 45000 },
+      { id: 'p1', name: 'Cappuccino', price: 45000, imageUrl: '/images/products/9.jpg' },
       'M',
       [],
       1
@@ -120,6 +189,12 @@ describe('Integration Test: Frontend <-> Backend API', () => {
       } as Response);
 
     render(<CheckoutPage />);
+    fireEvent.click(screen.getByTestId('confirm-payment-btn'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('qr-payment-panel')).toBeInTheDocument();
+    });
+    expect(screen.getByText(/chưa kết nối ngân hàng hoặc cổng thanh toán thật/)).toBeInTheDocument();
     fireEvent.click(screen.getByTestId('confirm-payment-btn'));
 
     await waitFor(() => {

@@ -16,33 +16,14 @@ import {
   ConflictException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import { JwtService, type JwtSignOptions } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../../common/prisma.service.js';
 
-export function getJwtExpiresInSeconds(
-  expiresIn = process.env.JWT_EXPIRES_IN ?? '1d',
-): number {
-  const match = expiresIn.match(/^(\d+)([dhms])?$/);
-  if (!match) {
-    throw new Error(
-      'JWT_EXPIRES_IN must be an integer followed by d, h, m, or s.',
-    );
-  }
+type JwtExpiry = Exclude<NonNullable<JwtSignOptions['expiresIn']>, number>;
 
-  const value = Number.parseInt(match[1], 10);
-  if (!Number.isSafeInteger(value) || value < 1) {
-    throw new Error('JWT_EXPIRES_IN must be a positive safe integer.');
-  }
-  const unit = match[2] ?? 's';
-
-  const multiplier =
-    unit === 'd' ? 86400 : unit === 'h' ? 3600 : unit === 'm' ? 60 : 1;
-  const seconds = value * multiplier;
-  if (!Number.isSafeInteger(seconds)) {
-    throw new Error('JWT_EXPIRES_IN exceeds the supported duration.');
-  }
-  return seconds;
+export function jwtExpiresIn(): JwtExpiry {
+  return (process.env.JWT_EXPIRES_IN ?? '1d') as JwtExpiry;
 }
 
 @Injectable()
@@ -58,6 +39,10 @@ export class AuthService {
 
   private get jwtSecret(): string {
     return process.env.JWT_SECRET ?? 'dev-secret-change-me';
+  }
+
+  private get jwtExpiresIn(): JwtExpiry {
+    return jwtExpiresIn();
   }
 
   async register(email: string, password: string) {
@@ -99,29 +84,28 @@ export class AuthService {
       where: { email: normalizedEmail },
     });
 
-    const invalidCredentials = () =>
-      new UnauthorizedException({
+    const invalidCredentials = (): never => {
+      throw new UnauthorizedException({
         statusCode: 401,
         error: 'Unauthorized',
         message: 'Invalid credentials',
         code: 'AUTH_INVALID',
       });
+    };
 
-    if (!user) {
-      throw invalidCredentials();
-    }
+    if (!user) return invalidCredentials();
 
     const isValid = await bcrypt.compare(password, user.passwordHash);
-    if (!isValid) {
-      throw invalidCredentials();
-    }
+    if (!isValid) return invalidCredentials();
 
     const payload = { sub: user.id, email: user.email };
-    const expiresIn = getJwtExpiresInSeconds();
     const accessToken = await this.jwt.signAsync(payload, {
       secret: this.jwtSecret,
-      expiresIn,
+      expiresIn: this.jwtExpiresIn,
     });
+
+    // Parse expiresIn to seconds (e.g., "1d" -> 86400)
+    const expiresIn = this.parseExpiresIn(this.jwtExpiresIn);
 
     return {
       accessToken,
@@ -132,6 +116,23 @@ export class AuthService {
         loyaltyPoints: user.loyaltyPoints,
       },
     };
+  }
+
+  private parseExpiresIn(expiresIn: string): number {
+    // Supports "1d", "1h", "30m", "60s", or raw seconds "86400"
+    const match = expiresIn.match(/^(\d+)([dhms])?$/);
+    if (!match) return 86400; // default 1 day
+
+    const value = parseInt(match[1], 10);
+    const unit = match[2] ?? 's';
+
+    switch (unit) {
+      case 'd': return value * 86400;
+      case 'h': return value * 3600;
+      case 'm': return value * 60;
+      case 's':
+      default: return value;
+    }
   }
 
   async validateUser(userId: string) {
