@@ -14,9 +14,11 @@ type MenuState =
   | { status: "success"; products: MenuProduct[] }
   | { status: "empty" }
   | { status: "error"; message: string };
-
-const API_BASE_URL =
+const rawMenuApiUrl =
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api/v1";
+const API_BASE_URL = rawMenuApiUrl.endsWith("/api/v1")
+  ? rawMenuApiUrl
+  : `${rawMenuApiUrl.replace(/\/+$/, "")}/api/v1`;
 
 function isMenuProduct(value: unknown): value is MenuProduct {
   if (typeof value !== "object" || value === null) {
