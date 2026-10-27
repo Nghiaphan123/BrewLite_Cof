@@ -1,5 +1,4 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module.js';
 import { HttpExceptionFilter } from './common/http-exception.filter.js';
 
@@ -12,7 +11,16 @@ async function bootstrap() {
   // C3: Standard error envelope filter
   app.useGlobalFilters(new HttpExceptionFilter());
 
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+  // CORS: the browser calls this API from another origin (web :3000 -> api :3001).
+  // WEB_ORIGIN (apps/api/.env) and CORS_ORIGIN (docker-compose) each take one or
+  // more comma-separated origins, e.g. http://localhost:3000 (no trailing slash).
+  const allowedOrigins = [process.env.WEB_ORIGIN, process.env.CORS_ORIGIN]
+    .flatMap((value) => (value ?? '').split(','))
+    .map((origin) => origin.trim().replace(/\/+$/, ''))
+    .filter(Boolean);
+  app.enableCors({
+    origin: allowedOrigins.length > 0 ? [...new Set(allowedOrigins)] : ['http://localhost:3000'],
+  });
 
   // API_PORT comes from .env (docs/deployment.md); PORT is set by some hosts such as Render.
   await app.listen(process.env.API_PORT ?? process.env.PORT ?? 3001);

@@ -1,9 +1,14 @@
 import { Order, Product, SizeOption, User } from '@/types';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+export const API_BASE_URL = (
+  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
+).replace(/\/+$/, '');
 
 function getAuthHeaders(): HeadersInit {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('brewlite_token') : null;
+  const token =
+    typeof window !== 'undefined'
+      ? localStorage.getItem('brewlite_token')
+      : null;
   return {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -21,6 +26,24 @@ async function handleResponse<T>(res: Response): Promise<T> {
   return (data?.data !== undefined ? data.data : data) as T;
 }
 
+type ListResponse<T> = { items: T[]; total: number };
+
+/** API hiện trả danh sách theo dạng { items, total }; vẫn hỗ trợ mảng cũ để tương thích. */
+function getListItems<T>(
+  result: ListResponse<T> | T[],
+  resourceName: string,
+): T[] {
+  if (Array.isArray(result)) {
+    return result;
+  }
+
+  if (result && Array.isArray(result.items)) {
+    return result.items;
+  }
+
+  throw new Error(`Dữ liệu ${resourceName} từ máy chủ không đúng định dạng.`);
+}
+
 export const apiClient = {
   // [Task 2 & 3] GET /products
   async getProducts(): Promise<Product[]> {
@@ -28,7 +51,8 @@ export const apiClient = {
       headers: getAuthHeaders(),
       cache: 'no-store',
     });
-    return handleResponse<Product[]>(res);
+    const result = await handleResponse<ListResponse<Product> | Product[]>(res);
+    return getListItems(result, 'sản phẩm');
   },
 
   // [Task 2 & 4] GET /products/:id
@@ -117,6 +141,7 @@ export const apiClient = {
       headers: getAuthHeaders(),
       cache: 'no-store',
     });
-    return handleResponse<Order[]>(res);
+    const result = await handleResponse<ListResponse<Order> | Order[]>(res);
+    return getListItems(result, 'lịch sử đơn hàng');
   },
 };

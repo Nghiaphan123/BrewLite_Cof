@@ -3,6 +3,7 @@ import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import MenuPage from '@/app/page';
+import OrderHistoryPage from '@/app/orders/page';
 import CheckoutPage from '@/app/checkout/page';
 import { useCartStore } from '@/store/cart.store';
 import { useAuthStore } from '@/store/auth.store';
@@ -29,10 +30,13 @@ describe('Integration Test: Frontend <-> Backend API', () => {
   it('Trang Menu gọi GET /products hiển thị loading rồi render danh sách sản phẩm', async () => {
     vi.spyOn(global, 'fetch').mockResolvedValueOnce({
       ok: true,
-      json: async () => [
-        { id: '1', name: 'Cà phê sữa', price: 35000, imageUrl: 'http://localhost:3000/images/products/2.jpg' },
-        { id: '2', name: 'Cappuccino', price: 45000, imageUrl: 'http://localhost:3000/images/products/9.jpg' },
-      ],
+      json: async () => ({
+        items: [
+          { id: '1', name: 'Cà phê sữa', price: 35000, imageUrl: 'http://localhost:3000/images/products/2.jpg' },
+          { id: '2', name: 'Cappuccino', price: 45000, imageUrl: 'http://localhost:3000/images/products/9.jpg' },
+        ],
+        total: 2,
+      }),
     } as Response);
 
     render(<MenuPage />);
@@ -44,6 +48,30 @@ describe('Integration Test: Frontend <-> Backend API', () => {
 
     expect(screen.getByText('Cà phê sữa')).toBeInTheDocument();
     expect(screen.getByText('Cappuccino')).toBeInTheDocument();
+  });
+
+  it('Trang lịch sử đơn hàng lấy items từ response { items, total }', async () => {
+    vi.spyOn(global, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        items: [
+          {
+            id: 'order-1',
+            status: 'PAID',
+            total: 35000,
+            createdAt: '2026-10-26T00:00:00.000Z',
+          },
+        ],
+        total: 1,
+      }),
+    } as Response);
+
+    render(<OrderHistoryPage />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('history-order-order-1')).toBeInTheDocument();
+    });
+    expect(screen.getByText('PAID')).toBeInTheDocument();
   });
 
   it('Trang Menu hiển thị thông báo lỗi khi API /products thất bại', async () => {

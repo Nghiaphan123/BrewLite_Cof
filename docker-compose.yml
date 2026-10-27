@@ -63,7 +63,7 @@ services:
       context: ./apps/web
       args:
         # Baked in at build time; this is the URL the browser uses, not the service name.
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001/api/v1}
     restart: unless-stopped
     ports:
       - "3000:3000"

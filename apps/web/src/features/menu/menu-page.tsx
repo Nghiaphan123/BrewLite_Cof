@@ -16,7 +16,7 @@ type MenuState =
   | { status: "error"; message: string };
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api/v1";
+  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api";
 
 function isMenuProduct(value: unknown): value is MenuProduct {
   if (typeof value !== "object" || value === null) {

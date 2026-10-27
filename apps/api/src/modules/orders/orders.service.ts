@@ -70,9 +70,8 @@ export class OrdersService {
       const products = await Promise.all(items.map(i =>
         tx.product.findUnique({ where: { id: i.productId } })),
       );
-      const productPrices: number[] = [];
-      for (const [idx, p] of products.entries()) {
-        if (!p) {
+      const productPrices = products.map((product, idx) => {
+        if (!product) {
           throw new NotFoundException({
             statusCode: 404,
             error: 'Not Found',
@@ -80,8 +79,8 @@ export class OrdersService {
             code: 'PRODUCT_NOT_FOUND',
           });
         }
-        productPrices.push(p.price);
-      }
+        return product.price;
+      });
 
       // 1b. Validate toppings and build price map
       const allToppingIds = items.flatMap(i => i.toppingIds ?? []);
