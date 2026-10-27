@@ -5,7 +5,7 @@ import React from 'react';
 import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
 
-export default function OrderConfirmationPage() {
+function OrderConfirmationContent() {
   const params = useParams();
   const searchParams = useSearchParams();
   const orderId = String(params?.id || '1042');
@@ -38,5 +38,13 @@ export default function OrderConfirmationPage() {
         </Link>
       </div>
     </main>
+  );
+}
+
+export default function OrderConfirmationPage() {
+  return (
+    <React.Suspense fallback={<div className="mx-auto max-w-md px-4 py-12 text-center text-stone-500">Đang tải...</div>}>
+      <OrderConfirmationContent />
+    </React.Suspense>
   );
 }

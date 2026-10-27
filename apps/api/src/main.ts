@@ -5,6 +5,13 @@ import { HttpExceptionFilter } from './common/http-exception.filter.js';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // Enable CORS for web frontend (docs/deployment.md)
+  const allowedOrigin = process.env.CORS_ORIGIN ?? process.env.WEB_ORIGIN ?? 'http://localhost:3000';
+  app.enableCors({
+    origin: allowedOrigin.includes(',') ? allowedOrigin.split(',').map((o) => o.trim()) : allowedOrigin,
+    credentials: true,
+  });
+
   // C1: Base path /api/v1 (ADR 0005)
   app.setGlobalPrefix('api/v1');
 
