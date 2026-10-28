@@ -19,6 +19,7 @@ export async function seedUser(
   return prisma.user.create({
     data: {
       id: randomUUID(),
+      name: 'E2E Customer',
       email: finalEmail,
       passwordHash: hashPassword(password),
       loyaltyPoints: 0,

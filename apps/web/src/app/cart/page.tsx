@@ -41,8 +41,8 @@ export default function CartPage() {
       <div className="min-h-full bg-[#faf8f3]">
         <header className="border-b border-stone-200 bg-white/80">
           <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-            <Link href="/" className="text-lg font-bold text-emerald-950">☕ BrewLite</Link>
-            <Link href="/" className="text-sm font-semibold text-emerald-800 hover:underline">
+            <Link href="/menu" className="text-lg font-bold text-emerald-950">☕ BrewLite</Link>
+            <Link href="/menu" className="text-sm font-semibold text-emerald-800 hover:underline">
               ← Quay lại menu
             </Link>
           </div>
@@ -54,7 +54,7 @@ export default function CartPage() {
           <h1 className="mt-6 font-serif text-3xl font-semibold text-stone-900">Giỏ hàng đang chờ món ngon</h1>
           <p className="mt-3 text-stone-600">Bạn chưa chọn thức uống nào. Khám phá menu và chọn món yêu thích nhé.</p>
           <Link
-            href="/"
+            href="/menu"
             className="mt-7 inline-flex min-h-12 items-center justify-center rounded-xl bg-emerald-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-emerald-800"
           >
             Khám phá menu
@@ -68,8 +68,8 @@ export default function CartPage() {
     <div className="min-h-full bg-[#faf8f3]">
       <header className="border-b border-stone-200 bg-white/80">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-          <Link href="/" className="text-lg font-bold text-emerald-950">☕ BrewLite</Link>
-          <Link href="/" className="text-sm font-semibold text-emerald-800 hover:underline">
+          <Link href="/menu" className="text-lg font-bold text-emerald-950">☕ BrewLite</Link>
+          <Link href="/menu" className="text-sm font-semibold text-emerald-800 hover:underline">
             ← Tiếp tục chọn món
           </Link>
         </div>

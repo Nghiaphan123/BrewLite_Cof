@@ -64,6 +64,7 @@ enum PromotionType {
 /// A registered customer. Only the bcrypt hash of the password is stored.
 model User {
   id            String   @id @default(uuid()) @db.Uuid
+  name          String
   /// Stored in lower case by the application.
   email         String   @unique
   passwordHash  String   @map("password_hash")

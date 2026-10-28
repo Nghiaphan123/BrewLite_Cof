@@ -31,7 +31,7 @@ function OrderConfirmationContent() {
         <p className="mt-4 text-sm text-stone-600">Mời tới quầy lấy nước ☕</p>
 
         <Link
-          href="/"
+          href="/menu"
           className="mt-6 inline-block w-full rounded-xl bg-emerald-700 py-3 font-semibold text-white hover:bg-emerald-800"
         >
           Về trang chủ

@@ -2,9 +2,11 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import MenuPage from '@/app/page';
+import { MenuPage } from '@/features/menu/menu-page';
 import OrderHistoryPage from '@/app/orders/page';
 import CheckoutPage from '@/app/checkout/page';
+import LoginPage from '@/app/login/page';
+import { AccountMenu } from '@/components/AccountMenu';
 import { useCartStore } from '@/store/cart.store';
 import { useAuthStore } from '@/store/auth.store';
 
@@ -22,6 +24,7 @@ describe('Integration Test: Frontend <-> Backend API', () => {
     useCartStore.getState().clearCart();
     useAuthStore.getState().setAuth('fake-jwt-token', {
       id: 'u1',
+      name: 'Test User',
       email: 'test@brewlite.vn',
       loyaltyPoints: 10,
     });
@@ -156,6 +159,139 @@ describe('Integration Test: Frontend <-> Backend API', () => {
     // Giỏ hàng vẫn còn nguyên 2 sản phẩm
     expect(useCartStore.getState().getTotalItems()).toBe(2);
     expect(fetchSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it('xóa phiên không hợp lệ và hướng dẫn đăng nhập lại khi tạo QR bị từ chối', async () => {
+    useCartStore.getState().addItem(
+      { id: 'p1', name: 'Cà phê sữa', price: 29000, imageUrl: '' },
+      'S',
+      [],
+    );
+    vi.spyOn(global, 'fetch').mockResolvedValueOnce({
+      ok: false,
+      status: 401,
+      json: async () => ({ message: 'Invalid token' }),
+    } as Response);
+
+    render(<CheckoutPage />);
+    fireEvent.click(screen.getByTestId('confirm-payment-btn'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('checkout-error')).toHaveTextContent(
+        'Phiên đăng nhập không hợp lệ hoặc đã hết hạn',
+      );
+    });
+
+    expect(screen.getByRole('link', { name: 'Đăng nhập lại để tạo mã QR' })).toHaveAttribute(
+      'href',
+      '/login?redirect=%2Fcheckout',
+    );
+    expect(useAuthStore.getState().token).toBeNull();
+    expect(useCartStore.getState().getTotalItems()).toBe(1);
+  });
+
+  it('đăng nhập sau đăng ký để nhận JWT và tiếp tục thanh toán', async () => {
+    const fetchSpy = vi.spyOn(global, 'fetch')
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          user: { id: 'u2', name: 'New User', email: 'new@brewlite.vn', loyaltyPoints: 0 },
+        }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          accessToken: 'valid-jwt-token',
+          user: { id: 'u2', name: 'New User', email: 'new@brewlite.vn', loyaltyPoints: 0 },
+        }),
+      } as Response);
+
+    render(<LoginPage />);
+    fireEvent.click(screen.getByRole('button', { name: 'Chưa có tài khoản? Đăng ký ngay' }));
+    fireEvent.change(screen.getByTestId('auth-name'), {
+      target: { value: 'New User' },
+    });
+    fireEvent.change(screen.getByTestId('auth-email'), {
+      target: { value: 'new@brewlite.vn' },
+    });
+    fireEvent.change(screen.getByTestId('auth-password'), {
+      target: { value: 'password123' },
+    });
+    fireEvent.click(screen.getByTestId('auth-submit-btn'));
+
+    await waitFor(() => {
+      expect(pushMock).toHaveBeenCalledWith('/menu');
+    });
+    expect(fetchSpy.mock.calls[0][1]?.body).toBe(
+      JSON.stringify({
+        name: 'New User',
+        email: 'new@brewlite.vn',
+        password: 'password123',
+      }),
+    );
+    expect(useAuthStore.getState().token).toBe('valid-jwt-token');
+    expect(localStorage.getItem('brewlite_token')).toBe('valid-jwt-token');
+  });
+
+  it('hiển thị tên và thông tin tài khoản trong menu tài khoản', async () => {
+    const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        id: 'u1',
+        name: 'Test User',
+        email: 'test@brewlite.vn',
+        loyaltyPoints: 25,
+        createdAt: '2026-01-15T00:00:00.000Z',
+      }),
+    } as Response);
+
+    render(<AccountMenu />);
+    expect(screen.getByTestId('account-display-name')).toHaveTextContent('Test User');
+    fireEvent.click(screen.getByTestId('account-menu-button'));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Xem thông tin' }));
+
+    expect(await screen.findByTestId('profile-name')).toHaveTextContent('Test User');
+    expect(screen.getByText('test@brewlite.vn')).toBeInTheDocument();
+    expect(screen.getByText('25 điểm')).toBeInTheDocument();
+    expect(fetchSpy).toHaveBeenCalledWith(
+      expect.stringContaining('/auth/me'),
+      expect.objectContaining({ cache: 'no-store' }),
+    );
+  });
+
+  it('đổi mật khẩu từ menu tài khoản sau khi xác nhận mật khẩu mới', async () => {
+    const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ message: 'Password changed successfully' }),
+    } as Response);
+
+    render(<AccountMenu />);
+    fireEvent.click(screen.getByTestId('account-menu-button'));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Đổi mật khẩu' }));
+    fireEvent.change(screen.getByTestId('current-password'), {
+      target: { value: 'password123' },
+    });
+    fireEvent.change(screen.getByTestId('new-password'), {
+      target: { value: 'newpassword123' },
+    });
+    fireEvent.change(screen.getByTestId('confirm-password'), {
+      target: { value: 'newpassword123' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Cập nhật mật khẩu' }));
+
+    expect(await screen.findByTestId('password-success')).toHaveTextContent(
+      'Đổi mật khẩu thành công.',
+    );
+    expect(fetchSpy).toHaveBeenCalledWith(
+      expect.stringContaining('/auth/password'),
+      expect.objectContaining({
+        method: 'PATCH',
+        body: JSON.stringify({
+          currentPassword: 'password123',
+          newPassword: 'newpassword123',
+        }),
+      }),
+    );
   });
 
   it('có nút quay lại giỏ hàng ở trang thanh toán', () => {

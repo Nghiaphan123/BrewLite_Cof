@@ -28,9 +28,10 @@ export interface CartItem {
 
 export interface User {
   id: string;
-  email: string;
   name?: string;
+  email: string;
   loyaltyPoints?: number;
+  createdAt?: string;
 }
 
 export type OrderStatus =

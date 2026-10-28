@@ -32,6 +32,8 @@ export default function CheckoutPage() {
   const [pendingQr, setPendingQr] = useState<PendingQrPayment | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [requiresLogin, setRequiresLogin] = useState(false);
+  const logout = useAuthStore((state) => state.logout);
 
   const total = getTotalPrice();
 
@@ -39,6 +41,7 @@ export default function CheckoutPage() {
     if (items.length === 0 || loading) return;
     setLoading(true);
     setError(null);
+    setRequiresLogin(false);
 
     try {
       if (method === 'QR' && !pendingQr) {
@@ -102,7 +105,14 @@ export default function CheckoutPage() {
       clearCart();
       router.push(`/orders/${orderId}?status=${paymentResult.status || 'PAID'}`);
     } catch (paymentError: unknown) {
-      setError(getErrorMessage(paymentError));
+      const message = getErrorMessage(paymentError);
+      if (/invalid token|token expired|authentication required/i.test(message)) {
+        logout();
+        setRequiresLogin(true);
+        setError('Phiên đăng nhập không hợp lệ hoặc đã hết hạn. Hãy đăng nhập lại để tiếp tục.');
+      } else {
+        setError(message);
+      }
     } finally {
       setLoading(false);
     }
@@ -235,6 +245,15 @@ export default function CheckoutPage() {
               >
                 {error}
               </div>
+            )}
+
+            {requiresLogin && (
+              <Link
+                href="/login?redirect=%2Fcheckout"
+                className="mt-3 inline-flex min-h-10 items-center font-semibold text-emerald-900 underline underline-offset-4"
+              >
+                Đăng nhập lại để tạo mã QR
+              </Link>
             )}
 
             <button
