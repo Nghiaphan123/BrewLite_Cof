@@ -132,8 +132,13 @@ function OrderConfirmationContent() {
         )}
 
         <Link
+<<<<<<< HEAD
+          href="/menu"
+          className="mt-6 inline-block w-full rounded-xl bg-emerald-700 py-3 font-semibold text-white hover:bg-emerald-800"
+=======
           href="/"
           className="mt-6 inline-block w-full rounded-xl bg-emerald-700 py-3 text-center font-semibold text-white hover:bg-emerald-800"
+>>>>>>> bb876c0 (feat(web): auth flow, profile, order details)
         >
           Về trang chủ
         </Link>

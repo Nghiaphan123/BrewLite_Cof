@@ -1,8 +1,11 @@
 import { Order, Product, SizeOption, User } from '@/types';
 
-export const API_BASE_URL = (
+const configuredApiUrl = (
   process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1'
 ).replace(/\/+$/, '');
+export const API_BASE_URL = configuredApiUrl.endsWith('/api/v1')
+  ? configuredApiUrl
+  : `${configuredApiUrl}/api/v1`;
 
 function getAuthHeaders(): HeadersInit {
   const token =
@@ -27,6 +30,20 @@ async function handleResponse<T>(res: Response): Promise<T> {
 }
 
 type ListResponse<T> = { items: T[]; total: number };
+type AuthResponse = {
+  accessToken?: string;
+  access_token?: string;
+  token?: string;
+  user?: User;
+};
+
+function getAuthResult(result: AuthResponse): { accessToken: string; user?: User } {
+  const accessToken = result.accessToken ?? result.access_token ?? result.token;
+  if (!accessToken) {
+    throw new Error('Phản hồi xác thực không có access token.');
+  }
+  return { accessToken, user: result.user };
+}
 
 /** API hiện trả danh sách theo dạng { items, total }; vẫn hỗ trợ mảng cũ để tương thích. */
 function getListItems<T>(
@@ -97,6 +114,30 @@ export const apiClient = {
       headers: getAuthHeaders(),
       body: JSON.stringify(payload),
     });
+<<<<<<< HEAD
+    const result = await handleResponse<AuthResponse>(res);
+    return getAuthResult(result);
+  },
+
+  async getProfile(): Promise<User> {
+    const res = await fetch(`${API_BASE_URL}/auth/me`, {
+      headers: getAuthHeaders(),
+      cache: 'no-store',
+    });
+    return handleResponse<User>(res);
+  },
+
+  async changePassword(payload: {
+    currentPassword: string;
+    newPassword: string;
+  }): Promise<{ message: string }> {
+    const res = await fetch(`${API_BASE_URL}/auth/password`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(payload),
+    });
+    return handleResponse<{ message: string }>(res);
+=======
     const result = await handleResponse<{
       accessToken?: string;
       access_token?: string;
@@ -107,6 +148,7 @@ export const apiClient = {
       accessToken: result.accessToken || result.access_token || result.token || '',
       user: result.user,
     };
+>>>>>>> bb876c0 (feat(web): auth flow, profile, order details)
   },
 
   // [Task 6 & 10] POST /orders (Bảo vệ bởi JwtAuthGuard)

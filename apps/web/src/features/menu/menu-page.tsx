@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -10,7 +10,7 @@ import { ProductCard } from "./ProductCard";
 
 type MenuProduct = Product;
 
-const MENU_TABS = ["Tất cả", "Cà phê", "Trà", "Đá xay", "Khác"] as const;
+const MENU_TABS = ["Tß║Ñt cß║ú", "C├á ph├¬", "Tr├á", "─É├í xay", "Kh├íc"] as const;
 type MenuTab = (typeof MENU_TABS)[number];
 
 type ProductsResponse = {
@@ -54,26 +54,26 @@ function isProductsResponse(value: unknown): value is ProductsResponse {
   );
 }
 
-function getProductCategory(product: Product): Exclude<MenuTab, "Tất cả"> {
+function getProductCategory(product: Product): Exclude<MenuTab, "Tß║Ñt cß║ú"> {
   const name = product.name
     .toLocaleLowerCase("vi")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    .replace(/đ/g, "d");
+    .replace(/─æ/g, "d");
 
   if (name.includes("da xay")) {
-    return "Đá xay";
+    return "─É├í xay";
   }
-  if (name.includes("tra ")) {
+  if (name.includes("tra") || name.includes("tr")) {
     return "Trà";
   }
   if (
-    ["ca phe", "bac xiu", "espresso", "americano", "cappuccino", "latte", "macchiato", "mocha", "cold brew"]
+    ["ca phe", "cà phê", "bac xiu", "bạc xỉu", "sua", "sữa", "espresso", "americano", "cappuccino", "latte", "macchiato", "mocha", "cold brew"]
       .some((keyword) => name.includes(keyword))
   ) {
-    return "Cà phê";
+    return "C├á ph├¬";
   }
-  return "Khác";
+  return "Kh├íc";
 }
 
 async function fetchProducts(signal: AbortSignal): Promise<MenuProduct[]> {
@@ -93,12 +93,12 @@ async function fetchProducts(signal: AbortSignal): Promise<MenuProduct[]> {
         throw new Error(message.join(", "));
       }
     }
-    throw new Error(`Không thể tải menu (HTTP ${response.status}).`);
+    throw new Error(`Kh├┤ng thß╗â tß║úi menu (HTTP ${response.status}).`);
   }
 
   const body: unknown = await response.json();
   if (!isProductsResponse(body)) {
-    throw new Error("Dữ liệu menu từ máy chủ không đúng định dạng.");
+    throw new Error("Dß╗» liß╗çu menu tß╗½ m├íy chß╗º kh├┤ng ─æ├║ng ─æß╗ïnh dß║íng.");
   }
 
   return body.items;
@@ -108,7 +108,7 @@ function MenuSkeleton() {
   return (
     <div
       data-testid="menu-loading"
-      aria-label="Đang tải menu"
+      aria-label="─Éang tß║úi menu"
       aria-busy="true"
       className="grid grid-cols-2 gap-4 md:grid-cols-4"
     >
@@ -131,8 +131,12 @@ function MenuSkeleton() {
 export function MenuPage() {
   const [menuState, setMenuState] = useState<MenuState>({ status: "loading" });
   const [retryCount, setRetryCount] = useState(0);
+<<<<<<< HEAD
+  const [activeTab, setActiveTab] = useState<MenuTab>("Tß║Ñt cß║ú");
+=======
   const [activeTab, setActiveTab] = useState<MenuTab>("Tất cả");
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+>>>>>>> bb876c0 (feat(web): auth flow, profile, order details)
   const totalItems = useCartStore((state) => state.getTotalItems());
   const cartTotal = useCartStore((state) => state.getTotalPrice());
   const { token, user, logout } = useAuthStore();
@@ -150,7 +154,7 @@ export function MenuPage() {
 
   const products = menuState.status === "success" ? menuState.products : [];
   const visibleProducts =
-    activeTab === "Tất cả"
+    activeTab === "Tß║Ñt cß║ú"
       ? products
       : products.filter((product) => getProductCategory(product) === activeTab);
 
@@ -175,7 +179,7 @@ export function MenuPage() {
           message:
             error instanceof Error
               ? error.message
-              : "Đã xảy ra lỗi khi tải menu.",
+              : "─É├ú xß║úy ra lß╗ùi khi tß║úi menu.",
         });
       });
 
@@ -195,9 +199,22 @@ export function MenuPage() {
             href="/"
             className="flex items-center gap-2 text-xl font-bold tracking-tight text-emerald-950 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-800"
           >
-            <span aria-hidden="true" className="text-2xl">☕</span>
+            <span aria-hidden="true" className="text-2xl">Γÿò</span>
             BrewLite
           </Link>
+<<<<<<< HEAD
+          <Link
+            href="/cart"
+            aria-label={`Giß╗Å h├áng, hiß╗çn c├│ ${totalItems} sß║ún phß║⌐m`}
+            className="flex items-center gap-2 rounded-full bg-emerald-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-900"
+          >
+            <span aria-hidden="true">≡ƒ¢Æ</span>
+            <span>Giß╗Å h├áng</span>
+            <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-white px-1.5 text-xs font-bold text-emerald-950">
+              {totalItems}
+            </span>
+          </Link>
+=======
           <div className="flex items-center gap-2">
             {token ? (
               <div className="relative" ref={userMenuRef}>
@@ -268,6 +285,7 @@ export function MenuPage() {
               </span>
             </Link>
           </div>
+>>>>>>> bb876c0 (feat(web): auth flow, profile, order details)
         </div>
       </header>
 
@@ -275,35 +293,35 @@ export function MenuPage() {
         <section className="relative mb-8 overflow-hidden rounded-3xl bg-emerald-950 px-6 py-10 text-white sm:px-10 sm:py-14">
           <div className="relative z-10 max-w-xl">
             <p className="mb-3 text-xs font-bold uppercase tracking-[0.24em] text-emerald-200">
-              Pha tươi mỗi ngày
+              Pha t╞░╞íi mß╗ùi ng├áy
             </p>
             <h1 className="font-serif text-4xl font-semibold tracking-tight sm:text-5xl">
-              Một chút chill,<br className="hidden sm:block" /> một chút BrewLite.
+              Mß╗Öt ch├║t chill,<br className="hidden sm:block" /> mß╗Öt ch├║t BrewLite.
             </h1>
             <p className="mt-4 max-w-md text-sm leading-6 text-emerald-100 sm:text-base">
-              Chọn món bạn thích, thêm nhanh vào giỏ và thưởng thức theo cách của bạn.
+              Chß╗ìn m├│n bß║ín th├¡ch, th├¬m nhanh v├áo giß╗Å v├á th╞░ß╗ƒng thß╗⌐c theo c├ích cß╗ºa bß║ín.
             </p>
           </div>
           <span
             aria-hidden="true"
             className="absolute -right-4 -top-14 select-none text-[15rem] opacity-10 sm:right-8 sm:top-[-5.5rem]"
           >
-            ☕
+            Γÿò
           </span>
         </section>
 
         <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-800">
-              Khám phá hương vị
+              Kh├ím ph├í h╞░╞íng vß╗ï
             </p>
             <h2 className="mt-1 font-sans text-3xl font-bold tracking-tight">
-              Menu thức uống
+              Menu thß╗⌐c uß╗æng
             </h2>
           </div>
           {menuState.status === "success" && (
             <p className="text-sm text-stone-500">
-              {visibleProducts.length} món
+              {visibleProducts.length} m├│n
             </p>
           )}
         </div>
@@ -316,7 +334,7 @@ export function MenuPage() {
             role="status"
             className="rounded-lg border border-zinc-200 bg-white px-6 py-12 text-center text-zinc-600"
           >
-            Menu đang cập nhật. Vui lòng quay lại sau.
+            Menu ─æang cß║¡p nhß║¡t. Vui l├▓ng quay lß║íi sau.
           </p>
         )}
 
@@ -332,7 +350,7 @@ export function MenuPage() {
               onClick={retry}
               className="mt-4 rounded-md bg-zinc-900 px-4 py-2 font-medium text-white hover:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900"
             >
-              Thử lại
+              Thß╗¡ lß║íi
             </button>
           </div>
         )}
@@ -340,12 +358,12 @@ export function MenuPage() {
         {menuState.status === "success" && (
           <div
             role="tablist"
-            aria-label="Danh mục thức uống"
+            aria-label="Danh mß╗Ñc thß╗⌐c uß╗æng"
             className="mb-6 flex gap-2 overflow-x-auto pb-2"
           >
             {MENU_TABS.map((tab) => {
               const count =
-                tab === "Tất cả"
+                tab === "Tß║Ñt cß║ú"
                   ? products.length
                   : products.filter((product) => getProductCategory(product) === tab).length;
               const selected = activeTab === tab;
@@ -384,7 +402,7 @@ export function MenuPage() {
             </ul>
           ) : (
             <p role="status" className="rounded-2xl border border-stone-200 bg-white px-6 py-12 text-center text-stone-500">
-              Chưa có món trong danh mục này.
+              Ch╞░a c├│ m├│n trong danh mß╗Ñc n├áy.
             </p>
           )
         )}
@@ -395,16 +413,16 @@ export function MenuPage() {
           <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-1 sm:px-2">
             <div>
               <p className="text-sm font-semibold text-stone-900">
-                {totalItems} món trong giỏ
+                {totalItems} m├│n trong giß╗Å
               </p>
-              <p className="text-xs text-stone-500">Tạm tính</p>
+              <p className="text-xs text-stone-500">Tß║ím t├¡nh</p>
             </div>
             <Link
               href="/cart"
               className="flex min-h-12 items-center gap-4 rounded-xl bg-emerald-900 px-5 py-2 text-sm font-semibold text-white transition hover:bg-emerald-800"
             >
-              <span>Xem giỏ hàng</span>
-              <span>{new Intl.NumberFormat("vi-VN").format(cartTotal)}₫</span>
+              <span>Xem giß╗Å h├áng</span>
+              <span>{new Intl.NumberFormat("vi-VN").format(cartTotal)}Γé½</span>
             </Link>
           </div>
         </div>

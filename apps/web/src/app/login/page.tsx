@@ -48,7 +48,6 @@ function LoginForm() {
         <h1 className="text-xl font-bold text-black">
           {isRegister ? 'Đăng ký tài khoản' : 'Đăng nhập BrewLite'}
         </h1>
-
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           <div>
             <label className="block text-sm font-bold uppercase text-black">Email</label>

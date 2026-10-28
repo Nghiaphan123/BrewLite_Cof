@@ -5,9 +5,14 @@
  * - email: valid email format, normalized to lowercase before storage
  * - password: ≥ 8 chars, at least one letter and one digit
  */
-import { IsEmail, IsString, Matches, MinLength } from 'class-validator';
+import { IsEmail, IsString, Matches, MinLength, MaxLength } from 'class-validator';
 
 export class RegisterDto {
+  @IsString()
+  @MinLength(2)
+  @MaxLength(80)
+  name: string;
+
   @IsEmail()
   email: string;
 
