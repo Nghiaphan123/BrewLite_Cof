@@ -1,10 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-<<<<<<< HEAD
-=======
 import { ReactNode } from "react";
 import { CartStoreHydration } from "@/components/CartStoreHydration";
->>>>>>> bb876c0 (feat(web): auth flow, profile, order details)
 import "./globals.css";
 
 const geistSans = Geist({
@@ -18,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "BrewLite | CA� phA� vA� th��cc u��`ng",
-  description: "Ch��?n th��cc u��`ng yA�u thA-ch vA� �`���t hA�ng t���i BrewLite.",
+  title: "BrewLite | Cà phê và thức uống",
+description: "Chọn thức uống yêu thích và đặt hàng tới BrewLite.",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
