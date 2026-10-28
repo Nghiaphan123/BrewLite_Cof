@@ -100,7 +100,7 @@ export const apiClient = {
     }>(res);
     return {
       accessToken: result.accessToken || result.access_token || result.token || '',
-      user: result.user || { email: payload.email, name },
+      user: result.user ,
     };
   },
 
@@ -114,30 +114,6 @@ export const apiClient = {
       headers: getAuthHeaders(),
       body: JSON.stringify(payload),
     });
-<<<<<<< HEAD
-    const result = await handleResponse<AuthResponse>(res);
-    return getAuthResult(result);
-  },
-
-  async getProfile(): Promise<User> {
-    const res = await fetch(`${API_BASE_URL}/auth/me`, {
-      headers: getAuthHeaders(),
-      cache: 'no-store',
-    });
-    return handleResponse<User>(res);
-  },
-
-  async changePassword(payload: {
-    currentPassword: string;
-    newPassword: string;
-  }): Promise<{ message: string }> {
-    const res = await fetch(`${API_BASE_URL}/auth/password`, {
-      method: 'PATCH',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(payload),
-    });
-    return handleResponse<{ message: string }>(res);
-=======
     const result = await handleResponse<{
       accessToken?: string;
       access_token?: string;
@@ -148,7 +124,6 @@ export const apiClient = {
       accessToken: result.accessToken || result.access_token || result.token || '',
       user: result.user,
     };
->>>>>>> bb876c0 (feat(web): auth flow, profile, order details)
   },
 
   // [Task 6 & 10] POST /orders (Bảo vệ bởi JwtAuthGuard)
