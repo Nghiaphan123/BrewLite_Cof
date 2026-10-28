@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { API_BASE_URL } from "@/lib/api";
 import { useCartStore } from "@/store/cart.store";
+import { useAuthStore } from "@/store/auth.store";
 import type { Product } from "@/types";
 import { ProductCard } from "./ProductCard";
 
@@ -131,8 +132,21 @@ export function MenuPage() {
   const [menuState, setMenuState] = useState<MenuState>({ status: "loading" });
   const [retryCount, setRetryCount] = useState(0);
   const [activeTab, setActiveTab] = useState<MenuTab>("Tất cả");
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const totalItems = useCartStore((state) => state.getTotalItems());
   const cartTotal = useCartStore((state) => state.getTotalPrice());
+  const { token, user, logout } = useAuthStore();
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const products = menuState.status === "success" ? menuState.products : [];
   const visibleProducts =
@@ -184,17 +198,76 @@ export function MenuPage() {
             <span aria-hidden="true" className="text-2xl">☕</span>
             BrewLite
           </Link>
-          <Link
-            href="/cart"
-            aria-label={`Giỏ hàng, hiện có ${totalItems} sản phẩm`}
-            className="flex items-center gap-2 rounded-full bg-emerald-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-900"
-          >
-            <span aria-hidden="true">🛒</span>
-            <span>Giỏ hàng</span>
-            <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-white px-1.5 text-xs font-bold text-emerald-950">
-              {totalItems}
-            </span>
-          </Link>
+          <div className="flex items-center gap-2">
+            {token ? (
+              <div className="relative" ref={userMenuRef}>
+                <button
+                  type="button"
+                  onClick={() => setUserMenuOpen((prev) => !prev)}
+                  className="flex items-center gap-2 rounded-full border border-emerald-900/10 bg-white px-3 py-2 text-sm font-semibold text-emerald-950 shadow-sm transition hover:bg-emerald-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-900"
+                  aria-haspopup="menu"
+                  aria-expanded={userMenuOpen}
+                >
+                  <span aria-hidden="true">👤</span>
+                  <span className="max-w-[120px] truncate">
+                    {user?.name?.trim() || (user?.email ? user.email.split('@')[0] : 'Tài khoản')}
+                  </span>
+                  <span aria-hidden="true">▾</span>
+                </button>
+                {userMenuOpen && (
+                  <div
+                    role="menu"
+                    className="absolute right-0 mt-2 w-56 rounded-xl border border-stone-200 bg-white p-2 shadow-lg"
+                  >
+                    <div className="px-2 py-1.5">
+                      <p className="truncate text-sm font-semibold text-stone-900">
+                        {user?.name?.trim() || (user?.email ? user.email.split('@')[0] : 'Người dùng')}
+                      </p>
+                      <p className="text-xs text-amber-700">⭐ {user?.loyaltyPoints ?? 0} điểm tích lũy</p>
+                    </div>
+                    <div className="my-1 h-px bg-stone-100" />
+                    <Link
+                      href="/profile"
+                      role="menuitem"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="block rounded-lg px-2 py-2 text-sm text-stone-700 hover:bg-stone-50"
+                    >
+                      Thông tin chi tiết
+                    </Link>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        logout();
+                      }}
+                      className="w-full rounded-lg px-2 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+                    >
+                      Đăng xuất
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Link
+                href="/login"
+                className="rounded-full border border-emerald-900/20 px-4 py-2 text-sm font-semibold text-emerald-950 transition hover:bg-emerald-50"
+              >
+                Đăng nhập
+              </Link>
+            )}
+            <Link
+              href="/cart"
+              aria-label={`Giỏ hàng, hiện có ${totalItems} sản phẩm`}
+              className="flex items-center gap-2 rounded-full bg-emerald-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-900"
+            >
+              <span aria-hidden="true">🛒</span>
+              <span>Giỏ hàng</span>
+              <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-white px-1.5 text-xs font-bold text-emerald-950">
+                {totalItems}
+              </span>
+            </Link>
+          </div>
         </div>
       </header>
 

@@ -69,15 +69,21 @@ export const apiClient = {
     accessToken: string;
     user?: User;
   }> {
+    const name = payload.name || (payload.email.includes('@') ? payload.email.split('@')[0] : payload.email);
     const res = await fetch(`${API_BASE_URL}/auth/register`, {
       method: 'POST',
       headers: getAuthHeaders(),
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ ...payload, name }),
     });
-    const result = await handleResponse<any>(res);
+    const result = await handleResponse<{
+      accessToken?: string;
+      access_token?: string;
+      token?: string;
+      user?: User;
+    }>(res);
     return {
-      accessToken: result.accessToken || result.access_token || result.token,
-      user: result.user,
+      accessToken: result.accessToken || result.access_token || result.token || '',
+      user: result.user || { email: payload.email, name },
     };
   },
 
@@ -91,9 +97,14 @@ export const apiClient = {
       headers: getAuthHeaders(),
       body: JSON.stringify(payload),
     });
-    const result = await handleResponse<any>(res);
+    const result = await handleResponse<{
+      accessToken?: string;
+      access_token?: string;
+      token?: string;
+      user?: User;
+    }>(res);
     return {
-      accessToken: result.accessToken || result.access_token || result.token,
+      accessToken: result.accessToken || result.access_token || result.token || '',
       user: result.user,
     };
   },

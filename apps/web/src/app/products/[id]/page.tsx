@@ -34,8 +34,8 @@ function ProductDetailContent() {
       try {
         const data = await apiClient.getProductById(productId);
         setProduct(data);
-      } catch (err: any) {
-        setError(err.message || 'Không tìm thấy sản phẩm');
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : 'Không tìm thấy sản phẩm');
       } finally {
         setLoading(false);
       }

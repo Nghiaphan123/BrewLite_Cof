@@ -28,10 +28,15 @@ function LoginForm() {
         ? await apiClient.register({ email, password })
         : await apiClient.login({ email, password });
 
-      setAuth(res.accessToken, res.user);
+      if (!res?.accessToken) {
+        throw new Error('Không nhận được token xác thực từ máy chủ');
+      }
+
+      setAuth(res.accessToken, res.user || { email });
       router.push(redirectUrl);
-    } catch (err: any) {
-      setError(err.message || 'Xác thực thất bại');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Xác thực thất bại';
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -55,6 +60,7 @@ function LoginForm() {
               data-testid="auth-email"
               className="mt-1 w-full rounded-lg border border-stone-400 bg-white px-3 py-2.5 text-sm font-medium text-black placeholder:text-stone-500 focus:border-black focus:outline-none focus:ring-2 focus:ring-stone-300"
               placeholder="ban@example.com"
+              autoComplete="email"
             />
           </div>
 
@@ -63,11 +69,13 @@ function LoginForm() {
             <input
               type="password"
               required
+              minLength={6}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               data-testid="auth-password"
               className="mt-1 w-full rounded-lg border border-stone-400 bg-white px-3 py-2.5 text-sm font-medium text-black placeholder:text-stone-500 focus:border-black focus:outline-none focus:ring-2 focus:ring-stone-300"
               placeholder="••••••••"
+              autoComplete={isRegister ? 'new-password' : 'current-password'}
             />
           </div>
 
