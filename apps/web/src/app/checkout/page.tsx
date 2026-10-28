@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -17,6 +17,66 @@ interface PendingQrPayment {
   image: string;
 }
 
+const PENDING_QR_STORAGE_KEY = 'brewlite-pending-qr';
+const PENDING_QR_CHANGE_EVENT = 'brewlite-pending-qr-change';
+
+function subscribeToPendingQr(onStoreChange: () => void) {
+  window.addEventListener('storage', onStoreChange);
+  window.addEventListener(PENDING_QR_CHANGE_EVENT, onStoreChange);
+  return () => {
+    window.removeEventListener('storage', onStoreChange);
+    window.removeEventListener(PENDING_QR_CHANGE_EVENT, onStoreChange);
+  };
+}
+
+function getPendingQrSnapshot(): string | null {
+  return sessionStorage.getItem(PENDING_QR_STORAGE_KEY);
+}
+
+function getClientReadySnapshot(): boolean {
+  return true;
+}
+
+function subscribeToClientReady(): () => void {
+  return () => {};
+}
+
+function savePendingQr(pendingQr: PendingQrPayment | null) {
+  if (pendingQr) {
+    sessionStorage.setItem(PENDING_QR_STORAGE_KEY, JSON.stringify(pendingQr));
+  } else {
+    sessionStorage.removeItem(PENDING_QR_STORAGE_KEY);
+  }
+  window.dispatchEvent(new Event(PENDING_QR_CHANGE_EVENT));
+}
+
+function parsePendingQr(serialized: string | null): PendingQrPayment | null {
+  if (!serialized) return null;
+
+  try {
+    const parsed: unknown = JSON.parse(serialized);
+    if (
+      parsed &&
+      typeof parsed === 'object' &&
+      'orderId' in parsed &&
+      typeof parsed.orderId === 'string' &&
+      'amount' in parsed &&
+      typeof parsed.amount === 'number' &&
+      'image' in parsed &&
+      typeof parsed.image === 'string'
+    ) {
+      return {
+        orderId: parsed.orderId,
+        amount: parsed.amount,
+        image: parsed.image,
+      };
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
 function getErrorMessage(error: unknown): string {
   return error instanceof Error
     ? error.message
@@ -29,14 +89,29 @@ export default function CheckoutPage() {
   const addLoyaltyPoints = useAuthStore((state) => state.addLoyaltyPoints);
 
   const [method, setMethod] = useState<PaymentMethod>('QR');
-  const [pendingQr, setPendingQr] = useState<PendingQrPayment | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const pendingQrSnapshot = useSyncExternalStore(
+    subscribeToPendingQr,
+    getPendingQrSnapshot,
+    () => null,
+  );
+  const pendingQr = parsePendingQr(pendingQrSnapshot);
+  const checkoutError =
+    error ??
+    (pendingQrSnapshot !== null && pendingQr === null
+      ? 'Không thể khôi phục mã QR thanh toán. Giỏ hàng của bạn vẫn được giữ nguyên.'
+      : null);
+  const isPendingQrRestored = useSyncExternalStore(
+    subscribeToClientReady,
+    getClientReadySnapshot,
+    () => false,
+  );
 
   const total = getTotalPrice();
 
   const handleConfirmPayment = async () => {
-    if (items.length === 0 || loading) return;
+    if (items.length === 0 || loading || !isPendingQrRestored) return;
     setLoading(true);
     setError(null);
 
@@ -60,11 +135,12 @@ export default function CheckoutPage() {
           color: { dark: '#064e3b', light: '#ffffff' },
         });
 
-        setPendingQr({
+        const newPendingQr = {
           orderId: order.id,
           amount,
           image: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`,
-        });
+        };
+        savePendingQr(newPendingQr);
         return;
       }
 
@@ -93,12 +169,13 @@ export default function CheckoutPage() {
 
       if (paymentResult.status === 'PAYMENT_FAILED') {
         setError('Thanh toán thất bại (PAYMENT_FAILED). Giỏ hàng của bạn vẫn được giữ nguyên.');
-        setPendingQr(null);
+        savePendingQr(null);
         return;
       }
 
       const earnedPoints = paymentResult.loyaltyPointsEarned ?? Math.floor(amount / 10000);
       addLoyaltyPoints(earnedPoints);
+      savePendingQr(null);
       clearCart();
       router.push(`/orders/${orderId}?status=${paymentResult.status || 'PAID'}`);
     } catch (paymentError: unknown) {
@@ -227,19 +304,19 @@ export default function CheckoutPage() {
               </section>
             )}
 
-            {error && (
+            {checkoutError && (
               <div
                 data-testid="checkout-error"
                 role="alert"
                 className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700"
               >
-                {error}
+                {checkoutError}
               </div>
             )}
 
             <button
               type="button"
-              disabled={loading || items.length === 0}
+              disabled={loading || items.length === 0 || !isPendingQrRestored}
               data-testid="confirm-payment-btn"
               onClick={handleConfirmPayment}
               className="mt-6 min-h-12 w-full rounded-xl bg-emerald-900 px-4 py-3 font-semibold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"

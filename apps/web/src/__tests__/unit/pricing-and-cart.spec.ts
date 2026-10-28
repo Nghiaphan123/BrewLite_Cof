@@ -66,4 +66,19 @@ describe('Unit Test: Zustand Cart Store (Thêm / Sửa / Xóa / Tổng tiền)',
     store.updateQty(itemId, 0);
     expect(useCartStore.getState().items).toHaveLength(0);
   });
+
+  it('khôi phục sản phẩm và mã giảm giá đã lưu sau khi tải lại store', async () => {
+    useCartStore.getState().addItem(mockCappuccino, 'M', [], 2);
+    useCartStore.getState().setPromoCode('BREW10');
+    const savedCart = localStorage.getItem('brewlite-cart');
+
+    expect(savedCart).not.toBeNull();
+
+    useCartStore.setState({ items: [], promoCode: '' });
+    localStorage.setItem('brewlite-cart', savedCart!);
+    await useCartStore.persist.rehydrate();
+
+    expect(useCartStore.getState().getTotalItems()).toBe(2);
+    expect(useCartStore.getState().promoCode).toBe('BREW10');
+  });
 });

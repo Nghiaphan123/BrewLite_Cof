@@ -19,6 +19,7 @@ describe('Integration Test: Frontend <-> Backend API', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     pushMock.mockReset();
+    sessionStorage.removeItem('brewlite-pending-qr');
     useCartStore.getState().clearCart();
     useAuthStore.getState().setAuth('fake-jwt-token', {
       id: 'u1',
@@ -161,6 +162,25 @@ describe('Integration Test: Frontend <-> Backend API', () => {
   it('có nút quay lại giỏ hàng ở trang thanh toán', () => {
     render(<CheckoutPage />);
     expect(screen.getByRole('link', { name: /Quay lại giỏ hàng/ })).toHaveAttribute('href', '/cart');
+  });
+
+  it('khôi phục mã QR thanh toán đang chờ sau khi tải lại trang', async () => {
+    sessionStorage.setItem(
+      'brewlite-pending-qr',
+      JSON.stringify({
+        orderId: '1042',
+        amount: 50000,
+        image: 'data:image/svg+xml;charset=utf-8,qr',
+      }),
+    );
+
+    render(<CheckoutPage />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('qr-payment-panel')).toBeInTheDocument();
+    });
+    expect(screen.getByText('Đơn 1042 · 50.000₫')).toBeInTheDocument();
+    expect(screen.getByTestId('payment-qr')).toHaveAttribute('src', 'data:image/svg+xml;charset=utf-8,qr');
   });
 
   it('Luồng Thanh toán: gửi JWT + Idempotency-Key, cộng điểm thưởng và chuyển sang trang xác nhận khi PAID', async () => {
