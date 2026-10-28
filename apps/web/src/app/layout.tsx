@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ReactNode } from "react";
-import { CartStoreHydration } from "@/components/CartStoreHydration";
 import "./globals.css";
 
 const geistSans = Geist({
