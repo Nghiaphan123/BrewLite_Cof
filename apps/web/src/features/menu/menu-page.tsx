@@ -314,7 +314,7 @@ export function MenuPage() {
             role="status"
             className="rounded-lg border border-zinc-200 bg-white px-6 py-12 text-center text-zinc-600"
           >
-            Menu đang cập nhật. Vui lòng quay lại sau..
+            Menu đang cập nhật. Vui lòng quay lại sau...
           </p>
         )}
 
@@ -330,7 +330,7 @@ export function MenuPage() {
               onClick={retry}
               className="mt-4 rounded-md bg-zinc-900 px-4 py-2 font-medium text-white hover:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900"
             >
-              Thß╗¡ lß║íi
+              Thử lại
             </button>
           </div>
         )}
