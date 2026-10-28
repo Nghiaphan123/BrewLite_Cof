@@ -10,7 +10,7 @@ import { ProductCard } from "./ProductCard";
 
 type MenuProduct = Product;
 
-const MENU_TABS = ["Tß║Ñt cß║ú", "C├á ph├¬", "Tr├á", "─É├í xay", "Kh├íc"] as const;
+const MENU_TABS = ["Tất cả", "Cà phê", "Trà", "Đá xay", "Khác"] as const;
 type MenuTab = (typeof MENU_TABS)[number];
 
 type ProductsResponse = {
@@ -54,15 +54,13 @@ function isProductsResponse(value: unknown): value is ProductsResponse {
   );
 }
 
-function getProductCategory(product: Product): Exclude<MenuTab, "Tß║Ñt cß║ú"> {
-  const name = product.name
+function getProductCategory(product: Product): Exclude<MenuTab, "Tất cả">  {
+const name = product.name
     .toLocaleLowerCase("vi")
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/─æ/g, "d");
-
+    .replace(/[\u0300-\u036f]/g, "");
   if (name.includes("da xay")) {
-    return "─É├í xay";
+    return "Đá xay";
   }
   if (name.includes("tra") || name.includes("tr")) {
     return "Trà";
@@ -71,9 +69,9 @@ function getProductCategory(product: Product): Exclude<MenuTab, "Tß║Ñt cß�
     ["ca phe", "cà phê", "bac xiu", "bạc xỉu", "sua", "sữa", "espresso", "americano", "cappuccino", "latte", "macchiato", "mocha", "cold brew"]
       .some((keyword) => name.includes(keyword))
   ) {
-    return "C├á ph├¬";
+    return "Cà phê";
   }
-  return "Kh├íc";
+  return "Khác";
 }
 
 async function fetchProducts(signal: AbortSignal): Promise<MenuProduct[]> {
@@ -131,12 +129,8 @@ function MenuSkeleton() {
 export function MenuPage() {
   const [menuState, setMenuState] = useState<MenuState>({ status: "loading" });
   const [retryCount, setRetryCount] = useState(0);
-<<<<<<< HEAD
-  const [activeTab, setActiveTab] = useState<MenuTab>("Tß║Ñt cß║ú");
-=======
   const [activeTab, setActiveTab] = useState<MenuTab>("Tất cả");
   const [userMenuOpen, setUserMenuOpen] = useState(false);
->>>>>>> bb876c0 (feat(web): auth flow, profile, order details)
   const totalItems = useCartStore((state) => state.getTotalItems());
   const cartTotal = useCartStore((state) => state.getTotalPrice());
   const { token, user, logout } = useAuthStore();
@@ -154,7 +148,7 @@ export function MenuPage() {
 
   const products = menuState.status === "success" ? menuState.products : [];
   const visibleProducts =
-    activeTab === "Tß║Ñt cß║ú"
+    activeTab === "Tất cả"
       ? products
       : products.filter((product) => getProductCategory(product) === activeTab);
 
@@ -202,19 +196,6 @@ export function MenuPage() {
             <span aria-hidden="true" className="text-2xl">Γÿò</span>
             BrewLite
           </Link>
-<<<<<<< HEAD
-          <Link
-            href="/cart"
-            aria-label={`Giß╗Å h├áng, hiß╗çn c├│ ${totalItems} sß║ún phß║⌐m`}
-            className="flex items-center gap-2 rounded-full bg-emerald-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-900"
-          >
-            <span aria-hidden="true">≡ƒ¢Æ</span>
-            <span>Giß╗Å h├áng</span>
-            <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-white px-1.5 text-xs font-bold text-emerald-950">
-              {totalItems}
-            </span>
-          </Link>
-=======
           <div className="flex items-center gap-2">
             {token ? (
               <div className="relative" ref={userMenuRef}>
@@ -285,7 +266,6 @@ export function MenuPage() {
               </span>
             </Link>
           </div>
->>>>>>> bb876c0 (feat(web): auth flow, profile, order details)
         </div>
       </header>
 
@@ -316,7 +296,7 @@ export function MenuPage() {
               Kh├ím ph├í h╞░╞íng vß╗ï
             </p>
             <h2 className="mt-1 font-sans text-3xl font-bold tracking-tight">
-              Menu thß╗⌐c uß╗æng
+              Menu thức uống
             </h2>
           </div>
           {menuState.status === "success" && (
@@ -363,7 +343,7 @@ export function MenuPage() {
           >
             {MENU_TABS.map((tab) => {
               const count =
-                tab === "Tß║Ñt cß║ú"
+                tab === "Tất cả"
                   ? products.length
                   : products.filter((product) => getProductCategory(product) === tab).length;
               const selected = activeTab === tab;
