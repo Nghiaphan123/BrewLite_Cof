@@ -115,7 +115,12 @@ async function seedUsers(): Promise<void> {
       where: { email },
       // Existing users keep their password and points.
       update: {},
-      create: { id: id('30000000', n), email, passwordHash },
+      create: {
+        id: id('30000000', n),
+        name: `Customer ${n.toString().padStart(2, '0')}`,
+        email,
+        passwordHash,
+      },
     });
   }
 }

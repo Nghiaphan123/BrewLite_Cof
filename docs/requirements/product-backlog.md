@@ -234,6 +234,7 @@ Stock reservation (Task 10), promotions (Task 10), order state transitions beyon
 ### Acceptance Criteria
 
 - [ ] `POST /auth/register` creates a user with a bcrypt-hashed password and returns `201`; duplicate email returns `409`.
+- [ ] Registration stores the customer's name and returns it in the authenticated user profile.
 - [ ] `POST /auth/login` verifies the password and returns a JWT; wrong password returns `401` with a generic message (no user enumeration).
 - [ ] `JWT_SECRET` and `JWT_EXPIRES_IN` are read from env per `docs/config.md` §2.1; no hard-coded secret.
 - [ ] `JwtAuthGuard` protects `POST /orders`; an unauthenticated request returns `401`. The guard is applied to exactly the routes named in the API contract.

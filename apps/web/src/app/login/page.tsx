@@ -9,9 +9,10 @@ import { useAuthStore } from '@/store/auth.store';
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectUrl = searchParams?.get('redirect') || '/';
+  const redirectUrl = searchParams?.get('redirect') || '/menu';
 
   const [isRegister, setIsRegister] = useState(false);
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -24,14 +25,15 @@ function LoginForm() {
     setError(null);
     setLoading(true);
     try {
-      const res = isRegister
-        ? await apiClient.register({ email, password })
-        : await apiClient.login({ email, password });
+      if (isRegister) {
+        await apiClient.register({ name, email, password });
+      }
+      const res = await apiClient.login({ email, password });
 
       setAuth(res.accessToken, res.user);
       router.push(redirectUrl);
-    } catch (err: any) {
-      setError(err.message || 'Xác thực thất bại');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Xác thực thất bại');
     } finally {
       setLoading(false);
     }
@@ -45,6 +47,26 @@ function LoginForm() {
         </h1>
 
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+          {isRegister && (
+            <div>
+              <label htmlFor="auth-name" className="block text-sm font-bold uppercase text-black">
+                Họ và tên
+              </label>
+              <input
+                id="auth-name"
+                type="text"
+                required
+                minLength={2}
+                maxLength={80}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                data-testid="auth-name"
+                autoComplete="name"
+                className="mt-1 w-full rounded-lg border border-stone-400 bg-white px-3 py-2.5 text-sm font-medium text-black placeholder:text-stone-500 focus:border-black focus:outline-none focus:ring-2 focus:ring-stone-300"
+                placeholder="Nguyễn Văn A"
+              />
+            </div>
+          )}
           <div>
             <label className="block text-sm font-bold uppercase text-black">Email</label>
             <input
@@ -63,6 +85,15 @@ function LoginForm() {
             <input
               type="password"
               required
+              minLength={isRegister ? 8 : undefined}
+              pattern={
+                isRegister ? '^(?=.*[A-Za-z])(?=.*\\d).{8,}$' : undefined
+              }
+              title={
+                isRegister
+                  ? 'Mật khẩu cần ít nhất 8 ký tự, gồm chữ cái và chữ số.'
+                  : undefined
+              }
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               data-testid="auth-password"

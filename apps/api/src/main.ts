@@ -1,9 +1,11 @@
+import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module.js';
 import { HttpExceptionFilter } from './common/http-exception.filter.js';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
   // Enable CORS for web frontend (docs/deployment.md)
   const allowedOrigin = process.env.CORS_ORIGIN ?? process.env.WEB_ORIGIN ?? 'http://localhost:3000';
@@ -27,6 +29,13 @@ async function bootstrap() {
     .filter(Boolean);
   app.enableCors({
     origin: allowedOrigins.length > 0 ? [...new Set(allowedOrigins)] : ['http://localhost:3000'],
+  });
+
+  app.enableCors({
+    origin:
+      process.env.CORS_ORIGIN ??
+      process.env.WEB_ORIGIN ??
+      'http://localhost:3000',
   });
 
   // API_PORT comes from .env (docs/deployment.md); PORT is set by some hosts such as Render.

@@ -77,7 +77,7 @@ A scenario without a testable outcome is not a scenario; it is a wish. If a flow
 
 | #   | Actor    | Action / System response                                                                 |
 | --- | -------- | ---------------------------------------------------------------------------------------- |
-| 1   | Customer | Opens `/auth/register`, submits email + password meeting the policy.                     |
+| 1   | Customer | Opens `/auth/register`, submits name, email, and password meeting the policy.            |
 | 2   | System   | Hashes password with bcrypt, creates user, returns `201`.                                |
 | 3   | Customer | Submits the same email on `/auth/login` with the correct password.                       |
 | 4   | System   | Verifies hash, returns JWT. Frontend stores token, attaches it to `POST /api/v1/orders`. |

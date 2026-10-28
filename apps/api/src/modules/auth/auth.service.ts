@@ -13,7 +13,9 @@
  */
 import {
   Injectable,
+  BadRequestException,
   ConflictException,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService, type JwtSignOptions } from '@nestjs/jwt';
@@ -45,7 +47,17 @@ export class AuthService {
     return jwtExpiresIn();
   }
 
-  async register(email: string, password: string) {
+  async register(name: string, email: string, password: string) {
+    const normalizedName = name.trim();
+    if (normalizedName.length < 2 || normalizedName.length > 80) {
+      throw new BadRequestException({
+        statusCode: 400,
+        error: 'Bad Request',
+        message: 'Name must be between 2 and 80 characters long',
+        code: 'INVALID_NAME',
+      });
+    }
+
     const normalizedEmail = email.toLowerCase();
 
     const existing = await this.prisma.user.findUnique({
@@ -64,6 +76,7 @@ export class AuthService {
 
     const user = await this.prisma.user.create({
       data: {
+        name: normalizedName,
         email: normalizedEmail,
         passwordHash,
         loyaltyPoints: 0,
@@ -72,6 +85,7 @@ export class AuthService {
 
     return {
       id: user.id,
+      name: user.name,
       email: user.email,
       loyaltyPoints: user.loyaltyPoints,
     };
@@ -112,6 +126,7 @@ export class AuthService {
       expiresIn,
       user: {
         id: user.id,
+        name: user.name,
         email: user.email,
         loyaltyPoints: user.loyaltyPoints,
       },
@@ -140,6 +155,81 @@ export class AuthService {
       where: { id: userId },
     });
     if (!user) return null;
-    return { id: user.id, email: user.email, loyaltyPoints: user.loyaltyPoints };
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      loyaltyPoints: user.loyaltyPoints,
+    };
+  }
+
+  async getProfile(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        loyaltyPoints: true,
+        createdAt: true,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException({
+        statusCode: 404,
+        error: 'Not Found',
+        message: 'User not found',
+        code: 'USER_NOT_FOUND',
+      });
+    }
+
+    return user;
+  }
+
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+  ) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException({
+        statusCode: 404,
+        error: 'Not Found',
+        message: 'User not found',
+        code: 'USER_NOT_FOUND',
+      });
+    }
+
+    const isCurrentPasswordValid = await bcrypt.compare(
+      currentPassword,
+      user.passwordHash,
+    );
+    if (!isCurrentPasswordValid) {
+      throw new UnauthorizedException({
+        statusCode: 401,
+        error: 'Unauthorized',
+        message: 'Current password is incorrect',
+        code: 'CURRENT_PASSWORD_INVALID',
+      });
+    }
+
+    if (await bcrypt.compare(newPassword, user.passwordHash)) {
+      throw new BadRequestException({
+        statusCode: 400,
+        error: 'Bad Request',
+        message: 'New password must be different from the current password',
+        code: 'PASSWORD_UNCHANGED',
+      });
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, this.bcryptRounds);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash },
+    });
+
+    return { message: 'Password changed successfully' };
   }
 }

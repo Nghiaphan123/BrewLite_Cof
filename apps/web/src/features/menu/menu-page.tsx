@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -63,11 +63,11 @@ function getProductCategory(product: Product): Exclude<MenuTab, "Tất cả"> {
   if (name.includes("da xay")) {
     return "Đá xay";
   }
-  if (name.includes("tra ")) {
+  if (name.includes("tra") || name.includes("tr")) {
     return "Trà";
   }
   if (
-    ["ca phe", "bac xiu", "espresso", "americano", "cappuccino", "latte", "macchiato", "mocha", "cold brew"]
+    ["ca phe", "cà phê", "bac xiu", "bạc xỉu", "sua", "sữa", "espresso", "americano", "cappuccino", "latte", "macchiato", "mocha", "cold brew"]
       .some((keyword) => name.includes(keyword))
   ) {
     return "Cà phê";

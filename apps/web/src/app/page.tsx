@@ -1,1 +1,5 @@
-export { MenuPage as default } from "@/features/menu/menu-page";
+import { redirect } from "next/navigation";
+
+export default function HomePage() {
+  redirect("/login");
+}

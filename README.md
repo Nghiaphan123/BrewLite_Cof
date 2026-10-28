@@ -67,6 +67,8 @@ docker compose ps
 
 - Web: http://localhost:3000
 - API: http://localhost:3001
+- Opening the web URL starts at sign-in/registration; after successful authentication, BrewLite opens the menu at `/menu`.
+- The menu header shows the signed-in customer's name beside the cart; the account dropdown opens profile details, password change, and sign-out.
 - The API applies database migrations when it starts. Its health check needs `GET /health`, which arrives with `C-04`; until then `docker compose ps` shows the API as unhealthy even though it answers.
 
 Stop with `docker compose down`; add `-v` to delete the local database. More detail and troubleshooting: [docs/deployment.md](docs/deployment.md).

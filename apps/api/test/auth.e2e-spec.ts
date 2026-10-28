@@ -27,16 +27,18 @@ describe('Auth (Task 7)', () => {
   });
 
   const testEmail = `auth-e2e-${randomUUID()}@example.com`;
+  const testName = 'Auth E2E Customer';
   const testPassword = 'correct-horse-battery-1';
 
   it('register with a new email -> 201, body.user.email matches', async () => {
     const res = await request(app.getHttpServer())
       .post('/api/v1/auth/register')
-      .send({ email: testEmail, password: testPassword });
+      .send({ name: testName, email: testEmail, password: testPassword });
 
     expect(res.status).toBe(201);
     expect(res.body.user).toBeDefined();
     expect(res.body.user.email).toBe(testEmail.toLowerCase());
+    expect(res.body.user.name).toBe(testName);
     expect(res.body.user.loyaltyPoints).toBe(0);
     expect(res.body.user.id).toBeDefined();
 
@@ -46,7 +48,7 @@ describe('Auth (Task 7)', () => {
   it('register the same email again -> 409, body.code = EMAIL_TAKEN', async () => {
     const res = await request(app.getHttpServer())
       .post('/api/v1/auth/register')
-      .send({ email: testEmail, password: testPassword });
+      .send({ name: testName, email: testEmail, password: testPassword });
 
     expect(res.status).toBe(409);
     expect(res.body.code).toBe('EMAIL_TAKEN');
@@ -64,8 +66,40 @@ describe('Auth (Task 7)', () => {
     expect(res.body.expiresIn).toBeDefined();
     expect(res.body.user).toBeDefined();
     expect(res.body.user.email).toBe(testEmail.toLowerCase());
+    expect(res.body.user.name).toBe(testName);
 
     token = res.body.accessToken;
+  });
+
+  it('GET /auth/me returns only the authenticated user profile', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/api/v1/auth/me')
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({
+      id: userId,
+      name: testName,
+      email: testEmail.toLowerCase(),
+      loyaltyPoints: 0,
+    });
+    expect(res.body.passwordHash).toBeUndefined();
+  });
+
+  it('PATCH /auth/password verifies current password and updates the hash', async () => {
+    const nextPassword = 'new-correct-password-2';
+    const res = await request(app.getHttpServer())
+      .patch('/api/v1/auth/password')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ currentPassword: testPassword, newPassword: nextPassword });
+
+    expect(res.status).toBe(200);
+    expect(res.body.message).toBe('Password changed successfully');
+
+    const login = await request(app.getHttpServer())
+      .post('/api/v1/auth/login')
+      .send({ email: testEmail, password: nextPassword });
+    expect(login.status).toBe(200);
   });
 
   it('login with wrong password -> 401, body.code = AUTH_INVALID', async () => {

@@ -27,12 +27,14 @@ Endpoints in the assignment (PDF §12.1): `GET /products`, `GET /products/:id`, 
 | `GET`  | `/products/:id`  | Public  | `200 Product` / `404`                          | §5        |
 | `POST` | `/auth/register` | Public  | `201 { user }` / `409`                         | §6        |
 | `POST` | `/auth/login`    | Public  | `200 { accessToken, expiresIn, user }` / `401` | §7        |
+| `GET`  | `/auth/me`       | **JWT** | `200 UserProfile` / `401`                      | §7.1      |
+| `PATCH`| `/auth/password` | **JWT** | `200 { message }` / `400` / `401`              | §7.2      |
 | `POST` | `/orders`        | **JWT** | `201 Order` / `400` / `401`                    | §8        |
 | `POST` | `/payments`      | **JWT** | `200 PaymentResult` / `400` / `401` / `409`    | §9        |
 | `GET`  | `/orders/me`     | **JWT** | `200 { items, total }` / `401`                 | §10       |
 | `GET`  | `/orders/:code`  | **JWT** | `200 Order` / `404`                            | §11       |
 
-`/health` is not under auth (it's the one route the frontend and CI use to check liveness). `GET /products` and `GET /products/:id` are public; everything else requires JWT.
+`/health`, `GET /products`, `GET /products/:id`, `POST /auth/register`, and `POST /auth/login` are public. User profile and password changes, orders, and payments require JWT.
 
 ## 3. `GET /api/v1/health`
 
@@ -126,17 +128,18 @@ No other responses. Not cached; no rate limit in Phase 1.
 
 **Request body:**
 ```json
-{ "email": "an@example.com", "password": "correct-horse-battery" }
+{ "name": "An Nguyen", "email": "an@example.com", "password": "correct-horse-battery" }
 ```
 
 **Validation (`class-validator`):**
+- `name`: 2–80 characters after trimming.
 - `email`: valid email format, normalized to lowercase before storage.
 - `password`: ≥ 8 chars, at least one letter and one digit. The same rule is enforced client-side (`wireframes.md` §10); if one changes, both change.
 
 **Response `201`:**
 ```json
 {
-  "user": { "id": "a3f1...", "email": "an@example.com", "loyaltyPoints": 0 }
+  "user": { "id": "a3f1...", "name": "An Nguyen", "email": "an@example.com", "loyaltyPoints": 0 }
 }
 ```
 
@@ -180,7 +183,7 @@ No token is returned here. The client calls `POST /auth/login` after register (`
 {
   "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
   "expiresIn": 86400,
-  "user": { "id": "a3f1...", "email": "an@example.com", "loyaltyPoints": 12 }
+  "user": { "id": "a3f1...", "name": "An Nguyen", "email": "an@example.com", "loyaltyPoints": 12 }
 }
 ```
 
@@ -192,6 +195,32 @@ No token is returned here. The client calls `POST /auth/login` after register (`
 ```json
 { "statusCode": 401, "error": "Unauthorized", "message": "Invalid credentials", "code": "AUTH_INVALID" }
 ```
+
+## 7.1. `GET /api/v1/auth/me`
+
+**Auth:** JWT. Returns only the authenticated user's profile; the password hash is never selected.
+
+**Response `200`:**
+```json
+{
+  "id": "a3f1...",
+  "name": "An Nguyen",
+  "email": "an@example.com",
+  "loyaltyPoints": 12,
+  "createdAt": "2026-01-15T00:00:00.000Z"
+}
+```
+
+## 7.2. `PATCH /api/v1/auth/password`
+
+**Auth:** JWT.
+
+**Request body:**
+```json
+{ "currentPassword": "correct-horse-battery", "newPassword": "another-correct-password" }
+```
+
+The current password must be verified before storing a bcrypt hash of the new password. The new password must be at least 8 characters and contain a letter and a digit. An incorrect current password returns `401 CURRENT_PASSWORD_INVALID`.
 
 **Rules:**
 - The `401` body is **identical** for "unknown email" and "wrong password" (`scenarios.md` S-AUTH-3). Do not return "email not found."

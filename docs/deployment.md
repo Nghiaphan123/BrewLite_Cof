@@ -71,13 +71,13 @@ Prisma scripts in `apps/api` (run them in the container, or on your machine agai
 | `npm run db:seed`     | `prisma db seed`        | Load the sample data                        |
 | `npm run db:reset`    | `prisma migrate reset`  | Drop and rebuild the local database         |
 
-Open the UI at `http://localhost:3000`; API base is `http://localhost:3001`.
+Open the UI at `http://localhost:3000`; it shows sign-in/registration first and opens the menu at `/menu` after successful authentication. The menu header displays the customer's name beside the cart; the account dropdown provides profile details, password change, and sign-out. The API base is `http://localhost:3001`.
 
 ## 5. Demo smoke flow
 
-1. Verify `GET /products` returns the sample menu.
-2. Browse a drink, select size/topping, and add it to cart.
-3. Register or sign in.
+1. Register or sign in.
+2. Verify `GET /products` returns the sample menu and browse a drink.
+3. Select size/topping and add it to cart.
 4. Create an order and verify `PENDING` plus an order identifier.
 5. Pay with mock Wallet/Card; verify confirmation and `PAID`.
 6. Simulate payment failure and retry; verify cart remains available and idempotency behavior is correct.
