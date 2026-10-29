@@ -30,10 +30,15 @@ function LoginForm() {
       }
       const res = await apiClient.login({ email, password });
 
-      setAuth(res.accessToken, res.user);
+      if (!res?.accessToken) {
+        throw new Error('Không nhận được token xác thực từ máy chủ');
+      }
+
+      setAuth(res.accessToken, res.user ?? { id: 'user-1', email });
       router.push(redirectUrl);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Xác thực thất bại');
+      const message = err instanceof Error ? err.message : 'Xác thực thất bại';
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -45,7 +50,6 @@ function LoginForm() {
         <h1 className="text-xl font-bold text-black">
           {isRegister ? 'Đăng ký tài khoản' : 'Đăng nhập BrewLite'}
         </h1>
-
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           {isRegister && (
             <div>
@@ -77,6 +81,7 @@ function LoginForm() {
               data-testid="auth-email"
               className="mt-1 w-full rounded-lg border border-stone-400 bg-white px-3 py-2.5 text-sm font-medium text-black placeholder:text-stone-500 focus:border-black focus:outline-none focus:ring-2 focus:ring-stone-300"
               placeholder="ban@example.com"
+              autoComplete="email"
             />
           </div>
 
@@ -85,20 +90,13 @@ function LoginForm() {
             <input
               type="password"
               required
-              minLength={isRegister ? 8 : undefined}
-              pattern={
-                isRegister ? '^(?=.*[A-Za-z])(?=.*\\d).{8,}$' : undefined
-              }
-              title={
-                isRegister
-                  ? 'Mật khẩu cần ít nhất 8 ký tự, gồm chữ cái và chữ số.'
-                  : undefined
-              }
+              minLength={6}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               data-testid="auth-password"
               className="mt-1 w-full rounded-lg border border-stone-400 bg-white px-3 py-2.5 text-sm font-medium text-black placeholder:text-stone-500 focus:border-black focus:outline-none focus:ring-2 focus:ring-stone-300"
               placeholder="••••••••"
+              autoComplete={isRegister ? 'new-password' : 'current-password'}
             />
           </div>
 

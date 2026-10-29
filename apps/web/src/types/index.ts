@@ -54,8 +54,10 @@ export interface Order {
     id?: string;
     productId: string;
     productName?: string;
+    name?: string;
     size: SizeOption;
     qty: number;
     lineTotal: number;
+    unitPrice?: number;
   }>;
 }

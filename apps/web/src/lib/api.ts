@@ -82,15 +82,26 @@ export const apiClient = {
   },
 
   // [Task 7] POST /auth/register
-  async register(
-    payload: { name: string; email: string; password: string },
-  ): Promise<{ user?: User }> {
+  async register(payload: { email: string; password: string; name?: string }): Promise<{
+    accessToken: string;
+    user?: User;
+  }> {
+    const name = payload.name || (payload.email.includes('@') ? payload.email.split('@')[0] : payload.email);
     const res = await fetch(`${API_BASE_URL}/auth/register`, {
       method: 'POST',
       headers: getAuthHeaders(),
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ ...payload, name }),
     });
-    return handleResponse<{ user?: User }>(res);
+    const result = await handleResponse<{
+      accessToken?: string;
+      access_token?: string;
+      token?: string;
+      user?: User;
+    }>(res);
+    return {
+      accessToken: result.accessToken || result.access_token || result.token || '',
+      user: result.user ,
+    };
   },
 
   // [Task 7] POST /auth/login
@@ -103,28 +114,16 @@ export const apiClient = {
       headers: getAuthHeaders(),
       body: JSON.stringify(payload),
     });
-    const result = await handleResponse<AuthResponse>(res);
-    return getAuthResult(result);
-  },
-
-  async getProfile(): Promise<User> {
-    const res = await fetch(`${API_BASE_URL}/auth/me`, {
-      headers: getAuthHeaders(),
-      cache: 'no-store',
-    });
-    return handleResponse<User>(res);
-  },
-
-  async changePassword(payload: {
-    currentPassword: string;
-    newPassword: string;
-  }): Promise<{ message: string }> {
-    const res = await fetch(`${API_BASE_URL}/auth/password`, {
-      method: 'PATCH',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(payload),
-    });
-    return handleResponse<{ message: string }>(res);
+    const result = await handleResponse<{
+      accessToken?: string;
+      access_token?: string;
+      token?: string;
+      user?: User;
+    }>(res);
+    return {
+      accessToken: result.accessToken || result.access_token || result.token || '',
+      user: result.user,
+    };
   },
 
   // [Task 6 & 10] POST /orders (Bảo vệ bởi JwtAuthGuard)
@@ -162,6 +161,26 @@ export const apiClient = {
       }),
     });
     return handleResponse(res);
+  },
+
+  async getProfile(): Promise<User> {
+    const res = await fetch(`${API_BASE_URL}/auth/me`, {
+      headers: getAuthHeaders(),
+      cache: 'no-store',
+    });
+    return handleResponse<User>(res);
+  },
+
+  async changePassword(payload: {
+    currentPassword: string;
+    newPassword: string;
+  }): Promise<{ message: string }> {
+    const res = await fetch(`${API_BASE_URL}/auth/password`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(payload),
+    });
+    return handleResponse<{ message: string }>(res);
   },
 
   // [Task 9] GET /orders/me
