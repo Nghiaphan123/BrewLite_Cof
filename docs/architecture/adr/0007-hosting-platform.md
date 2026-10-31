@@ -73,7 +73,7 @@ These are still missing. The diagram marks them planned. They are not reasons to
 | No Render service and no production URL | URL placeholders only |
 | `GET /api/v1/health` is implemented. The public URL is not assigned. | Health arrow is the contract path. Smoke evidence is still open. |
 | Compose health check currently calls `GET /api/v1`, and `deployment.md` says `GET /health` | Both disagree with ADR 0005. Production follows ADR 0005. The local docs are a known defect. |
-| No PWA manifest or service worker | Web service is still the PWA host once those files exist |
+| PWA manifest, icons, and service worker exist. Install still needs HTTPS. | Web service hosts them. |
 | No request logger beyond Nest's default | Logs are stdout; a logging interceptor is still to be added |
 
 ## Alternatives considered

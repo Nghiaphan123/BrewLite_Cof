@@ -27,7 +27,7 @@ The browser does not talk to the database. The web app does not call the databas
 
 | Container | Technology | Responsibility | Talks to |
 | --- | --- | --- | --- |
-| Web | Next.js 16 App Router, React, Tailwind, Zustand | Menu, product options, cart, login, checkout, confirmation, history. Mobile-first. PWA shell is required (NFR-04) and not built yet. | API only, from the browser, using `NEXT_PUBLIC_API_URL` |
+| Web | Next.js 16 App Router, React, Tailwind, Zustand | Menu, product options, cart, login, checkout, confirmation, history. Mobile-first. Manifest, icons, and a network-only service worker are present (NFR-04). | API only, from the browser, using `NEXT_PUBLIC_API_URL` |
 | API | NestJS, Prisma | Auth, catalog, orders, mock payment, promotions, loyalty rules. Validates every mutation again. | PostgreSQL. Payment mock in the same process. |
 | Database | PostgreSQL 17 | Users, products, toppings, orders, payments, promotions, loyalty transactions. | API only |
 | Payment mock | In-process module | Approves or declines Wallet and Card. No network call. No card numbers. | Called by the payments module |
@@ -95,7 +95,7 @@ A pull request must not deploy. A tag or a protected branch deploy builds the im
 
 - There is no production URL yet.
 - There is no GitHub Actions workflow yet.
-- The PWA manifest and service worker are not in `apps/web` yet. The web service is still where they will be served.
+- The PWA shell is in `apps/web`. A browser install prompt still needs HTTPS, which Render provides. Localhost can offer it too.
 - `LoyaltyTransaction` is in `schema.prisma` and is written when a paid order earns points.
 - Confirmation in the running app is `/orders/[id]`. ADR 0004 names `/orders/[code]/confirmation`. The architecture still treats the order code as the customer-facing identifier.
 - A demo QR on checkout is not a payment service and is not a node in the deployment diagram.
@@ -104,7 +104,7 @@ A pull request must not deploy. A tag or a protected branch deploy builds the im
 
 | Assignment 2 item | Where it is |
 | --- | --- |
-| Next.js / PWA | §2 Web. PWA files are a later code change. |
+| Next.js / PWA | §2 Web. `apps/web/src/app/manifest.ts` and `apps/web/public/sw.js`. |
 | NestJS modules | §3 |
 | PostgreSQL and migrations | §2, §6, API Dockerfile `prisma migrate deploy` |
 | Mock payment | §2, ADR 0004 |
