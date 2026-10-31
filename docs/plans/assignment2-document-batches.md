@@ -1,6 +1,6 @@
 # Assignment 2 — document batches
 
-**Status:** Batches 1–3 written on `docs/assignment2-requirements`. Batch 4 not started.  
+**Status:** Batches 1–4 written on `docs/assignment2-requirements`. Production URL and CI runs are still open.  
 **Rule:** documents only. No application code in these batches.  
 **Related:** Assignment 2 PDF (Requirements to Deployment), [context and scope](../requirements/context-and-scope.md)
 
@@ -36,18 +36,18 @@ The class diagram must include `User`, `Product`, `Order`, `OrderItem`, `Payment
 
 The host is Render, confirmed by the team. ADR number 0006 was already reserved for auth-token storage, so hosting is 0007. The diagram is the intended Render layout. It is not a claim that the services or the production URL exist.
 
-## Batch 4 — handover documents (after deploy, not started)
+## Batch 4 — handover documents (written, evidence open)
 
-These are documents, but they are false if written before the pipeline and the production URL exist.
+These files exist. They do not claim a live site, a CI run, or a held review.
 
-| File | Required by |
-| --- | --- |
-| `docs/traceability-matrix.md` (rewrite to Assignment 2 columns) | Task 8 |
-| `docs/deployment.md` (production, secrets, rollback) | Task 5.4 |
-| `README.md` (test, build, deploy, rollback, URLs) | Task 5.4 |
-| `docs/delivery/release-notes.md` | Task 5.4 |
-| `docs/delivery/sprint-review.md` | Task 5.4 |
-| `docs/delivery/sprint-retrospective.md` | Task 5.4 |
-| CI evidence (green run and a run that caught a failure) | Task 4.4 |
+| File | Required by | What is still empty |
+| --- | --- | --- |
+| `docs/traceability-matrix.md` | Assignment 2 traceability | Rows that need a pipeline, a health route, or a production URL stay Partial, Documented, or Not run. |
+| `docs/deployment.md` §9–§12 | Task 5.4 | Web, API, and health URLs are "not assigned". |
+| `README.md` | Task 5.4 | Same URLs. Test and build commands are filled. |
+| `docs/delivery/release-notes.md` | Task 5.4 | No tag and no release. |
+| `docs/delivery/sprint-review.md` | Task 5.4 | Not held. |
+| `docs/delivery/sprint-retrospective.md` | Task 5.4 | Not held. |
+| `docs/delivery/ci-evidence.md` | Task 4.4 | No workflow and no green or red run. |
 
-The demo video is a handover artifact, not a repository file.
+The demo video is still not a repository file. Record it only against a URL that answers.

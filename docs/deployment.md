@@ -1,6 +1,6 @@
 # BrewLite - Local Deployment Guide
 
-This guide describes the local Docker Compose deployment for development and class demo. The stack is defined in [`docker-compose.yml`](../docker-compose.yml) (`S-04`) with the images in `apps/api/Dockerfile` and `apps/web/Dockerfile`. The production part and rollback are added in `D-15` (P7).
+This guide describes local Docker Compose and the intended Render production path. The local stack is [`docker-compose.yml`](../docker-compose.yml), with images from `apps/api/Dockerfile` and `apps/web/Dockerfile`. Production is [ADR 0007](architecture/adr/0007-hosting-platform.md). The Render services are not created yet.
 
 ## 1. Prerequisites
 
@@ -106,7 +106,7 @@ docker compose up --build -d
 ## 7. Compose manifest
 
 - `db` has a `pg_isready` health check and keeps its data in the named volume `db-data`.
-- `api` starts only after `db` is healthy, runs `prisma migrate deploy`, then starts NestJS. Its health check calls `GET /health`, which is added in `C-04`; until then `docker compose ps` shows the API as unhealthy even though it answers on port 3001.
+- `api` starts only after `db` is healthy, runs `prisma migrate deploy`, then starts NestJS. The contract health path is `GET /api/v1/health` (ADR 0005). That route is not implemented. The Compose health check currently calls `GET /api/v1`, so `docker compose ps` can show the API as unhealthy even though the process answers on port 3001.
 - `web` is built with `NEXT_PUBLIC_API_URL` as a build argument, because Next.js inlines it at build time. Rebuild the web image after changing it.
 - All services share the default private Compose network; only ports 3000, 3001, and the database port are published for local use.
 - The payment provider is the mock (`PAYMENT_PROVIDER=mock`); local credentials are placeholders.
@@ -122,6 +122,55 @@ docker compose up --build -d
 - **Browser reports a CORS error:** set `CORS_ORIGIN` to the exact frontend origin (scheme, host, and port), then restart the API (`docker compose up -d api`).
 - **Web shows an empty menu:** check the API logs, seed products, and verify API URL.
 
-## 9. Production note
+## 9. Production target
 
-This runbook targets local development and academic demo only. Public deployment needs TLS, managed secrets, restricted database networking, backups, monitoring, real payment integration, and a reviewed production platform configuration.
+Production is Render, as decided in [ADR 0007](architecture/adr/0007-hosting-platform.md). This section is the procedure. It is not a record of a deploy that has happened.
+
+| Item | Value |
+| --- | --- |
+| Web URL | Not assigned. Do not invent an `onrender.com` host. |
+| API URL | Not assigned. |
+| Health URL | Not assigned. The path, once the API URL exists, is `GET /api/v1/health`. |
+| Database | Render PostgreSQL, internal URL only. Not public. |
+| Images | `ghcr.io/<github-owner>/brewlite-web:<commit-sha>` and `ghcr.io/<github-owner>/brewlite-api:<commit-sha>` |
+| Registry owner | Not set. It is fixed when the CD workflow is added. |
+
+HTTPS is provided by Render for the two web services. The browser calls the API directly, so `CORS_ORIGIN` must be the exact web origin and `NEXT_PUBLIC_API_URL` must be the public API origin including `/api/v1`. That API URL is a build argument. Changing it requires a new web image.
+
+## 10. Secrets
+
+Production secrets live in the Render service environment. They are not committed, and they must not be printed by GitHub Actions.
+
+| Name | Service | Secret |
+| --- | --- | --- |
+| `DATABASE_URL` | API | Yes. Render internal Postgres URL. |
+| `JWT_SECRET` | API | Yes. |
+| `CORS_ORIGIN` | API | No. Exact web origin. |
+| `PAYMENT_PROVIDER` | API | No. `mock`. |
+| `NEXT_PUBLIC_API_URL` | Web build | No. Must not hold a password or a token. |
+
+`.env` stays out of git. A log line that contains `JWT_SECRET` or `DATABASE_URL` is a failed deploy, even if the health check is green.
+
+## 11. Deploy, when the pipeline exists
+
+The workflow file is not in the repository. Until it is, do not claim a deploy. The intended order is:
+
+1. Pull request runs install, lint, unit test, and build for `apps/api` and `apps/web`. A failure blocks merge.
+2. A tag, or the protected branch, builds both Dockerfiles.
+3. Actions pushes both images to GHCR with the full commit SHA as the tag. `latest` is not the deploy tag.
+4. Render pulls those images for `brewlite-web` and `brewlite-api`.
+5. The API container runs `prisma migrate deploy` before `node dist/main.js`. If migration fails, the deploy fails. Seed is not run in production.
+6. Smoke calls `GET /api/v1/health` and expects `200` and `{ "status": "ok", "version": "v1" }`. Retry long enough to survive a cold start. If it still fails, stop. Do not point the README at that URL.
+
+## 12. Rollback
+
+Rollback is deploying the previous image SHA, not editing the running container.
+
+1. Find the last SHA whose health check passed. It is the previous row in [release-notes.md](delivery/release-notes.md), once a real release exists.
+2. In Render, deploy that SHA for both `brewlite-web` and `brewlite-api`. The web image must be the one built for the same API URL.
+3. Call `GET /api/v1/health` again.
+4. Write the SHA that was restored into the release notes.
+
+A database migration that already ran is not reversed by the old image. If the new migration is not backward compatible, rollback of the image is not enough. That case needs a written forward fix, not a silent `migrate reset`.
+
+Local rollback of a developer database is different: `docker compose down -v` deletes the local volume. Do not run that against production.
