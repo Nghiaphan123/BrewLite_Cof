@@ -1,6 +1,6 @@
 # Assignment 2 — document batches
 
-**Status:** Batch 1 written on `docs/assignment2-requirements`. Batches 2–4 not started.  
+**Status:** Batches 1 and 2 written on `docs/assignment2-requirements`. Batches 3–4 not started.  
 **Rule:** documents only. No application code in these batches.  
 **Related:** Assignment 2 PDF (Requirements to Deployment), [context and scope](../requirements/context-and-scope.md)
 
@@ -16,7 +16,7 @@ Assignment 2 accepts a later task only after the earlier task's required files a
 | `docs/diagrams/use-case-system.puml` and `.svg` | Task 1.2 |
 | `docs/diagrams/use-case-checkout.puml` and `.svg` | Task 1.3 |
 
-## Batch 2 — Task 2 modeling (not started)
+## Batch 2 — Task 2 modeling (written)
 
 | File | Required by |
 | --- | --- |

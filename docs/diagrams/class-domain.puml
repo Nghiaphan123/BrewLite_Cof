@@ -1,0 +1,162 @@
+@startuml class-domain
+!pragma layout smetana
+title BrewLite domain classes (Assignment 2, Task 2.3)
+skinparam shadowing false
+skinparam backgroundColor #FFFFFF
+skinparam classAttributeIconSize 0
+skinparam class {
+  BackgroundColor #FAF7F2
+  BorderColor #6F4E37
+  HeaderBackgroundColor #6F4E37
+  HeaderFontColor #FFFFFF
+  FontColor #3B2A1E
+}
+hide methods
+hide circles
+
+together {
+  enum OrderStatus {
+    PENDING
+    PAID
+    PAYMENT_FAILED
+    PREPARING
+    READY
+    COMPLETED
+    CANCELLED
+  }
+  enum Size {
+    S
+    M
+    L
+  }
+  enum PaymentMethod {
+    WALLET
+    CARD
+  }
+  enum PaymentStatus {
+    SUCCESS
+    FAILED
+    REFUNDED
+  }
+  enum PromotionType {
+    PERCENT
+    FIXED
+  }
+}
+
+class User {
+  id: UUID
+  name: String
+  email: String
+  passwordHash: String
+  loyaltyPoints: Int
+  createdAt: DateTime
+}
+
+class Product {
+  id: UUID
+  name: String
+  price: Int
+  imageUrl: String
+  stock: Int
+  version: Int
+}
+
+class Topping {
+  id: UUID
+  name: String
+  price: Int
+  active: Boolean
+}
+
+class Order {
+  id: UUID
+  code: String
+  status: OrderStatus
+  subtotal: Int
+  discountAmount: Int
+  total: Int
+  promoCode: String
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
+class OrderItem {
+  id: UUID
+  size: Size
+  qty: Int
+  unitPrice: Int
+  lineTotal: Int
+}
+
+class OrderItemTopping {
+  unitPrice: Int
+}
+
+class Payment {
+  id: UUID
+  idempotencyKey: String
+  requestHash: String
+  amount: Int
+  method: PaymentMethod
+  status: PaymentStatus
+  createdAt: DateTime
+  refundedAt: DateTime
+}
+
+class Promotion {
+  id: UUID
+  code: String
+  type: PromotionType
+  value: Int
+  minOrderTotal: Int
+  validFrom: DateTime
+  validTo: DateTime
+  active: Boolean
+  usageLimit: Int
+  usedCount: Int
+}
+
+class LoyaltyTransaction <<planned>> {
+  id: UUID
+  points: Int
+  createdAt: DateTime
+}
+
+User "1" --> "0..*" Order : places >
+User "1" --> "0..*" Payment : pays >
+User "1" --> "0..*" LoyaltyTransaction : earns >
+Order "1" *-- "1..*" OrderItem : contains >
+Order "1" --> "0..*" Payment : attempts >
+Order "0..*" --> "0..1" Promotion : uses >
+Order "1" --> "0..*" LoyaltyTransaction : records >
+Product "1" --> "0..*" OrderItem : ordered as >
+OrderItem "1" *-- "0..*" OrderItemTopping : snapshots >
+Topping "1" --> "0..*" OrderItemTopping : priced on >
+
+Order .. OrderStatus
+OrderItem .. Size
+Payment .. PaymentMethod
+Payment .. PaymentStatus
+Promotion .. PromotionType
+
+note bottom of LoyaltyTransaction
+  Required by FR-13.
+  Not a table in schema.prisma yet.
+  Point balance still lives on User.loyaltyPoints.
+  Spending points is out of scope.
+end note
+
+note bottom of Product
+  price is the size S price, whole VND.
+  stock decreases only when an order becomes PAID.
+  version is the optimistic lock.
+end note
+
+note bottom of Order
+  total = subtotal - discountAmount.
+  code is the customer-facing id.
+  PENDING does not reserve stock.
+end note
+
+@enduml

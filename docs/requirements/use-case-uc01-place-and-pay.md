@@ -175,7 +175,7 @@ Allowed payment methods in this use case are `WALLET` and `CARD` only.
 | NFR-02 | Steps 6, 8, 9 |
 | NFR-06 | Steps 4, 8, E4 |
 
-The sequence diagram for this use case is a Task 2 deliverable: `docs/diagrams/sequence-checkout.puml`. It is not part of this batch.
+The sequence diagram for this use case is [sequence-checkout.puml](../diagrams/sequence-checkout.puml) (export: [sequence-checkout.svg](../diagrams/sequence-checkout.svg)). The end-to-end activity is [activity-order-flow.puml](../diagrams/activity-order-flow.puml).
 
 ## 10. Test ideas
 

@@ -1,0 +1,131 @@
+@startuml activity-order-flow
+title End-to-end order flow (Assignment 2, Task 2.1)\nStock changes only when payment reaches PAID
+skinparam shadowing false
+skinparam backgroundColor #FFFFFF
+skinparam activity {
+  BackgroundColor #FAF7F2
+  BorderColor #6F4E37
+  FontColor #3B2A1E
+}
+skinparam activityDiamond {
+  BackgroundColor #FFFFFF
+  BorderColor #6F4E37
+}
+
+|Customer|
+start
+:Open the menu;
+
+|Next.js UI|
+:Request the menu;
+
+|NestJS API|
+:Load the catalog;
+if (catalog request ok?) then (yes)
+  if (any drinks?) then (yes)
+    |Next.js UI|
+    :Show name, image, and price;
+  else (empty)
+    |Next.js UI|
+    :Show the empty state;
+    stop
+  endif
+else (failed)
+  |Next.js UI|
+  :Show an error and a retry;
+  stop
+endif
+
+|Customer|
+:Open one drink;
+:Choose size and toppings;
+:Add the line to the cart;
+:Open the cart and check the total;
+if (cart has a line?) then (yes)
+  :Choose to pay;
+else (empty)
+  :Stay on the cart. No order.;
+  stop
+endif
+
+if (signed in?) then (yes)
+else (not logged in)
+  |Next.js UI|
+  :Open sign-in;
+  |Customer|
+  if (registers or signs in?) then (yes)
+    :Return to checkout;
+  else (will not sign in)
+    :Keep the cart. No order.;
+    stop
+  endif
+endif
+
+|Customer|
+:Choose Wallet or Card;
+:Confirm payment;
+
+|Next.js UI|
+:Send the cart with the JWT;
+
+|NestJS API|
+if (JWT valid?) then (yes)
+else (no)
+  :Reject the call;
+  |Next.js UI|
+  :Ask the customer to sign in again. Cart kept.;
+  stop
+endif
+if (cart and options valid?) then (yes)
+else (no)
+  :Reject validation. No order.;
+  |Next.js UI|
+  :Show the error. Cart kept.;
+  stop
+endif
+:Create one PENDING order.\nServer total. Stock unchanged.;
+
+|Next.js UI|
+:Send payment with an Idempotency-Key;
+
+|NestJS API|
+if (same key and same body already stored?) then (replay)
+  :Return the stored result. No second charge.;
+else (new attempt)
+  |Payment Service|
+  :Decide the mock Wallet or Card charge;
+  if (provider approves?) then (yes)
+    |NestJS API|
+    if (stock still covers the lines?) then (yes)
+      :Transaction: payment SUCCESS,\norder PAID, decrement stock,\nrecord loyalty points.;
+      |Next.js UI|
+      :Clear the cart;
+      |Customer|
+      :See the order code and status PAID;
+      stop
+    else (out of stock)
+      :Do not change stock below zero.\nDo not mark the order PAID.;
+      |Next.js UI|
+      :Keep the cart;
+      |Customer|
+      :See that the drink is unavailable;
+      stop
+    endif
+  else (declined)
+    |NestJS API|
+    :Mark the order PAYMENT_FAILED.\nStock and points unchanged.;
+    |Next.js UI|
+    :Keep the cart and offer retry;
+    |Customer|
+    :See payment failed;
+    stop
+  endif
+endif
+
+|Next.js UI|
+:Show the stored success or failure;
+|Customer|
+:See that original outcome;
+stop
+
+@enduml

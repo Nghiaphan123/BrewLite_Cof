@@ -16,7 +16,7 @@ This directory holds BrewLite's diagrams. This README is the rule sheet: what be
 | `flows/`      | Business flow diagrams: main path, error/cancel branches, state machine | Mermaid `flowchart` or `stateDiagram-v2` (`.mmd`) + `.svg` | `docs/requirements/scenarios.md`, Task 4.0                         |
 | `wireframes/` | Exported screen wireframes                                              | `.png` (2× scale, white background)                        | `docs/design/wireframes.md`, Task 5.0                              |
 | `raw/`        | Whiteboard photos, sketches, scratch exports                            | Anything, but **not referenced** from deliverables         | —                                                                  |
-| `*.puml` at this folder root | Assignment 2 UML: use case, activity, sequence, class, deployment | PlantUML (`.puml`) + `.svg` export | The owning file in `docs/requirements/` or `docs/architecture/` |
+| `*.puml` at this folder root | Assignment 2 UML: use case, activity, sequence, class, deployment | PlantUML (`.puml`) + `.svg` export | [task2-modeling.md](task2-modeling.md), or the owning file in `docs/requirements/` or `docs/architecture/` |
 
 **What does not belong here:**
 - Screenshots of the running app (those go in PR descriptions, not the repo).
