@@ -106,7 +106,7 @@ docker compose up --build -d
 ## 7. Compose manifest
 
 - `db` has a `pg_isready` health check and keeps its data in the named volume `db-data`.
-- `api` starts only after `db` is healthy, runs `prisma migrate deploy`, then starts NestJS. The contract health path is `GET /api/v1/health` (ADR 0005). That route is not implemented. The Compose health check currently calls `GET /api/v1`, so `docker compose ps` can show the API as unhealthy even though the process answers on port 3001.
+- `api` starts only after `db` is healthy, runs `prisma migrate deploy`, then starts NestJS. Compose calls `GET /api/v1/health` (ADR 0005). `web` waits until that check passes.
 - `web` is built with `NEXT_PUBLIC_API_URL` as a build argument, because Next.js inlines it at build time. Rebuild the web image after changing it.
 - All services share the default private Compose network; only ports 3000, 3001, and the database port are published for local use.
 - The payment provider is the mock (`PAYMENT_PROVIDER=mock`); local credentials are placeholders.

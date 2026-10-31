@@ -160,7 +160,7 @@ These URLs are not assigned. Do not replace them with a guessed host.
 | API | Not assigned |
 | Health `GET /api/v1/health` | Not assigned |
 
-The health route is specified and not implemented. There is no `.github/workflows` file, so CI does not yet block a merge by itself. Evidence slots are in [docs/delivery/ci-evidence.md](docs/delivery/ci-evidence.md). There is no production release: [docs/delivery/release-notes.md](docs/delivery/release-notes.md).
+`GET /api/v1/health` is implemented. There is no `.github/workflows` file, so CI does not yet block a merge by itself. The public health URL is still not assigned. Evidence slots are in [docs/delivery/ci-evidence.md](docs/delivery/ci-evidence.md). There is no production release: [docs/delivery/release-notes.md](docs/delivery/release-notes.md).
 
 Rollback, once a SHA has been deployed, is "deploy the previous image SHA" for both web and API, then call the health URL again. It is not `docker compose down -v`. That command deletes only a local database volume.
 

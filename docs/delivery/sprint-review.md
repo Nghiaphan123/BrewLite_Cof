@@ -22,6 +22,6 @@ Assignment 2 asks for a Sprint Review of the delivered product. This file is the
 | Build shown | None. No production URL. |
 | Demo video | Not recorded. The video is not a file in this repository. |
 | Accepted | — |
-| Gaps still open | Health route, PWA, CI workflow, Playwright menu-to-confirmation test, `LoyaltyTransaction` table, Render services |
+| Gaps still open | PWA, CI workflow, Playwright menu-to-confirmation test, `LoyaltyTransaction` table, Render services. Health route exists; its public URL does not. |
 
 Do not fill the date until the people in the review were actually there.

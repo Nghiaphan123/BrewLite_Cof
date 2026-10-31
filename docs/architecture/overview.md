@@ -45,7 +45,7 @@ The API is one Nest application with a global prefix `/api/v1` (ADR 0005).
 | `orders` | Create an order, read the caller's orders, enforce the state machine. |
 | `payments` | Mock charge, idempotency key, stock decrement at `PAID`, loyalty points. |
 | `promotions` | Validate a promo code. |
-| `health` | Specified as `GET /api/v1/health`. Not implemented yet. |
+| `health` | `GET /api/v1/health`. Public. Does not touch the database. |
 
 Cross-cutting rules:
 
@@ -79,7 +79,7 @@ Configuration comes from the environment, not from committed secrets. `.env.exam
 
 Logs are process stdout. Render stores them. They must not include secrets or tokens. A dedicated logging interceptor is not in the code yet. `LOG_LEVEL` is named in `config.md` and is not wired to a custom logger yet.
 
-The health contract is `GET /api/v1/health` → `200 { "status": "ok", "version": "v1" }` (ADR 0005). Render will call that path. Today the route does not exist. Compose currently probes `GET /api/v1`, and `deployment.md` says `GET /health`. Those two notes are wrong relative to the contract. Production follows the contract. Fixing the route and the local probe is a code task, not a diagram change.
+The health contract is `GET /api/v1/health` → `200 { "status": "ok", "version": "v1" }` (ADR 0005). The route is implemented and Compose probes that path. Render will call the same path once the service exists. The public URL is not assigned.
 
 ## 6. Local, CI, and production
 

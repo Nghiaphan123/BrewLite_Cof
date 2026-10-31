@@ -30,6 +30,22 @@ describe('AppController (e2e)', () => {
       .expect('Hello World!');
   });
 
+  it('GET /api/v1/health returns the liveness contract', async () => {
+    const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+    const prefixed = moduleFixture.createNestApplication();
+    prefixed.setGlobalPrefix('api/v1');
+    await prefixed.init();
+
+    await request(prefixed.getHttpServer())
+      .get('/api/v1/health')
+      .expect(200)
+      .expect({ status: 'ok', version: 'v1' });
+
+    await prefixed.close();
+  });
+
   afterEach(async () => {
     await app.close();
   });

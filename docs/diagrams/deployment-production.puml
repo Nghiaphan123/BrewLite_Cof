@@ -63,7 +63,7 @@ end note
 
 note bottom of api
   Health path is GET /api/v1/health.
-  The route is specified and not implemented yet.
+  The route exists. The public URL does not.
 end note
 
 @enduml
