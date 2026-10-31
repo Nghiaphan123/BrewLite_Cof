@@ -29,7 +29,7 @@ The browser does not talk to the database. The web app does not call the databas
 | --- | --- | --- | --- |
 | Web | Next.js 16 App Router, React, Tailwind, Zustand | Menu, product options, cart, login, checkout, confirmation, history. Mobile-first. PWA shell is required (NFR-04) and not built yet. | API only, from the browser, using `NEXT_PUBLIC_API_URL` |
 | API | NestJS, Prisma | Auth, catalog, orders, mock payment, promotions, loyalty rules. Validates every mutation again. | PostgreSQL. Payment mock in the same process. |
-| Database | PostgreSQL 17 | Users, products, toppings, orders, payments, promotions. `LoyaltyTransaction` is required by the class diagram and is not a table yet. | API only |
+| Database | PostgreSQL 17 | Users, products, toppings, orders, payments, promotions, loyalty transactions. | API only |
 | Payment mock | In-process module | Approves or declines Wallet and Card. No network call. No card numbers. | Called by the payments module |
 
 Local run is Docker Compose: web on port 3000, API on port 3001, Postgres with a named volume. Compose may publish Postgres to the developer machine. Production must not.
@@ -96,7 +96,7 @@ A pull request must not deploy. A tag or a protected branch deploy builds the im
 - There is no production URL yet.
 - There is no GitHub Actions workflow yet.
 - The PWA manifest and service worker are not in `apps/web` yet. The web service is still where they will be served.
-- `LoyaltyTransaction` is on the class diagram and not in `schema.prisma`.
+- `LoyaltyTransaction` is in `schema.prisma` and is written when a paid order earns points.
 - Confirmation in the running app is `/orders/[id]`. ADR 0004 names `/orders/[code]/confirmation`. The architecture still treats the order code as the customer-facing identifier.
 - A demo QR on checkout is not a payment service and is not a node in the deployment diagram.
 

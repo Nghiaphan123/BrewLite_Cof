@@ -34,7 +34,7 @@ No row claims a production URL, a CI run, or an end-to-end browser test. Those d
 | FR-10 Idempotent payment | UC-01 | sequence diagram, ADR 0004 D4 | `Payment.idempotencyKey`, `requestHash` | `payments.e2e-spec.ts`: same key and body, same key and different body | Covered |
 | FR-11 No oversell | UC-01 | sequence diagram, ADR 0004 D1 | `Product.stock`, `Product.version`. Stock moves at `PAID`. | `orders-concurrent-stock.e2e-spec.ts` | Covered |
 | FR-12 Promotion | UC-01 A2 | class diagram `Promotion` | `POST /api/v1/promotions/validate`, promo on `POST /api/v1/orders` | `promotions.e2e-spec.ts` | Covered for the cases in that file. Priority is Should. |
-| FR-13 Loyalty accrual | UC-01 | class diagram `LoyaltyTransaction` <<planned>> | `loyaltyPointsFor` in `apps/api/src/modules/payments/loyalty.ts`. Points field on `User`. | `loyalty.spec.ts` tests the formula only. | Partial. The formula is tested. The `LoyaltyTransaction` table is not in `schema.prisma`. |
+| FR-13 Loyalty accrual | UC-01 | class diagram `LoyaltyTransaction` | `loyalty_transactions` table. Written in `payments.service.ts` when points are greater than zero. | `loyalty.spec.ts` for the formula. `payments.e2e-spec.ts` asserts one `EARN` row on success and none on failure. | Covered. Point redemption remains refused. |
 | FR-14 Retry a failed payment on the same order | UC-01 A3 | state machine `PAYMENT_FAILED → PAID` | `order-state-machine.ts` | `order-state-machine.spec.ts` allows the edge. | Partial. The legal edge is unit-tested. An API test that pays again and keeps one order is not cited here. |
 | FR-C1 Demo QR | not a payment step | checkout page note | `apps/web/src/app/checkout/page.tsx` | `frontend-api-flow.spec.tsx` | Could. Not required to pass FR-06. |
 | FR-W1 Real bank or VietQR | none | context-and-scope §4 | none | none | Refused |
@@ -53,7 +53,7 @@ No row claims a production URL, a CI run, or an end-to-end browser test. Those d
 | NFR-05 Compose, health, CI, HTTPS, private database, rollback | deploy | [deployment-production.puml](diagrams/deployment-production.puml), [ADR 0007](architecture/adr/0007-hosting-platform.md), [deployment.md](deployment.md) | `GET /api/v1/health` in `apps/api/src/health/`. `docker-compose.yml` probes that path. No `.github/workflows`. | `apps/api/test/app.e2e-spec.ts` | Partial. The route and the local probe exist. CI and the production URL do not. |
 | NFR-06 Integer VND, server price wins | UC-01 | ADR 0005, ui-decisions.md | Prisma `Int` money fields. Server recomputes the order total. | `pricing-and-cart.spec.ts` | Partial. The shared pricing fixture named in older docs is not the proof used here. The cart unit test is the current web proof. |
 | NFR-07 Logs without secrets | operations | overview.md §5 | Nest default logging only. No logging interceptor. | none | Documented. Should, not yet built. |
-| NFR-08 Diagrams match this SRS | UC-01 | activity, sequence, and class diagrams | docs only | review, not an automated test | Documented. `LoyaltyTransaction` is marked planned so the class diagram does not claim the table exists. |
+| NFR-08 Diagrams match this SRS | UC-01 | activity, sequence, and class diagrams | docs only | review, not an automated test | Documented. The class diagram now includes the loyalty table that the init migration already created. |
 
 ## 3. Assignment 2 tasks
 

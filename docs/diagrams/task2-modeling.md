@@ -27,6 +27,6 @@ These notes say how to read the three Task 2 diagrams. The PlantUML file is the 
 
 The class diagram includes every class the PDF names: `User`, `Product`, `Order`, `OrderItem`, `Payment`, `Promotion`, and `LoyaltyTransaction`. It also includes `Topping` and `OrderItemTopping`, because those tables exist and an order line is not complete without them.
 
-`LoyaltyTransaction` is marked `<<planned>>`. FR-13 and the comment on `User.loyaltyPoints` require a row for each point change. `schema.prisma` does not have that model yet. The diagram is the target domain model, not a claim that the table already exists. Adding the table is a later code change, not part of this document batch.
+`LoyaltyTransaction` matches `loyalty_transactions` in the init migration and `schema.prisma`. A paid order with points above zero writes one `EARN` row in the same transaction as the balance update. `REVERSAL` is reserved and is not used by the MVP.
 
 Enums match `schema.prisma`: `OrderStatus`, `Size`, `PaymentMethod`, `PaymentStatus`, `PromotionType`.

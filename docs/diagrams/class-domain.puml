@@ -42,6 +42,10 @@ together {
     PERCENT
     FIXED
   }
+  enum LoyaltyTransactionType {
+    EARN
+    REVERSAL
+  }
 }
 
 class User {
@@ -117,8 +121,9 @@ class Promotion {
   usedCount: Int
 }
 
-class LoyaltyTransaction <<planned>> {
+class LoyaltyTransaction {
   id: UUID
+  type: LoyaltyTransactionType
   points: Int
   createdAt: DateTime
 }
@@ -141,10 +146,9 @@ Payment .. PaymentStatus
 Promotion .. PromotionType
 
 note bottom of LoyaltyTransaction
-  Required by FR-13.
-  Not a table in schema.prisma yet.
-  Point balance still lives on User.loyaltyPoints.
-  Spending points is out of scope.
+  Table loyalty_transactions from the init migration.
+  One EARN row is written when an order becomes PAID and points > 0.
+  Spending points is out of scope. REVERSAL is reserved.
 end note
 
 note bottom of Product
