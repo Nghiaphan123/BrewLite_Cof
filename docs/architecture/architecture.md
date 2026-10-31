@@ -1,7 +1,7 @@
 # BrewLite - Project Structure
 
 **Status:** Current scaffold and target structure for implementation  
-**Related:** [Architecture](architecture.md)
+**Related:** [Architecture overview](overview.md). This file is the folder tree, not the Assignment 2 architecture description.
 
 BrewLite is a Node.js monorepo with two independent npm applications: `apps/api` (NestJS) and `apps/web` (Next.js). Each app has its own `package.json` and `package-lock.json`; install packages from that app's directory. The root currently has no npm workspace package.
 

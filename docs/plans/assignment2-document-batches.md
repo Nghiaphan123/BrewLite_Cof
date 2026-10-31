@@ -1,6 +1,6 @@
 # Assignment 2 — document batches
 
-**Status:** Batches 1 and 2 written on `docs/assignment2-requirements`. Batches 3–4 not started.  
+**Status:** Batches 1–3 written on `docs/assignment2-requirements`. Batch 4 not started.  
 **Rule:** documents only. No application code in these batches.  
 **Related:** Assignment 2 PDF (Requirements to Deployment), [context and scope](../requirements/context-and-scope.md)
 
@@ -26,15 +26,15 @@ Assignment 2 accepts a later task only after the earlier task's required files a
 
 The class diagram must include `User`, `Product`, `Order`, `OrderItem`, `Payment`, `Promotion`, and `LoyaltyTransaction`. It must not contradict the SRS or the database model.
 
-## Batch 3 — Task 3 architecture documents (not started)
+## Batch 3 — Task 3 architecture documents (written)
 
 | File | Required by |
 | --- | --- |
 | `docs/architecture/overview.md` | Task 3.1 |
-| `docs/architecture/adr/0006-hosting-platform.md` | Task 3.1 |
+| `docs/architecture/adr/0007-hosting-platform.md` | Task 3.1 |
 | `docs/diagrams/deployment-production.puml` and `.svg` | Task 3.2 |
 
-Batch 3 waits for the team to name the real host (Render, Railway, Fly.io, Azure, AWS, or a VPS). The deployment diagram must match that host. A generic diagram does not pass Task 3.2.
+The host is Render, confirmed by the team. ADR number 0006 was already reserved for auth-token storage, so hosting is 0007. The diagram is the intended Render layout. It is not a claim that the services or the production URL exist.
 
 ## Batch 4 — handover documents (after deploy, not started)
 

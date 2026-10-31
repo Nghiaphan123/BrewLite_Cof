@@ -15,7 +15,7 @@ BrewLite is a mobile-first web app for ordering coffee at a counter. A customer 
 | Database  | PostgreSQL                                                                  |
 | Payment   | Mock provider behind a `PaymentProvider` interface (no real money)          |
 | Local run | Docker Compose                                                              |
-| Hosting   | Render (proposed, ADR 004)                                                  |
+| Hosting   | Render (accepted, [ADR 0007](docs/architecture/adr/0007-hosting-platform.md)) |
 
 Decisions and their reasons are in the [decision log](docs/plans/decision-log.md) and the [ADRs](docs/architecture/adr/README.md).
 
@@ -125,7 +125,7 @@ The test levels, IDs, and required evidence are in the [test strategy](docs/test
 
 ## Build, deploy, rollback
 
-To be completed in Phase 7 (`D-15`, `D-16`, `S-07` to `S-09`). Planned target: Render with Docker images tagged by commit SHA ([ADR 004](docs/architecture/adr/004-hosting-platform.md)).
+To be completed when the pipeline and the Render services exist (`D-15`, `D-16`, `S-07` to `S-09`). Target: Render, with images in GHCR tagged by commit SHA ([ADR 0007](docs/architecture/adr/0007-hosting-platform.md)). The production URL is not assigned yet.
 
 ## Documentation
 
