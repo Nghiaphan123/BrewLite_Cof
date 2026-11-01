@@ -52,6 +52,9 @@ jobs:
       - name: Lint
         working-directory: apps/api
         run: npm run lint
+      - name: Generate Prisma client
+        working-directory: apps/api
+        run: npm run db:generate
       - name: Unit test
         working-directory: apps/api
         run: npm test

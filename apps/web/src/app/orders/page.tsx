@@ -62,7 +62,7 @@ export default function OrderHistoryPage() {
             {order.items && order.items.length > 0 && (
               <div className="space-y-2 rounded-lg bg-stone-50 p-3">
                 <p className="text-xs font-semibold text-stone-700">Sản phẩm đã mua</p>
-                {order.items.slice(0, 3).map((item: any, idx) => (
+                {order.items.slice(0, 3).map((item, idx) => (
                   <div key={idx} className="flex items-start justify-between gap-2 text-sm">
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-stone-900">{item.productName || item.name || 'Sản phẩm'}</p>

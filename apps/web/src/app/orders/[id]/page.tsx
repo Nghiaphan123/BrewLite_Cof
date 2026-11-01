@@ -102,7 +102,7 @@ const status: Order['status'] =
           <div className="mt-4">
             <h2 className="mb-2 text-sm font-bold text-stone-900">Sản phẩm đã mua</h2>
             <div className="space-y-2">
-              {order.items.map((item: any, idx) => (
+              {order.items.map((item, idx) => (
                 <div key={idx} className="flex items-start justify-between gap-3 rounded-xl border border-stone-200 p-3 text-sm">
                   <div className="min-w-0 flex-1">
                     <p className="font-semibold text-stone-900">{item.productName || item.name || 'Sản phẩm'}</p>
