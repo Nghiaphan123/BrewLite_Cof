@@ -117,7 +117,14 @@ npm run lint
 npm run build
 ```
 
-There is no Playwright suite under `tests/e2e/` yet. A green local run is not the Assignment 2 end-to-end proof from menu to confirmation.
+The browser journey from menu to confirmation is `tests/e2e`. It is a separate package because this repo has no root `package.json`. Start the database, API, and web first, with the web app pointing at `http://localhost:3001/api/v1`.
+
+```powershell
+cd tests/e2e
+npm install
+npm run test:install
+npm test
+```
 
 ## Build
 

@@ -36,4 +36,4 @@ npm run lint
 npm run build
 ```
 
-`apps/web` has `npm test` (Vitest). There is no Playwright suite under `tests/e2e/` yet, so a green local API suite still leaves the menu-to-confirmation end-to-end test open.
+`apps/web` has `npm test` (Vitest). The menu-to-confirmation browser test is `tests/e2e`. It is not started by GitHub Actions until the CI workflow exists.
