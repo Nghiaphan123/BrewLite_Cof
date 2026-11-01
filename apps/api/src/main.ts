@@ -2,9 +2,13 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module.js';
 import { HttpExceptionFilter } from './common/http-exception.filter.js';
+import { LoggingInterceptor } from './common/logging.interceptor.js';
+import { requestIdMiddleware } from './common/request-id.middleware.js';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.use(requestIdMiddleware);
+  app.useGlobalInterceptors(new LoggingInterceptor());
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
   // Enable CORS for web frontend (docs/deployment.md)

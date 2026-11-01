@@ -77,7 +77,7 @@ Configuration comes from the environment, not from committed secrets. `.env.exam
 | `PAYMENT_PROVIDER` / mock mode | API runtime | No. |
 | `NEXT_PUBLIC_API_URL` | Web image build arg | No. Must not hold a secret. |
 
-Logs are process stdout. Render stores them. They must not include secrets or tokens. A dedicated logging interceptor is not in the code yet. `LOG_LEVEL` is named in `config.md` and is not wired to a custom logger yet.
+Logs are process stdout. Each request gets an `X-Request-Id`. A `500` response includes that id, and the log line is redacted so passwords, bearer tokens, and database URLs are not printed. `LOG_LEVEL=warn` or `error` skips the success line. Render stores stdout once the service exists.
 
 The health contract is `GET /api/v1/health` → `200 { "status": "ok", "version": "v1" }` (ADR 0005). The route is implemented and Compose probes that path. Render will call the same path once the service exists. The public URL is not assigned.
 
