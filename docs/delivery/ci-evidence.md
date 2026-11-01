@@ -1,9 +1,9 @@
 # CI evidence
 
-**Status:** No pipeline run.  
-**Related:** [ADR 0007](../architecture/adr/0007-hosting-platform.md), [NFR-05](../requirements/srs.md)
+**Status:** Workflow file exists. No pipeline run is recorded.  
+**Related:** [ADR 0007](../architecture/adr/0007-hosting-platform.md), [NFR-05](../requirements/srs.md), [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml)
 
-Assignment 2 Task 4.4 asks for a pull request that ran CI, plus proof of one successful pipeline and one pipeline that caught a failure. This repository has no `.github/workflows` file, so there is no run to paste.
+Assignment 2 Task 4.4 asks for a pull request that ran CI, plus proof of one successful pipeline and one pipeline that caught a failure. The workflow file is present. Opening a pull request is what creates the runs. Do not paste a run that has not happened.
 
 Do not add a screenshot of another project, a cropped log, or a made-up Actions URL.
 
@@ -11,7 +11,7 @@ Do not add a screenshot of another project, a cropped log, or a made-up Actions 
 
 | Evidence | Link or path | Status |
 | --- | --- | --- |
-| Workflow file | `.github/workflows/ci.yml` | Missing |
+| Workflow file | `.github/workflows/ci.yml` | Present |
 | Pull request whose checks ran | | Not run |
 | Successful run: install, lint, unit test, build | | Not run |
 | Failed run that blocked merge | | Not run |
@@ -36,4 +36,4 @@ npm run lint
 npm run build
 ```
 
-`apps/web` has `npm test` (Vitest). The menu-to-confirmation browser test is `tests/e2e`. It is not started by GitHub Actions until the CI workflow exists.
+`apps/web` has `npm test` (Vitest). The menu-to-confirmation browser test is `tests/e2e`. This CI workflow does not start it. It runs after the database, API, and web are up.

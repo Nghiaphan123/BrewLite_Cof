@@ -86,7 +86,7 @@ The health contract is `GET /api/v1/health` → `200 { "status": "ok", "version"
 | Boundary | What runs | Database | Secrets |
 | --- | --- | --- | --- |
 | Local | Docker Compose, or host processes against the Compose database | Postgres in Compose. Port may be published on localhost. | `.env`, not committed |
-| CI | GitHub Actions, not added yet. Install, lint, unit test, build on a pull request. | Ephemeral test database, not Render | CI secrets only. Logs must not print them. |
+| CI | GitHub Actions, `.github/workflows/ci.yml`. Install, lint, unit test, and build on a pull request. API integration tests use an ephemeral Postgres service. | Ephemeral test database, not Render | CI-only values in the workflow. Logs must not print them. No run is recorded yet. |
 | Production | Render web services pulling GHCR images tagged by commit SHA | Render Postgres, private disk, no public port | Render environment. Not in the repo, not in logs. |
 
 A pull request must not deploy. A tag or a protected branch deploy builds the images, pushes them, tells Render to roll forward, runs migrations as the API container starts, then calls the health URL. If health fails, the pipeline stops and the previous SHA remains the rollback target.
@@ -94,7 +94,7 @@ A pull request must not deploy. A tag or a protected branch deploy builds the im
 ## 7. What this overview refuses to claim
 
 - There is no production URL yet.
-- There is no GitHub Actions workflow yet.
+- The CI workflow file exists. A green run and a failed run have not been recorded.
 - The PWA shell is in `apps/web`. A browser install prompt still needs HTTPS, which Render provides. Localhost can offer it too.
 - `LoyaltyTransaction` is in `schema.prisma` and is written when a paid order earns points.
 - Confirmation in the running app is `/orders/[id]`. ADR 0004 names `/orders/[code]/confirmation`. The architecture still treats the order code as the customer-facing identifier.

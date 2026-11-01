@@ -98,7 +98,7 @@ A demo QR on the checkout screen, if present, is not a payment method. It must n
 | --- | --- | --- |
 | Some application code already exists before this Task 1 file. | A strict reading of the sequential rule may question Task 4 evidence. | Commit Task 1–3 documents on their own branch before claiming later tasks. Do not delete the existing app. |
 | Hosting platform is not chosen yet. | Task 3.2 cannot be an honest deployment diagram. | Choose the host before Batch 3. Do not draw a generic cloud. |
-| CI/CD is specified and not present in code yet. | The SRS and the running system can drift. | Track it as an implementation gap. Do not weaken this document to match the gap. |
+| CD and a recorded CI run are not present yet. The CI workflow file is. | The SRS and the running system can drift. | Track the open delivery items. Do not invent a pipeline log. |
 | Frontend total and server total can diverge. | The customer sees one price and is charged another. | Server price is authoritative. A shared pricing fixture must agree. |
 | Production URL missing at grading time. | Task 5 deployment is incomplete even if the code is done. | Deploy only after the documents and the pipeline exist. Record the URL in the README. |
 
