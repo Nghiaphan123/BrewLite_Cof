@@ -15,7 +15,7 @@ Do not add a screenshot of another project, a cropped log, or a made-up Actions 
 | Pull request whose checks ran | | Not run |
 | Successful run: install, lint, unit test, build | | Not run |
 | Failed run that blocked merge | | Not run |
-| CD run: image SHA pushed to GHCR, Render deploy, smoke `GET /api/v1/health` | | Not run |
+| CD workflow | `.github/workflows/cd.yml` | Present. Not run. |
 
 The failed run must be a real failure of lint, test, or build. A cancelled run does not count. The log must not contain `JWT_SECRET` or `DATABASE_URL`.
 

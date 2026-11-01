@@ -157,7 +157,7 @@ The test levels, IDs, and required evidence are in the [test strategy](docs/test
 
 ## Deploy and rollback
 
-Target platform: Render. Images are tagged with the commit SHA and stored in GHCR. The decision is [ADR 0007](docs/architecture/adr/0007-hosting-platform.md). The steps are in [docs/deployment.md](docs/deployment.md) §9–§12.
+Target platform: Render. Images are tagged with the commit SHA and stored in GHCR. A version tag `v*` runs [`.github/workflows/cd.yml`](.github/workflows/cd.yml). It stops if the Render secrets are missing. The decision is [ADR 0007](docs/architecture/adr/0007-hosting-platform.md). The steps are in [docs/deployment.md](docs/deployment.md) §9–§12.
 
 These URLs are not assigned. Do not replace them with a guessed host.
 

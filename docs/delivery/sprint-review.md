@@ -22,6 +22,6 @@ Assignment 2 asks for a Sprint Review of the delivered product. This file is the
 | Build shown | None. No production URL. |
 | Demo video | Not recorded. The video is not a file in this repository. |
 | Accepted | — |
-| Gaps still open | A recorded CI run, the CD workflow, and Render services. The CI file, health route, loyalty rows, PWA shell, and Playwright journey exist. The public URL does not. |
+| Gaps still open | A recorded CI run, Render services, and the GitHub deploy secrets. The CI and CD workflow files exist. The public URL does not. |
 
 Do not fill the date until the people in the review were actually there.

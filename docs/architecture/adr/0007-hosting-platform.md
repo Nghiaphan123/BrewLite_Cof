@@ -69,7 +69,7 @@ These are still missing. The diagram marks them planned. They are not reasons to
 
 | Gap | Where it shows |
 | --- | --- |
-| CI workflow exists. CD and a recorded run do not. | `.github/workflows/ci.yml` runs on pull requests. |
+| CI and CD workflow files exist. Neither has a recorded run. | `.github/workflows/ci.yml` and `.github/workflows/cd.yml`. |
 | No Render service and no production URL | URL placeholders only |
 | `GET /api/v1/health` is implemented. The public URL is not assigned. | Health arrow is the contract path. Smoke evidence is still open. |
 | Compose health check currently calls `GET /api/v1`, and `deployment.md` says `GET /health` | Both disagree with ADR 0005. Production follows ADR 0005. The local docs are a known defect. |

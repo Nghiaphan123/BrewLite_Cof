@@ -133,7 +133,7 @@ Production is Render, as decided in [ADR 0007](architecture/adr/0007-hosting-pla
 | Health URL | Not assigned. The path, once the API URL exists, is `GET /api/v1/health`. |
 | Database | Render PostgreSQL, internal URL only. Not public. |
 | Images | `ghcr.io/<github-owner>/brewlite-web:<commit-sha>` and `ghcr.io/<github-owner>/brewlite-api:<commit-sha>` |
-| Registry owner | Not set. It is fixed when the CD workflow is added. |
+| Registry owner | The GitHub owner, lowercased, when [`.github/workflows/cd.yml`](../.github/workflows/cd.yml) runs. |
 
 HTTPS is provided by Render for the two web services. The browser calls the API directly, so `CORS_ORIGIN` must be the exact web origin and `NEXT_PUBLIC_API_URL` must be the public API origin including `/api/v1`. That API URL is a build argument. Changing it requires a new web image.
 
@@ -153,7 +153,7 @@ Production secrets live in the Render service environment. They are not committe
 
 ## 11. Deploy, when the pipeline exists
 
-The workflow file is not in the repository. Until it is, do not claim a deploy. The intended order is:
+The workflow is [`.github/workflows/cd.yml`](../.github/workflows/cd.yml). It has not been run. It refuses to deploy until these GitHub secrets exist: `RENDER_API_KEY`, `RENDER_API_SERVICE_ID`, `RENDER_WEB_SERVICE_ID`, and `API_PUBLIC_ORIGIN`. `API_PUBLIC_ORIGIN` is the public API origin with no path and no trailing slash. The intended order is:
 
 1. Pull request runs install, lint, unit test, and build for `apps/api` and `apps/web`. A failure blocks merge.
 2. A tag, or the protected branch, builds both Dockerfiles.
