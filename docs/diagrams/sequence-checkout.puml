@@ -1,0 +1,94 @@
+@startuml sequence-checkout
+title UC-01 place and pay (Assignment 2, Task 2.2)
+skinparam shadowing false
+skinparam backgroundColor #FFFFFF
+skinparam sequenceMessageAlign center
+autonumber
+
+actor "Customer" as Customer
+participant "Next.js UI" as UI
+participant "NestJS API" as API
+database "Database" as DB
+participant "Payment Service" as Pay
+
+== Sign-in gate ==
+Customer -> UI: Confirm payment (Wallet or Card)
+UI -> API: POST /api/v1/orders\nAuthorization: Bearer JWT\ncart lines, optional promoCode
+API -> API: Validate JWT
+
+alt token missing, invalid, or expired
+  API --> UI: 401 Authentication required
+  UI --> Customer: Sign in again. Cart kept.
+else token valid
+  API -> API: Validate size, quantity, products, toppings
+  alt body invalid or cart empty
+    API --> UI: 400 validation error
+    UI --> Customer: Show the error. No order. Cart kept.
+  else body valid
+    == Create order (no stock change) ==
+    API -> DB: BEGIN transaction
+    API -> DB: INSERT Order PENDING, code, server total
+    API -> DB: INSERT OrderItem and topping snapshots
+    opt promo code valid
+      API -> DB: Store discount. total = subtotal - discount
+    end
+    API -> DB: COMMIT
+    note right of DB
+      Stock is not reserved.
+      A client-sent price is ignored.
+    end note
+    API --> UI: 201 { id, code, status: PENDING, total }
+
+    == Pay, with idempotency ==
+    UI -> API: POST /api/v1/payments\nJWT, Idempotency-Key\norderId, method, amount
+    API -> API: Validate JWT and body
+    API -> DB: Lookup payment by userId + Idempotency-Key
+
+    alt same key and same request hash
+      DB --> API: existing payment
+      API --> UI: 200 original result\nno second charge
+      UI --> Customer: Show the stored success or failure
+    else same key and different body
+      API --> UI: 409 IDEMPOTENCY_CONFLICT
+      UI --> Customer: No new payment. Cart kept.
+    else new key
+      API -> Pay: charge(method WALLET|CARD, amount)
+      alt provider declines
+        Pay --> API: declined
+        API -> DB: BEGIN transaction
+        API -> DB: INSERT Payment FAILED
+        API -> DB: UPDATE Order PAYMENT_FAILED
+        API -> DB: COMMIT
+        note right of DB
+          Stock unchanged.
+          Points unchanged.
+        end note
+        API --> UI: 200 { status: PAYMENT_FAILED, retryable: true }
+        UI --> Customer: Payment failed. Cart kept. Retry uses a new key.
+      else provider approves
+        Pay --> API: approved
+        API -> DB: BEGIN transaction
+        API -> DB: Re-read Product.stock and version
+        alt stock covers every line
+          API -> DB: INSERT Payment SUCCESS
+          API -> DB: UPDATE Order PENDING to PAID
+          API -> DB: Decrement stock if version matches
+          API -> DB: INSERT LoyaltyTransaction\nUPDATE User.loyaltyPoints
+          API -> DB: COMMIT
+          API --> UI: 200 { status: PAID, order code, points }
+          UI -> UI: Clear cart
+          UI --> Customer: Show order code and PAID
+        else out of stock
+          API -> DB: ROLLBACK stock change
+          API -> DB: Record payment failure\nOrder not PAID
+          API -> DB: COMMIT failure only
+          note right of DB: stock stays >= 0
+          API --> UI: out of stock
+          UI --> Customer: Drink unavailable. Cart kept.
+        end
+      end
+    end
+  end
+end
+
+@enduml

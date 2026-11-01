@@ -196,22 +196,14 @@ describe('Integration Test: Frontend <-> Backend API', () => {
       .mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          user: { id: 'u2', name: 'New User', email: 'new@brewlite.vn', loyaltyPoints: 0 },
-        }),
-      } as Response)
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
           accessToken: 'valid-jwt-token',
-          user: { id: 'u2', name: 'New User', email: 'new@brewlite.vn', loyaltyPoints: 0 },
+          user: { id: 'u2', name: 'new', email: 'new@brewlite.vn', loyaltyPoints: 0 },
         }),
       } as Response);
 
     render(<LoginPage />);
     fireEvent.click(screen.getByRole('button', { name: 'Chưa có tài khoản? Đăng ký ngay' }));
-    fireEvent.change(screen.getByTestId('auth-name'), {
-      target: { value: 'New User' },
-    });
+    expect(screen.queryByTestId('auth-name')).not.toBeInTheDocument();
     fireEvent.change(screen.getByTestId('auth-email'), {
       target: { value: 'new@brewlite.vn' },
     });
@@ -221,13 +213,13 @@ describe('Integration Test: Frontend <-> Backend API', () => {
     fireEvent.click(screen.getByTestId('auth-submit-btn'));
 
     await waitFor(() => {
-      expect(pushMock).toHaveBeenCalledWith('/menu');
+      expect(pushMock).toHaveBeenCalledWith('/');
     });
     expect(fetchSpy.mock.calls[0][1]?.body).toBe(
       JSON.stringify({
-        name: 'New User',
         email: 'new@brewlite.vn',
         password: 'password123',
+        name: 'new',
       }),
     );
     expect(useAuthStore.getState().token).toBe('valid-jwt-token');
@@ -251,13 +243,9 @@ describe('Integration Test: Frontend <-> Backend API', () => {
     fireEvent.click(screen.getByTestId('account-menu-button'));
     fireEvent.click(screen.getByRole('menuitem', { name: 'Xem thông tin' }));
 
-    expect(await screen.findByTestId('profile-name')).toHaveTextContent('Test User');
-    expect(screen.getByText('test@brewlite.vn')).toBeInTheDocument();
-    expect(screen.getByText('25 điểm')).toBeInTheDocument();
-    expect(fetchSpy).toHaveBeenCalledWith(
-      expect.stringContaining('/auth/me'),
-      expect.objectContaining({ cache: 'no-store' }),
-    );
+    expect(pushMock).toHaveBeenCalledWith('/account');
+    expect(screen.queryByTestId('profile-name')).not.toBeInTheDocument();
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
 
   it('đổi mật khẩu từ menu tài khoản sau khi xác nhận mật khẩu mới', async () => {
@@ -300,7 +288,7 @@ describe('Integration Test: Frontend <-> Backend API', () => {
     expect(screen.getByRole('link', { name: /Quay lại giỏ hàng/ })).toHaveAttribute('href', '/cart');
   });
 
-  it('khôi phục mã QR thanh toán đang chờ sau khi tải lại trang', async () => {
+  it('không khôi phục mã QR thanh toán từ sessionStorage', () => {
     sessionStorage.setItem(
       'brewlite-pending-qr',
       JSON.stringify({
@@ -312,11 +300,8 @@ describe('Integration Test: Frontend <-> Backend API', () => {
 
     render(<CheckoutPage />);
 
-    await waitFor(() => {
-      expect(screen.getByTestId('qr-payment-panel')).toBeInTheDocument();
-    });
-    expect(screen.getByText('Đơn 1042 · 50.000₫')).toBeInTheDocument();
-    expect(screen.getByTestId('payment-qr')).toHaveAttribute('src', 'data:image/svg+xml;charset=utf-8,qr');
+    expect(screen.queryByTestId('qr-payment-panel')).not.toBeInTheDocument();
+    expect(screen.getByTestId('confirm-payment-btn')).toHaveTextContent('Tạo mã QR thanh toán');
   });
 
   it('Luồng Thanh toán: gửi JWT + Idempotency-Key, cộng điểm thưởng và chuyển sang trang xác nhận khi PAID', async () => {

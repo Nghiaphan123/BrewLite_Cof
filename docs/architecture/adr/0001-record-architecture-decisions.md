@@ -39,6 +39,7 @@ The following decisions are already identified as needing ADRs, and their number
 | 0004 | Payment mock, order state machine, idempotency          | Proposed → Accepted when Task 8/10 close     |
 | 0005 | API contract conventions (envelope, errors, versioning) | Proposed → Accepted when Task 7.0 closes     |
 | 0006 | UI state and auth token storage                         | Proposed → Accepted when Task 5.0 closes     |
+| 0007 | Hosting platform: Render, GHCR, private Postgres        | Accepted. See `0007-hosting-platform.md`.    |
 
 ## Consequences
 

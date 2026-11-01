@@ -6,7 +6,7 @@
 
 This directory holds BrewLite's diagrams. This README is the rule sheet: what belongs here, what format each diagram type uses, how files are named, and what "done" means for a diagram. Follow it before drawing; the rules exist so the folder doesn't become an unindexed pile of exports.
 
-> **Source of truth:** for ER diagrams and business flows, the **Mermaid source** (`.mmd`) is the source of truth; the rendered `.svg` is a convenience export. For wireframes, the **exported `.png`** is the drawing of record; the editable source (Figma/Excalidraw link) is recorded in `docs/design/wireframes.md` §12. If a rendered image and its source disagree, the source wins for ER/flows and the `wireframes.md` text wins for wireframes.
+> **Source of truth:** for ER diagrams and business flows, the **Mermaid source** (`.mmd`) is the source of truth; the rendered `.svg` is a convenience export. For Assignment 2 UML diagrams, the **PlantUML source** (`.puml`) is the source of truth and the `.svg` beside it is the required export. For wireframes, the **exported `.png`** is the drawing of record; the editable source (Figma/Excalidraw link) is recorded in `docs/design/wireframes.md` §12. If a rendered image and its source disagree, the source wins.
 
 ## 1. What belongs here
 
@@ -16,6 +16,7 @@ This directory holds BrewLite's diagrams. This README is the rule sheet: what be
 | `flows/`      | Business flow diagrams: main path, error/cancel branches, state machine | Mermaid `flowchart` or `stateDiagram-v2` (`.mmd`) + `.svg` | `docs/requirements/scenarios.md`, Task 4.0                         |
 | `wireframes/` | Exported screen wireframes                                              | `.png` (2× scale, white background)                        | `docs/design/wireframes.md`, Task 5.0                              |
 | `raw/`        | Whiteboard photos, sketches, scratch exports                            | Anything, but **not referenced** from deliverables         | —                                                                  |
+| `*.puml` at this folder root | Assignment 2 UML: use case, activity, sequence, class, deployment | PlantUML (`.puml`) + `.svg` export | [task2-modeling.md](task2-modeling.md), or the owning file in `docs/requirements/` or `docs/architecture/` |
 
 **What does not belong here:**
 - Screenshots of the running app (those go in PR descriptions, not the repo).

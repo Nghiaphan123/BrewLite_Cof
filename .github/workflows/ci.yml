@@ -1,0 +1,94 @@
+# Assignment 2 Task 4.4: Install → Lint → Unit Test → Build.
+# A failed job fails the check. GitHub branch protection must require this
+# workflow before a pull request can merge. This file cannot set that rule.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  api:
+    name: API install, lint, test, build
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: brewlite
+          POSTGRES_USER: brewlite
+          POSTGRES_PASSWORD: ci-only-not-a-production-secret
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U brewlite -d brewlite"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://brewlite:ci-only-not-a-production-secret@localhost:5432/brewlite
+      JWT_SECRET: ci-only-jwt-secret-not-for-production-32
+      JWT_EXPIRES_IN: 1d
+      PAYMENT_MOCK_MODE: success
+      CORS_ORIGIN: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/api/package-lock.json
+      - name: Install
+        working-directory: apps/api
+        run: npm ci
+      - name: Lint
+        working-directory: apps/api
+        run: npm run lint
+      - name: Generate Prisma client
+        working-directory: apps/api
+        run: npm run db:generate
+      - name: Unit test
+        working-directory: apps/api
+        run: npm test
+      - name: Apply migrations
+        working-directory: apps/api
+        run: npm run db:deploy
+      - name: API integration test
+        working-directory: apps/api
+        run: npm run test:e2e
+      - name: Build
+        working-directory: apps/api
+        run: npm run build
+
+  web:
+    name: Web install, lint, test, build
+    runs-on: ubuntu-latest
+    env:
+      NEXT_PUBLIC_API_URL: http://localhost:3001/api/v1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install
+        working-directory: apps/web
+        run: npm ci
+      - name: Lint
+        working-directory: apps/web
+        run: npm run lint
+      - name: Unit test
+        working-directory: apps/web
+        run: npm test
+      - name: Build
+        working-directory: apps/web
+        run: npm run build
