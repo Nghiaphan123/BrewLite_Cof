@@ -10,7 +10,7 @@ import { ProductCard } from "./ProductCard";
 
 type MenuProduct = Product;
 
-const MENU_TABS = ["Tß║Ñt cß║ú", "C├á ph├¬", "Tr├á", "─É├í xay", "Kh├íc"] as const;
+const MENU_TABS = ["Tất cả", "Cà phê", "Trà", "Đá xay", "Khác"] as const;
 type MenuTab = (typeof MENU_TABS)[number];
 
 type ProductsResponse = {
@@ -54,26 +54,26 @@ function isProductsResponse(value: unknown): value is ProductsResponse {
   );
 }
 
-function getProductCategory(product: Product): Exclude<MenuTab, "Tß║Ñt cß║ú"> {
+function getProductCategory(product: Product): Exclude<MenuTab, "Tất cả"> {
   const name = product.name
     .toLocaleLowerCase("vi")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    .replace(/─æ/g, "d");
+    .replace(/đ/g, "d");
 
   if (name.includes("da xay")) {
-    return "─É├í xay";
+    return "Đá xay";
   }
-  if (name.includes("tra") || name.includes("tr")) {
+  if (name.includes("tra")) {
     return "Trà";
   }
   if (
-    ["ca phe", "cà phê", "bac xiu", "bạc xỉu", "sua", "sữa", "espresso", "americano", "cappuccino", "latte", "macchiato", "mocha", "cold brew"]
+    ["ca phe", "bac xiu", "sua", "espresso", "americano", "cappuccino", "latte", "macchiato", "mocha", "cold brew"]
       .some((keyword) => name.includes(keyword))
   ) {
-    return "C├á ph├¬";
+    return "Cà phê";
   }
-  return "Kh├íc";
+  return "Khác";
 }
 
 async function fetchProducts(signal: AbortSignal): Promise<MenuProduct[]> {
@@ -131,7 +131,7 @@ function MenuSkeleton() {
 export function MenuPage() {
   const [menuState, setMenuState] = useState<MenuState>({ status: "loading" });
   const [retryCount, setRetryCount] = useState(0);
-  const [activeTab, setActiveTab] = useState<MenuTab>("Tß║Ñt cß║ú");
+  const [activeTab, setActiveTab] = useState<MenuTab>("Tất cả");
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const totalItems = useCartStore((state) => state.getTotalItems());
   const cartTotal = useCartStore((state) => state.getTotalPrice());
@@ -150,7 +150,7 @@ export function MenuPage() {
 
   const products = menuState.status === "success" ? menuState.products : [];
   const visibleProducts =
-    activeTab === "Tß║Ñt cß║ú"
+    activeTab === "Tất cả"
       ? products
       : products.filter((product) => getProductCategory(product) === activeTab);
 
@@ -345,7 +345,7 @@ export function MenuPage() {
           >
             {MENU_TABS.map((tab) => {
               const count =
-                tab === "Tß║Ñt cß║ú"
+                tab === "Tất cả"
                   ? products.length
                   : products.filter((product) => getProductCategory(product) === tab).length;
               const selected = activeTab === tab;
