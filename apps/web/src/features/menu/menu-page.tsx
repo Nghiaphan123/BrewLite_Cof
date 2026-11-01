@@ -131,12 +131,8 @@ function MenuSkeleton() {
 export function MenuPage() {
   const [menuState, setMenuState] = useState<MenuState>({ status: "loading" });
   const [retryCount, setRetryCount] = useState(0);
-<<<<<<< HEAD
   const [activeTab, setActiveTab] = useState<MenuTab>("Tß║Ñt cß║ú");
-=======
-  const [activeTab, setActiveTab] = useState<MenuTab>("Tất cả");
   const [userMenuOpen, setUserMenuOpen] = useState(false);
->>>>>>> bb876c0 (feat(web): auth flow, profile, order details)
   const totalItems = useCartStore((state) => state.getTotalItems());
   const cartTotal = useCartStore((state) => state.getTotalPrice());
   const { token, user, logout } = useAuthStore();
@@ -202,19 +198,6 @@ export function MenuPage() {
             <span aria-hidden="true" className="text-2xl">Γÿò</span>
             BrewLite
           </Link>
-<<<<<<< HEAD
-          <Link
-            href="/cart"
-            aria-label={`Giß╗Å h├áng, hiß╗çn c├│ ${totalItems} sß║ún phß║⌐m`}
-            className="flex items-center gap-2 rounded-full bg-emerald-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-900"
-          >
-            <span aria-hidden="true">≡ƒ¢Æ</span>
-            <span>Giß╗Å h├áng</span>
-            <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-white px-1.5 text-xs font-bold text-emerald-950">
-              {totalItems}
-            </span>
-          </Link>
-=======
           <div className="flex items-center gap-2">
             {token ? (
               <div className="relative" ref={userMenuRef}>
@@ -285,7 +268,6 @@ export function MenuPage() {
               </span>
             </Link>
           </div>
->>>>>>> bb876c0 (feat(web): auth flow, profile, order details)
         </div>
       </header>
 
