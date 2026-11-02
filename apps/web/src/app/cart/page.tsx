@@ -7,6 +7,10 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useCartStore } from '@/store/cart.store';
 import { useAuthStore } from '@/store/auth.store';
+import { apiClient } from '@/lib/api';
+import { Spinner } from '@/components/Skeleton';
+
+const REMOVE_ANIMATION_MS = 220;
 
 export default function CartPage() {
   const router = useRouter();
@@ -15,17 +19,41 @@ export default function CartPage() {
     promoCode,
     updateQty,
     removeItem,
-    setPromoCode,
+    setPromotion,
     getSubtotal,
     getDiscount,
     getTotalPrice,
   } = useCartStore();
   const token = useAuthStore((state) => state.token);
   const [promoInput, setPromoInput] = useState(promoCode);
+  const [promoError, setPromoError] = useState<string | null>(null);
+  const [promoLoading, setPromoLoading] = useState(false);
+  const [removingIds, setRemovingIds] = useState<string[]>([]);
 
-  const handleApplyPromo = (e: React.FormEvent) => {
+  const handleRemove = (cartItemId: string) => {
+    setRemovingIds((ids) => [...ids, cartItemId]);
+    setTimeout(() => removeItem(cartItemId), REMOVE_ANIMATION_MS);
+  };
+
+  const handleApplyPromo = async (e: React.FormEvent) => {
     e.preventDefault();
-    setPromoCode(promoInput);
+    const code = promoInput.trim().toUpperCase();
+    setPromoError(null);
+    if (!code) {
+      setPromotion(null);
+      return;
+    }
+
+    setPromoLoading(true);
+    try {
+      setPromotion(await apiClient.validatePromotion(code, getSubtotal()));
+      setPromoInput(code);
+    } catch (error) {
+      setPromotion(null);
+      setPromoError(error instanceof Error ? error.message : 'Không thể áp dụng mã giảm giá.');
+    } finally {
+      setPromoLoading(false);
+    }
   };
 
   const handleProceedCheckout = () => {
@@ -88,7 +116,9 @@ export default function CartPage() {
               <article
                 key={item.cartItemId}
                 data-testid={`cart-item-${item.cartItemId}`}
-                className="flex gap-4 rounded-2xl border border-stone-200 bg-white p-3 shadow-sm sm:p-4"
+                className={`flex gap-4 rounded-2xl border border-stone-200 bg-white p-3 shadow-sm sm:p-4 ${
+                  removingIds.includes(item.cartItemId) ? 'pointer-events-none animate-item-out' : 'animate-rise-in'
+                }`}
               >
                 <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-stone-100 sm:h-28 sm:w-32">
                   {item.product.imageUrl ? (
@@ -125,17 +155,21 @@ export default function CartPage() {
                       <button
                         type="button"
                         aria-label="Giảm số lượng"
-                        onClick={() => updateQty(item.cartItemId, item.qty - 1)}
-                        className="h-8 w-8 rounded-full bg-white text-lg font-bold text-black transition hover:bg-black hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
+                        onClick={() =>
+                          item.qty === 1
+                            ? handleRemove(item.cartItemId)
+                            : updateQty(item.cartItemId, item.qty - 1)
+                        }
+                        className="h-8 w-8 rounded-full bg-white text-lg font-bold text-[#002C22] transition hover:bg-[#002C22] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#002C22]"
                       >
                         −
                       </button>
-                      <span className="w-5 text-center text-sm font-bold text-black">{item.qty}</span>
+                      <span key={item.qty} className="w-5 animate-pop text-center text-sm font-bold text-black">{item.qty}</span>
                       <button
                         type="button"
                         aria-label="Tăng số lượng"
                         onClick={() => updateQty(item.cartItemId, item.qty + 1)}
-                        className="h-8 w-8 rounded-full bg-white text-lg font-bold text-black transition hover:bg-black hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
+                        className="h-8 w-8 rounded-full bg-white text-lg font-bold text-[#002C22] transition hover:bg-[#002C22] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#002C22]"
                       >
                         +
                       </button>
@@ -143,7 +177,7 @@ export default function CartPage() {
                     <button
                       type="button"
                       aria-label={`Xóa ${item.product.name} khỏi giỏ`}
-                      onClick={() => removeItem(item.cartItemId)}
+                      onClick={() => handleRemove(item.cartItemId)}
                       className="rounded-lg px-2 py-2 text-xs font-medium text-red-600 hover:bg-red-50"
                     >
                       Xóa
@@ -173,11 +207,18 @@ export default function CartPage() {
                 <button
                   type="submit"
                   data-testid="apply-promo-btn"
-                  className="rounded-xl bg-black px-4 py-2.5 text-sm font-bold text-white transition hover:bg-stone-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
+                  disabled={promoLoading}
+                  className="rounded-xl bg-[#002C22] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#014034] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#002C22] disabled:opacity-60"
                 >
+                  {promoLoading && <Spinner />}
                   Áp dụng
                 </button>
               </div>
+              {promoError && (
+                <p role="alert" data-testid="promo-error" className="mt-2 text-sm text-red-600">
+                  {promoError}
+                </p>
+              )}
             </form>
 
             <div className="mt-5 space-y-3 border-t border-stone-200 pt-4 text-sm">

@@ -4,7 +4,6 @@ import {
   calculateUnitPrice,
   calculateLineTotal,
   calculateDiscount,
-  AVAILABLE_TOPPINGS,
 } from '@/features/product/pricing';
 import { useCartStore } from '@/store/cart.store';
 import { Product } from '@/types';
@@ -27,15 +26,23 @@ describe('Unit Test: Tính giá theo Size / Topping & Khuyến mãi', () => {
   });
 
   it('cộng đúng tiền khi chọn nhiều topping và nhân số lượng', () => {
-    const toppings = [AVAILABLE_TOPPINGS[0], AVAILABLE_TOPPINGS[1]]; // 5k + 8k = 13k
+    const toppings = [
+      { id: 't1', name: 'Trân châu', price: 5000 },
+      { id: 't2', name: 'Kem', price: 8000 },
+    ]; // 5k + 8k = 13k
     // (45k + 5k size M + 13k topping) * 2 ly = 126.000đ
     expect(calculateLineTotal(45000, 'M', toppings, 2)).toBe(126000);
   });
 
-  it('áp dụng đúng mã giảm giá BREW10 (10%) và BREW20K', () => {
-    expect(calculateDiscount(100000, 'brew10')).toBe(10000);
-    expect(calculateDiscount(60000, 'BREW20K')).toBe(20000);
-    expect(calculateDiscount(40000, 'BREW20K')).toBe(0); // chưa đủ 50k
+  it('tính giảm giá theo quy tắc của API', () => {
+    const percent = { code: 'BREW10', type: 'PERCENT' as const, value: 10, minOrderTotal: 0 };
+    const fixed = { code: 'WELCOME20K', type: 'FIXED' as const, value: 20000, minOrderTotal: 50000 };
+    expect(calculateDiscount(100000, percent)).toBe(10000);
+    expect(calculateDiscount(99995, percent)).toBe(9999); // làm tròn xuống như API
+    expect(calculateDiscount(60000, fixed)).toBe(20000);
+    expect(calculateDiscount(40000, fixed)).toBe(0); // chưa đủ 50k
+    expect(calculateDiscount(100000, { ...fixed, value: 200000, minOrderTotal: 0 })).toBe(100000); // không vượt tạm tính
+    expect(calculateDiscount(100000, null)).toBe(0);
   });
 });
 
@@ -65,5 +72,20 @@ describe('Unit Test: Zustand Cart Store (Thêm / Sửa / Xóa / Tổng tiền)',
 
     store.updateQty(itemId, 0);
     expect(useCartStore.getState().items).toHaveLength(0);
+  });
+
+  it('khôi phục sản phẩm và mã giảm giá đã lưu sau khi tải lại store', async () => {
+    useCartStore.getState().addItem(mockCappuccino, 'M', [], 2);
+    useCartStore.getState().setPromotion({ code: 'BREW10', type: 'PERCENT' as const, value: 10, minOrderTotal: 0 });
+    const savedCart = localStorage.getItem('brewlite-cart');
+
+    expect(savedCart).not.toBeNull();
+
+    useCartStore.setState({ items: [], promoCode: '', promotion: null });
+    localStorage.setItem('brewlite-cart', savedCart!);
+    await useCartStore.persist.rehydrate();
+
+    expect(useCartStore.getState().getTotalItems()).toBe(2);
+    expect(useCartStore.getState().promoCode).toBe('BREW10');
   });
 });

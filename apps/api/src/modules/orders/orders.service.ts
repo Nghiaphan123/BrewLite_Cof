@@ -36,6 +36,7 @@ import { PrismaService } from '../../common/prisma.service.js';
 import { Prisma } from '../../generated/prisma/client.js';
 import { OrderStatus } from '../../generated/prisma/enums.js';
 import { assertTransition } from './order-state-machine.js';
+import { calculateUnitPrice } from './pricing.js';
 import { PromotionsService } from '../promotions/promotions.service.js';
 import { loyaltyPointsFor } from '../payments/loyalty.js';
 
@@ -44,6 +45,29 @@ interface CreateOrderItemInput {
   size: 'S' | 'M' | 'L';
   toppingIds?: string[];
   qty: number;
+}
+
+const orderItemDetails = {
+  product: { select: { name: true } },
+  toppings: { include: { topping: { select: { name: true } } } },
+} satisfies Prisma.OrderItemInclude;
+
+type OrderItemWithDetails = Prisma.OrderItemGetPayload<{ include: typeof orderItemDetails }>;
+
+/** Order pages show what was bought; topping prices are the snapshot from order time. */
+function toOrderItemResponse(item: OrderItemWithDetails) {
+  return {
+    productId: item.productId,
+    name: item.product.name,
+    size: item.size,
+    qty: item.qty,
+    lineTotal: item.lineTotal,
+    toppings: item.toppings.map((topping) => ({
+      id: topping.toppingId,
+      name: topping.topping.name,
+      price: topping.unitPrice,
+    })),
+  };
 }
 
 @Injectable()
@@ -112,14 +136,13 @@ export class OrdersService {
         }
       }
 
-      // Compute subtotal with topping prices
-      const subtotal = items.reduce((sum, i, idx) => {
-        const productPrice = productPrices[idx];
-        const toppingPrice = (i.toppingIds ?? []).reduce(
-          (tSum, tid) => tSum + toppingMap.get(tid)!.price, 0);
-        const unitPrice = productPrice + toppingPrice;
-        return sum + unitPrice * i.qty;
-      }, 0);
+      // Compute unit prices (size S price + size surcharge + toppings) and subtotal
+      const unitPrices = items.map((i, idx) => calculateUnitPrice(
+        productPrices[idx],
+        i.size,
+        (i.toppingIds ?? []).map(tid => toppingMap.get(tid)!.price),
+      ));
+      const subtotal = items.reduce((sum, i, idx) => sum + unitPrices[idx] * i.qty, 0);
 
       // 2. Apply promo if provided
       let discountAmount = 0;
@@ -145,10 +168,7 @@ export class OrdersService {
           promoCode: promoCode ?? null,
           items: {
             create: items.map((i, idx) => {
-              const productPrice = productPrices[idx];
-              const toppingPrice = (i.toppingIds ?? []).reduce(
-                (tSum, tid) => tSum + toppingMap.get(tid)!.price, 0);
-              const unitPrice = productPrice + toppingPrice;
+              const unitPrice = unitPrices[idx];
               return {
                 productId: i.productId,
                 size: i.size,
@@ -201,7 +221,7 @@ export class OrdersService {
 
   /** Caller's order history, newest first. Empty history is { items: [], total: 0 }. */
   async listMine(userId: string) {
-    const items = await this.prisma.order.findMany({
+    const orders = await this.prisma.order.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
       select: {
@@ -210,8 +230,13 @@ export class OrdersService {
         status: true,
         total: true,
         createdAt: true,
+        items: { include: orderItemDetails },
       },
     });
+    const items = orders.map((order) => ({
+      ...order,
+      items: order.items.map(toOrderItemResponse),
+    }));
     return { items, total: items.length };
   }
 
@@ -223,9 +248,7 @@ export class OrdersService {
     const order = await this.prisma.order.findUnique({
       where: { code },
       include: {
-        items: {
-          include: { product: { select: { name: true } } },
-        },
+        items: { include: orderItemDetails },
         payments: {
           where: { status: 'SUCCESS' },
           orderBy: { createdAt: 'desc' },
@@ -249,13 +272,7 @@ export class OrdersService {
       code: order.code,
       status: order.status,
       total: order.total,
-      items: order.items.map((item) => ({
-        productId: item.productId,
-        name: item.product.name,
-        size: item.size,
-        qty: item.qty,
-        lineTotal: item.lineTotal,
-      })),
+      items: order.items.map(toOrderItemResponse),
       payment: paid
         ? {
             method: paid.method,

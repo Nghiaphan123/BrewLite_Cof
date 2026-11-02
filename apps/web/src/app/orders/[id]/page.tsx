@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
 import { apiClient } from '@/lib/api';
 import { Order } from '@/types';
+import { DetailLinesSkeleton } from '@/components/Skeleton';
 
 function OrderConfirmationContent() {
   const params = useParams();
@@ -67,7 +68,7 @@ const status: Order['status'] =
       <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
         {isConfirmation && (
           <>
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-3xl text-emerald-700">
+            <div className="mx-auto flex h-14 w-14 animate-pop items-center justify-center rounded-full bg-emerald-100 text-3xl text-emerald-700">
               ✓
             </div>
             <h1 className="mt-4 text-center text-2xl font-bold text-stone-900">Đặt hàng thành công</h1>
@@ -102,13 +103,18 @@ const status: Order['status'] =
           <div className="mt-4">
             <h2 className="mb-2 text-sm font-bold text-stone-900">Sản phẩm đã mua</h2>
             <div className="space-y-2">
-              {order.items.map((item: any, idx) => (
+              {order.items.map((item, idx) => (
                 <div key={idx} className="flex items-start justify-between gap-3 rounded-xl border border-stone-200 p-3 text-sm">
                   <div className="min-w-0 flex-1">
-                    <p className="font-semibold text-stone-900">{item.productName || item.name || 'Sản phẩm'}</p>
+                    <p className="font-semibold text-stone-900">{item.name || 'Sản phẩm'}</p>
                     <p className="text-xs text-stone-500">Size: {item.size || 'M'} • Số lượng: {item.qty}</p>
+                    {item.toppings && item.toppings.length > 0 && (
+                      <p data-testid="order-item-toppings" className="text-xs text-stone-500">
+                        Topping: {item.toppings.map((topping) => topping.name).join(', ')}
+                      </p>
+                    )}
                   </div>
-                  <p className="shrink-0 font-bold text-stone-900">{Number(item.lineTotal || item.unitPrice || 0).toLocaleString('vi-VN')}₫</p>
+                  <p className="shrink-0 font-bold text-stone-900">{Number(item.lineTotal || 0).toLocaleString('vi-VN')}₫</p>
                 </div>
               ))}
             </div>
@@ -120,7 +126,7 @@ const status: Order['status'] =
         )}
 
         {loading && !order && (
-          <p className="mt-4 text-center text-sm text-stone-500">Đang tải chi tiết đơn hàng...</p>
+          <DetailLinesSkeleton label="Đang tải chi tiết đơn hàng" />
         )}
 
         {!loading && !order && (
@@ -145,7 +151,13 @@ const status: Order['status'] =
 
 export default function OrderConfirmationPage() {
   return (
-    <React.Suspense fallback={<div className="mx-auto max-w-md px-4 py-12 text-center text-stone-500">Đang tải...</div>}>
+    <React.Suspense
+      fallback={
+        <div className="mx-auto max-w-md px-4 py-8">
+          <DetailLinesSkeleton label="Đang tải chi tiết đơn hàng" />
+        </div>
+      }
+    >
       <OrderConfirmationContent />
     </React.Suspense>
   );

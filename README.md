@@ -114,6 +114,13 @@ cd apps/web
 npm run lint
 ```
 
+## Recent updates
+
+- Auth flow: yêu cầu đăng nhập trước khi vào trang chủ, hỗ trợ đăng nhập/đăng ký, lưu token và thông tin người dùng.
+- Profile page: hiển thị thông tin tài khoản, điểm tích lũy, đơn hàng đã mua và đổi mật khẩu.
+- Order details: hiển thị đầy đủ sản phẩm, số lượng, size, giá tiền và trạng thái đơn hàng.
+- Menu header: thêm nút người dùng với menu (Thông tin chi tiết, Đăng xuất).
+
 The test levels, IDs, and required evidence are in the [test strategy](docs/testing/test-strategy.md). The CI pipeline (`S-05`), test database (`T-02`), and Playwright end-to-end tests (`T-09`) are added in later phases.
 
 ## Build, deploy, rollback

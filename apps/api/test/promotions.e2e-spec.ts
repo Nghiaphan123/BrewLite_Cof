@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import request from 'supertest';
 import { INestApplication } from '@nestjs/common';
 import { createE2EApp } from './setup/e2e-app.js';
-import { seedProduct, seedUser, seedOrder } from './setup/fixtures.js';
+import { seedProduct, seedUser } from './setup/fixtures.js';
 import { loginAs } from './setup/auth.js';
 import { PrismaService } from '../src/common/prisma.service.js';
 import { randomUUID } from 'node:crypto';
@@ -17,13 +17,11 @@ describe('Promotions (Task 10d)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
   let token: string;
-  let userId: string;
   let productId: string;
 
   beforeAll(async () => {
     ({ app, prisma } = await createE2EApp());
     const user = await seedUser(prisma, 'promo-e2e@example.com');
-    userId = user.id;
     token = await loginAs(app, user.email);
 
     const product = await seedProduct(prisma, { stock: 100, price: 35000 });
@@ -191,12 +189,12 @@ describe('Promotions (Task 10d)', () => {
       expect(res.body.id).toBeDefined();
       expect(res.body.code).toMatch(/^BL-\d{4}-\d{4}$/);
       expect(res.body.status).toBe('PENDING');
-      expect(res.body.subtotal).toBe(70000); // 35000 * 2
-      expect(res.body.discountAmount).toBe(7000); // 10% of 70000
-      expect(res.body.total).toBe(63000); // 70000 - 7000
+      expect(res.body.subtotal).toBe(80000); // (35000 + 5000 size M) * 2
+      expect(res.body.discountAmount).toBe(8000); // 10% of 80000
+      expect(res.body.total).toBe(72000); // 80000 - 8000
       expect(res.body.items).toHaveLength(1);
-      expect(res.body.items[0].unitPrice).toBe(35000);
-      expect(res.body.items[0].lineTotal).toBe(70000);
+      expect(res.body.items[0].unitPrice).toBe(40000);
+      expect(res.body.items[0].lineTotal).toBe(80000);
 
       // Verify usedCount was incremented
       const promoAfter = await prisma.promotion.findUnique({ where: { code: promo.code } });
@@ -214,9 +212,9 @@ describe('Promotions (Task 10d)', () => {
         });
 
       expect(res.status).toBe(201);
-      expect(res.body.subtotal).toBe(35000);
+      expect(res.body.subtotal).toBe(40000); // 35000 + 5000 size M
       expect(res.body.discountAmount).toBe(0);
-      expect(res.body.total).toBe(35000);
+      expect(res.body.total).toBe(40000);
     });
 
     it('unknown promo: 404 PROMO_NOT_FOUND, no order created', async () => {

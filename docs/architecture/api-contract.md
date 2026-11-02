@@ -33,8 +33,10 @@ Endpoints in the assignment (PDF §12.1): `GET /products`, `GET /products/:id`, 
 | `POST` | `/payments`      | **JWT** | `200 PaymentResult` / `400` / `401` / `409`    | §9        |
 | `GET`  | `/orders/me`     | **JWT** | `200 { items, total }` / `401`                 | §10       |
 | `GET`  | `/orders/:code`  | **JWT** | `200 Order` / `404`                            | §11       |
+| `GET`  | `/cart`          | **JWT** | `200 Cart` / `401`                             | §11.1     |
+| `PUT`  | `/cart`          | **JWT** | `200 Cart` / `400` / `401` / `404`             | §11.1     |
 
-`/health`, `GET /products`, `GET /products/:id`, `POST /auth/register`, and `POST /auth/login` are public. User profile and password changes, orders, and payments require JWT.
+`/health`, `GET /products`, `GET /products/:id`, `POST /auth/register`, and `POST /auth/login` are public. User profile and password changes, orders, payments, and the saved cart require JWT.
 
 ## 3. `GET /api/v1/health`
 
@@ -248,7 +250,7 @@ The current password must be verified before storing a bcrypt hash of the new pa
 - `size` not in the product's `sizes` → `400` with `code: "INVALID_SIZE"`.
 
 **Server behavior:**
-- **Recomputes `total` and each `lineTotal` from the DB.** Client-supplied prices are ignored (`scenarios.md` S-ORD-1). The pricing rule is the shared fixture (`ui-decisions.md` §4.2).
+- **Recomputes `total` and each `lineTotal` from the DB.** Client-supplied prices are ignored (`scenarios.md` S-ORD-1). The pricing rule is the shared fixture (`ui-decisions.md` §4.2): unit price = S price + size surcharge (S 0, M 5,000, L 10,000) + topping prices.
 - Creates `Order` with `status = "PENDING"`, `userId` from the JWT, `createdAt`, and `code` (D3). **Does not decrement stock** (ADR 0004 D1).
 - Creates `OrderItem` rows with `productId`, `size`, `qty`, `lineTotal`, and the topping ids.
 - Returns `201` with the order summary; the client then calls `POST /payments` (`scenarios.md` S-MAIN-1 step 8).
@@ -365,6 +367,16 @@ The current password must be verified before storing a bcrypt hash of the new pa
       "code": "BL-2026-0001",
       "status": "PAID",
       "total": 95000,
+      "items": [
+        {
+          "productId": "0f8fad5b-...",
+          "name": "Cà phê sữa",
+          "size": "M",
+          "qty": 2,
+          "lineTotal": 90000,
+          "toppings": [{ "id": "20000000-...", "name": "Trân châu đen", "price": 5000 }]
+        }
+      ],
       "createdAt": "2026-10-22T14:30:00.000Z"
     },
     {
@@ -372,6 +384,7 @@ The current password must be verified before storing a bcrypt hash of the new pa
       "code": "BL-2026-0000",
       "status": "PAYMENT_FAILED",
       "total": 45000,
+      "items": [],
       "createdAt": "2026-10-21T09:00:00.000Z"
     }
   ],
@@ -382,7 +395,7 @@ The current password must be verified before storing a bcrypt hash of the new pa
 **Rules:**
 - Sorted by `createdAt` **descending** (newest first; `wireframes.md` §11). Server-side sort, not client-side.
 - Only the caller's orders. Cross-user orders are absent, not `403`.
-- `items` here are order summaries (no line items). The confirmation/detail screen (`GET /orders/:code`) returns the full order.
+- Each order includes its line items with product name and toppings, because the history screen shows what was bought. `toppings[].price` is the price snapshot from order time.
 - Empty history returns `{ "items": [], "total": 0 }` with `200`; the UI shows the empty state.
 
 **Errors:** `401` missing/expired JWT; `500` unexpected.
@@ -420,6 +433,48 @@ The current password must be verified before storing a bcrypt hash of the new pa
 - **Not found and not-yours both return `404`** with `code: "ORDER_NOT_FOUND"` (`scenarios.md` S-ORD-4 step 2). The UI shows the same safe message for both (`wireframes.md` §8).
 
 **Errors:** `401` missing/expired JWT; `404` not found or not owned; `500` unexpected.
+
+## 11.1. `GET` and `PUT /api/v1/cart`
+
+**Auth:** **JWT required** (C4). The user comes from the token; there is one cart per user.  
+**Purpose:** keep a logged-in customer's cart across devices. A guest's cart stays in the browser only. The web app merges it into the saved cart at login and clears the browser copy at sign-out.
+
+**`PUT` request body** (replaces the whole cart; `items: []` clears it):
+```json
+{
+  "items": [
+    { "productId": "0f8fad5b-...", "size": "M", "toppingIds": ["20000000-..."], "qty": 2 }
+  ],
+  "promoCode": "BREW10"
+}
+```
+
+**Validation:** `items` is an array of at most 100 lines; each has `productId` (UUID), `size` (`S`|`M`|`L`), `toppingIds` (optional, at most 20 strings), and `qty` (integer 1..99). `promoCode` is an optional string of at most 40 characters. Lines with the same product, size, and toppings are merged, with `qty` capped at 99.
+
+**Response `200`** (both methods; a user with no saved cart gets `items: []`, `promoCode: ""`, and `promotion: null`):
+```json
+{
+  "items": [
+    {
+      "productId": "0f8fad5b-...",
+      "size": "M",
+      "qty": 2,
+      "toppingIds": ["pearl"],
+      "product": { "id": "0f8fad5b-...", "name": "Latte", "price": 45000, "imageUrl": "/images/products/10.jpg" }
+    }
+  ],
+  "promoCode": "BREW10",
+  "promotion": { "code": "BREW10", "type": "PERCENT", "value": 10, "minOrderTotal": 0 }
+}
+```
+
+**Rules:**
+- The cart does not reserve stock and does not validate `promoCode`. Both are checked by the order and payment flows (§8, §9).
+- `promotion` is the rule the web uses to preview the discount. It is `null` when the code is unknown, inactive, expired, or used up.
+- The cart stores no prices. `POST /orders` computes the amount from server prices.
+- `toppingIds` has no foreign key: a topping that is removed or inactive drops out of the response.
+
+**Errors:** `400` validation; `401` missing/expired JWT; `404` with `code: "PRODUCT_NOT_FOUND"` for an unknown product (the saved cart is unchanged); `500` unexpected.
 
 ## 12. Reserved endpoints (Task 10, not Phase 1)
 

@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { API_BASE_URL } from "@/lib/api";
+import { apiFetch, getApiErrorMessage } from "@/lib/api-errors";
 import { useCartStore } from "@/store/cart.store";
 import { useAuthStore } from "@/store/auth.store";
+import { useLogout } from "@/features/auth/useLogout";
 import type { Product } from "@/types";
 import { ProductCard } from "./ProductCard";
 
@@ -54,11 +56,13 @@ function isProductsResponse(value: unknown): value is ProductsResponse {
   );
 }
 
-function getProductCategory(product: Product): Exclude<MenuTab, "Tất cả">  {
-const name = product.name
+function getProductCategory(product: Product): Exclude<MenuTab, "Tất cả"> {
+  const name = product.name
     .toLocaleLowerCase("vi")
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d");
+
   if (name.includes("da xay")) {
     return "Đá xay";
   }
@@ -75,28 +79,19 @@ const name = product.name
 }
 
 async function fetchProducts(signal: AbortSignal): Promise<MenuProduct[]> {
-  const response = await fetch(`${API_BASE_URL}/products`, {
+  const response = await apiFetch(`${API_BASE_URL}/products`, {
     signal,
     headers: { Accept: "application/json" },
   });
 
   if (!response.ok) {
     const body: unknown = await response.json().catch(() => null);
-    if (typeof body === "object" && body !== null && "message" in body) {
-      const message = body.message;
-      if (typeof message === "string") {
-        throw new Error(message);
-      }
-      if (Array.isArray(message) && message.every((item) => typeof item === "string")) {
-        throw new Error(message.join(", "));
-      }
-    }
-    throw new Error(`Không thể tải menu (HTTP ${response.status}).`);
+    throw new Error(getApiErrorMessage(response.status, body));
   }
 
   const body: unknown = await response.json();
   if (!isProductsResponse(body)) {
-    throw new Error("Dữ liệu menu trả về không hợp lệ.");
+    throw new Error("Dữ liệu menu từ máy chủ không đúng định dạng.");
   }
 
   return body.items;
@@ -106,7 +101,7 @@ function MenuSkeleton() {
   return (
     <div
       data-testid="menu-loading"
-      aria-label="─Éang tß║úi menu"
+      aria-label="Đang tải menu"
       aria-busy="true"
       className="grid grid-cols-2 gap-4 md:grid-cols-4"
     >
@@ -131,9 +126,11 @@ export function MenuPage() {
   const [retryCount, setRetryCount] = useState(0);
   const [activeTab, setActiveTab] = useState<MenuTab>("Tất cả");
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const totalItems = useCartStore((state) => state.getTotalItems());
-  const cartTotal = useCartStore((state) => state.getTotalPrice());
-  const { token, user, logout } = useAuthStore();
+  // Tính từ state.items, không gọi getTotal...: các hàm đó đọc thẳng store nên lệch HTML của server lúc hydrate.
+  const totalItems = useCartStore((state) => state.items.reduce((sum, item) => sum + item.qty, 0));
+  const cartTotal = useCartStore((state) => (state.items.length > 0 ? state.getTotalPrice() : 0));
+  const { token, user } = useAuthStore();
+  const logoutWithLoading = useLogout();
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -173,7 +170,7 @@ export function MenuPage() {
           message:
             error instanceof Error
               ? error.message
-              : "Không thể tải menu.",
+              : "Đã xảy ra lỗi khi tải menu.",
         });
       });
 
@@ -193,7 +190,7 @@ export function MenuPage() {
             href="/"
             className="flex items-center gap-2 text-xl font-bold tracking-tight text-emerald-950 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-800"
           >
-            <span aria-hidden="true" className="text-2xl"></span>
+            <span aria-hidden="true" className="text-2xl">☕</span>
             BrewLite
           </Link>
           <div className="flex items-center gap-2">
@@ -237,7 +234,7 @@ export function MenuPage() {
                       role="menuitem"
                       onClick={() => {
                         setUserMenuOpen(false);
-                        logout();
+                        void logoutWithLoading();
                       }}
                       className="w-full rounded-lg px-2 py-2 text-left text-sm text-red-600 hover:bg-red-50"
                     >
@@ -261,7 +258,10 @@ export function MenuPage() {
             >
               <span aria-hidden="true">🛒</span>
               <span>Giỏ hàng</span>
-              <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-white px-1.5 text-xs font-bold text-emerald-950">
+              <span
+                key={totalItems}
+                className="flex h-6 min-w-6 animate-pop items-center justify-center rounded-full bg-white px-1.5 text-xs font-bold text-emerald-950"
+              >
                 {totalItems}
               </span>
             </Link>
@@ -279,14 +279,14 @@ export function MenuPage() {
               Một chút chill,<br className="hidden sm:block" /> một chút BrewLite.
             </h1>
             <p className="mt-4 max-w-md text-sm leading-6 text-emerald-100 sm:text-base">
-              Chọn món bạn thích, thưởng thức nhanh chóng và nhận ưu đãi theo cách riêng của bạn.
+              Chọn món bạn thích, thêm nhanh vào giỏ và thưởng thức theo cách của bạn.
             </p>
           </div>
           <span
             aria-hidden="true"
             className="absolute -right-4 -top-14 select-none text-[15rem] opacity-10 sm:right-8 sm:top-[-5.5rem]"
           >
-            Γÿò
+            ☕
           </span>
         </section>
 
@@ -314,7 +314,7 @@ export function MenuPage() {
             role="status"
             className="rounded-lg border border-zinc-200 bg-white px-6 py-12 text-center text-zinc-600"
           >
-            Menu đang cập nhật. Vui lòng quay lại sau...
+            Menu đang cập nhật. Vui lòng quay lại sau.
           </p>
         )}
 
@@ -328,7 +328,7 @@ export function MenuPage() {
             <button
               type="button"
               onClick={retry}
-              className="mt-4 rounded-md bg-zinc-900 px-4 py-2 font-medium text-white hover:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900"
+              className="mt-4 rounded-md bg-[#002C22] px-4 py-2 font-medium text-white hover:bg-[#014034] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#002C22]"
             >
               Thử lại
             </button>
@@ -375,14 +375,14 @@ export function MenuPage() {
           visibleProducts.length > 0 ? (
             <ul data-testid="menu-grid" className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
               {visibleProducts.map((product) => (
-                <li key={product.id}>
+                <li key={product.id} className="animate-rise-in">
                   <ProductCard product={product} />
                 </li>
               ))}
             </ul>
           ) : (
             <p role="status" className="rounded-2xl border border-stone-200 bg-white px-6 py-12 text-center text-stone-500">
-              Chưa có món nào trong danh mục này.
+              Chưa có món trong danh mục này.
             </p>
           )
         )}
@@ -393,9 +393,9 @@ export function MenuPage() {
           <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-1 sm:px-2">
             <div>
               <p className="text-sm font-semibold text-stone-900">
-                {totalItems} món trong giỏ hàng
+                {totalItems} món trong giỏ
               </p>
-              <p className="text-xs text-stone-500">Tổng cộng</p>
+              <p className="text-xs text-stone-500">Tạm tính</p>
             </div>
             <Link
               href="/cart"
