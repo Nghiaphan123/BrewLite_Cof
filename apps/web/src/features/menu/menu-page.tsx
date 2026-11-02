@@ -93,12 +93,12 @@ async function fetchProducts(signal: AbortSignal): Promise<MenuProduct[]> {
         throw new Error(message.join(", "));
       }
     }
-    throw new Error(`Kh├┤ng thß╗â tß║úi menu (HTTP ${response.status}).`);
+    throw new Error(`Không thể tải menu (HTTP ${response.status}).`);
   }
 
   const body: unknown = await response.json();
   if (!isProductsResponse(body)) {
-    throw new Error("Dß╗» liß╗çu menu tß╗½ m├íy chß╗º kh├┤ng ─æ├║ng ─æß╗ïnh dß║íng.");
+    throw new Error("Dữ liệu menu từ máy chủ không đúng định dạng.");
   }
 
   return body.items;
@@ -108,7 +108,7 @@ function MenuSkeleton() {
   return (
     <div
       data-testid="menu-loading"
-      aria-label="─Éang tß║úi menu"
+      aria-label="Đang tải menu"
       aria-busy="true"
       className="grid grid-cols-2 gap-4 md:grid-cols-4"
     >
@@ -175,7 +175,7 @@ export function MenuPage() {
           message:
             error instanceof Error
               ? error.message
-              : "─É├ú xß║úy ra lß╗ùi khi tß║úi menu.",
+              : "Đã xảy ra lỗi khi tải menu.",
         });
       });
 
@@ -195,7 +195,7 @@ export function MenuPage() {
             href="/"
             className="flex items-center gap-2 text-xl font-bold tracking-tight text-emerald-950 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-800"
           >
-            <span aria-hidden="true" className="text-2xl">Γÿò</span>
+            <span aria-hidden="true" className="text-2xl">☕</span>
             BrewLite
           </Link>
           <div className="flex items-center gap-2">
@@ -275,35 +275,35 @@ export function MenuPage() {
         <section className="relative mb-8 overflow-hidden rounded-3xl bg-emerald-950 px-6 py-10 text-white sm:px-10 sm:py-14">
           <div className="relative z-10 max-w-xl">
             <p className="mb-3 text-xs font-bold uppercase tracking-[0.24em] text-emerald-200">
-              Pha t╞░╞íi mß╗ùi ng├áy
+              Pha tươi mỗi ngày
             </p>
             <h1 className="font-serif text-4xl font-semibold tracking-tight sm:text-5xl">
-              Mß╗Öt ch├║t chill,<br className="hidden sm:block" /> mß╗Öt ch├║t BrewLite.
+              Một chút chill,<br className="hidden sm:block" /> một chút BrewLite.
             </h1>
             <p className="mt-4 max-w-md text-sm leading-6 text-emerald-100 sm:text-base">
-              Chß╗ìn m├│n bß║ín th├¡ch, th├¬m nhanh v├áo giß╗Å v├á th╞░ß╗ƒng thß╗⌐c theo c├ích cß╗ºa bß║ín.
+              Chọn món bạn thích, thêm nhanh vào giỏ và thưởng thức theo cách của bạn.
             </p>
           </div>
           <span
             aria-hidden="true"
             className="absolute -right-4 -top-14 select-none text-[15rem] opacity-10 sm:right-8 sm:top-[-5.5rem]"
           >
-            Γÿò
+            ☕
           </span>
         </section>
 
         <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-800">
-              Kh├ím ph├í h╞░╞íng vß╗ï
+              Khám phá hương vị
             </p>
             <h2 className="mt-1 font-sans text-3xl font-bold tracking-tight">
-              Menu thß╗⌐c uß╗æng
+              Menu thức uống
             </h2>
           </div>
           {menuState.status === "success" && (
             <p className="text-sm text-stone-500">
-              {visibleProducts.length} m├│n
+              {visibleProducts.length} món
             </p>
           )}
         </div>
@@ -316,7 +316,7 @@ export function MenuPage() {
             role="status"
             className="rounded-lg border border-zinc-200 bg-white px-6 py-12 text-center text-zinc-600"
           >
-            Menu ─æang cß║¡p nhß║¡t. Vui l├▓ng quay lß║íi sau.
+            Menu đang cập nhật. Vui lòng quay lại sau.
           </p>
         )}
 
@@ -332,7 +332,7 @@ export function MenuPage() {
               onClick={retry}
               className="mt-4 rounded-md bg-zinc-900 px-4 py-2 font-medium text-white hover:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900"
             >
-              Thß╗¡ lß║íi
+              Thử lại
             </button>
           </div>
         )}
@@ -340,7 +340,7 @@ export function MenuPage() {
         {menuState.status === "success" && (
           <div
             role="tablist"
-            aria-label="Danh mß╗Ñc thß╗⌐c uß╗æng"
+            aria-label="Danh mục thức uống"
             className="mb-6 flex gap-2 overflow-x-auto pb-2"
           >
             {MENU_TABS.map((tab) => {
@@ -384,7 +384,7 @@ export function MenuPage() {
             </ul>
           ) : (
             <p role="status" className="rounded-2xl border border-stone-200 bg-white px-6 py-12 text-center text-stone-500">
-              Ch╞░a c├│ m├│n trong danh mß╗Ñc n├áy.
+              Chưa có món trong danh mục này.
             </p>
           )
         )}
@@ -395,16 +395,16 @@ export function MenuPage() {
           <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-1 sm:px-2">
             <div>
               <p className="text-sm font-semibold text-stone-900">
-                {totalItems} m├│n trong giß╗Å
+                {totalItems} món trong giỏ
               </p>
-              <p className="text-xs text-stone-500">Tß║ím t├¡nh</p>
+              <p className="text-xs text-stone-500">Tạm tính</p>
             </div>
             <Link
               href="/cart"
               className="flex min-h-12 items-center gap-4 rounded-xl bg-emerald-900 px-5 py-2 text-sm font-semibold text-white transition hover:bg-emerald-800"
             >
-              <span>Xem giß╗Å h├áng</span>
-              <span>{new Intl.NumberFormat("vi-VN").format(cartTotal)}Γé½</span>
+              <span>Xem giỏ hàng</span>
+              <span>{new Intl.NumberFormat("vi-VN").format(cartTotal)}₫</span>
             </Link>
           </div>
         </div>
