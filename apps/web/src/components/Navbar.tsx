@@ -5,7 +5,7 @@ import { useCartStore } from '@/store/cart.store';
 import { AccountMenu } from '@/components/AccountMenu';
 
 export function Navbar() {
-  const totalItems = useCartStore((state) => state.getTotalItems());
+  const totalItems = useCartStore((state) => state.items.reduce((sum, item) => sum + item.qty, 0));
 
   return (
     <header className="sticky top-0 z-30 border-b border-stone-200 bg-white/95 backdrop-blur">
@@ -30,8 +30,9 @@ export function Navbar() {
           >
             <span>Giỏ hàng</span>
             <span
+              key={totalItems}
               data-testid="cart-badge"
-              className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-white px-1.5 text-xs font-bold text-emerald-800"
+              className="flex h-5 min-w-[20px] animate-pop items-center justify-center rounded-full bg-white px-1.5 text-xs font-bold text-emerald-800"
             >
               {totalItems}
             </span>

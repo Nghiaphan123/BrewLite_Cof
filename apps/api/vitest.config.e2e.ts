@@ -1,5 +1,6 @@
 import { defineConfig } from 'vitest/config';
 import tsconfigPaths from 'vite-tsconfig-paths';
+import { e2eDatabaseUrl } from './test/setup/e2e-database.js';
 
 export default defineConfig({
   plugins: [tsconfigPaths()],
@@ -9,5 +10,8 @@ export default defineConfig({
     include: ['**/*.e2e-spec.ts'],
     testTimeout: 30000,
     hookTimeout: 30000,
+    globalSetup: ['./test/setup/global-setup.ts'],
+    // E2E rows never reach the database used for local development and demos.
+    env: { DATABASE_URL: e2eDatabaseUrl() },
   },
 });

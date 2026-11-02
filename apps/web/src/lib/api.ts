@@ -1,4 +1,5 @@
-import { Order, Product, SizeOption, User } from '@/types';
+import { Order, Product, Promotion, SizeOption, Topping, User } from '@/types';
+import { ApiError, apiFetch, getApiErrorMessage } from '@/lib/api-errors';
 
 const configuredApiUrl = (
   process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1'
@@ -21,30 +22,26 @@ function getAuthHeaders(): HeadersInit {
 async function handleResponse<T>(res: Response): Promise<T> {
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    const message =
-      data?.message || data?.error?.message || `Lỗi kết nối API (${res.status})`;
-    throw new Error(Array.isArray(message) ? message.join(', ') : message);
+    throw new ApiError(getApiErrorMessage(res.status, data), res.status);
   }
   // Hỗ trợ cả trường hợp backend trả trực tiếp data hoặc bọc trong { data: ... }
   return (data?.data !== undefined ? data.data : data) as T;
 }
 
-type ListResponse<T> = { items: T[]; total: number };
-type AuthResponse = {
-  accessToken?: string;
-  access_token?: string;
-  token?: string;
-  user?: User;
+export type ServerCart = {
+  items: Array<{
+    productId: string;
+    size: SizeOption;
+    qty: number;
+    toppingIds: string[];
+    toppings: Topping[];
+    product: Product;
+  }>;
+  promoCode: string;
+  promotion: Promotion | null;
 };
 
-function getAuthResult(result: AuthResponse): { accessToken: string; user?: User } {
-  const accessToken = result.accessToken ?? result.access_token ?? result.token;
-  if (!accessToken) {
-    throw new Error('Phản hồi xác thực không có access token.');
-  }
-  return { accessToken, user: result.user };
-}
-
+type ListResponse<T> = { items: T[]; total: number };
 /** API hiện trả danh sách theo dạng { items, total }; vẫn hỗ trợ mảng cũ để tương thích. */
 function getListItems<T>(
   result: ListResponse<T> | T[],
@@ -64,7 +61,7 @@ function getListItems<T>(
 export const apiClient = {
   // [Task 2 & 3] GET /products
   async getProducts(): Promise<Product[]> {
-    const res = await fetch(`${API_BASE_URL}/products`, {
+    const res = await apiFetch(`${API_BASE_URL}/products`, {
       headers: getAuthHeaders(),
       cache: 'no-store',
     });
@@ -74,7 +71,7 @@ export const apiClient = {
 
   // [Task 2 & 4] GET /products/:id
   async getProductById(id: string): Promise<Product> {
-    const res = await fetch(`${API_BASE_URL}/products/${id}`, {
+    const res = await apiFetch(`${API_BASE_URL}/products/${id}`, {
       headers: getAuthHeaders(),
       cache: 'no-store',
     });
@@ -82,26 +79,18 @@ export const apiClient = {
   },
 
   // [Task 7] POST /auth/register
+  // API chỉ trả { user }, không có token: người dùng phải đăng nhập sau khi đăng ký.
   async register(payload: { email: string; password: string; name?: string }): Promise<{
-    accessToken: string;
     user?: User;
   }> {
-    const name = payload.name || (payload.email.includes('@') ? payload.email.split('@')[0] : payload.email);
-    const res = await fetch(`${API_BASE_URL}/auth/register`, {
+    const emailName = payload.email.split('@')[0];
+    const name = payload.name || (emailName.length >= 2 ? emailName : 'Khách hàng');
+    const res = await apiFetch(`${API_BASE_URL}/auth/register`, {
       method: 'POST',
       headers: getAuthHeaders(),
       body: JSON.stringify({ ...payload, name }),
     });
-    const result = await handleResponse<{
-      accessToken?: string;
-      access_token?: string;
-      token?: string;
-      user?: User;
-    }>(res);
-    return {
-      accessToken: result.accessToken || result.access_token || result.token || '',
-      user: result.user ,
-    };
+    return handleResponse<{ user?: User }>(res);
   },
 
   // [Task 7] POST /auth/login
@@ -109,7 +98,7 @@ export const apiClient = {
     accessToken: string;
     user?: User;
   }> {
-    const res = await fetch(`${API_BASE_URL}/auth/login`, {
+    const res = await apiFetch(`${API_BASE_URL}/auth/login`, {
       method: 'POST',
       headers: getAuthHeaders(),
       body: JSON.stringify(payload),
@@ -128,10 +117,10 @@ export const apiClient = {
 
   // [Task 6 & 10] POST /orders (Bảo vệ bởi JwtAuthGuard)
   async createOrder(payload: {
-    items: Array<{ productId: string; size: SizeOption; qty: number; toppings?: string[] }>;
+    items: Array<{ productId: string; size: SizeOption; qty: number; toppingIds: string[] }>;
     promoCode?: string;
   }): Promise<Order> {
-    const res = await fetch(`${API_BASE_URL}/orders`, {
+    const res = await apiFetch(`${API_BASE_URL}/orders`, {
       method: 'POST',
       headers: getAuthHeaders(),
       body: JSON.stringify(payload),
@@ -149,7 +138,7 @@ export const apiClient = {
     },
     idempotencyKey: string
   ): Promise<{ status: 'PAID' | 'PAYMENT_FAILED'; orderId: string; loyaltyPointsEarned?: number }> {
-    const res = await fetch(`${API_BASE_URL}/payments`, {
+    const res = await apiFetch(`${API_BASE_URL}/payments`, {
       method: 'POST',
       headers: {
         ...getAuthHeaders(),
@@ -165,7 +154,7 @@ export const apiClient = {
 
   // [Task 9] GET /orders/me
   async getMyOrders(): Promise<Order[]> {
-    const res = await fetch(`${API_BASE_URL}/orders/me`, {
+    const res = await apiFetch(`${API_BASE_URL}/orders/me`, {
       headers: getAuthHeaders(),
       cache: 'no-store',
     });
@@ -173,8 +162,40 @@ export const apiClient = {
     return getListItems(result, 'lịch sử đơn hàng');
   },
 
+  // POST /promotions/validate — kiểm tra mã, không tính lượt dùng
+  async validatePromotion(code: string, subtotal: number): Promise<Promotion & { discountAmount: number }> {
+    const res = await apiFetch(`${API_BASE_URL}/promotions/validate`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ code, subtotal }),
+    });
+    return handleResponse(res);
+  },
+
+  // GET /cart
+  async getCart(): Promise<ServerCart> {
+    const res = await apiFetch(`${API_BASE_URL}/cart`, {
+      headers: getAuthHeaders(),
+      cache: 'no-store',
+    });
+    return handleResponse<ServerCart>(res);
+  },
+
+  // PUT /cart — gửi nguyên giỏ, items rỗng là xóa giỏ
+  async saveCart(payload: {
+    items: Array<{ productId: string; size: SizeOption; qty: number; toppingIds: string[] }>;
+    promoCode?: string;
+  }): Promise<ServerCart> {
+    const res = await apiFetch(`${API_BASE_URL}/cart`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(payload),
+    });
+    return handleResponse<ServerCart>(res);
+  },
+
   async getProfile(): Promise<User> {
-    const res = await fetch(`${API_BASE_URL}/auth/me`, {
+    const res = await apiFetch(`${API_BASE_URL}/auth/me`, {
       headers: getAuthHeaders(),
       cache: 'no-store',
     });
@@ -185,7 +206,7 @@ export const apiClient = {
     currentPassword: string;
     newPassword: string;
   }): Promise<{ message: string }> {
-    const res = await fetch(`${API_BASE_URL}/auth/password`, {
+    const res = await apiFetch(`${API_BASE_URL}/auth/password`, {
       method: 'PATCH',
       headers: getAuthHeaders(),
       body: JSON.stringify(payload),

@@ -10,7 +10,7 @@ export default function HomePage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!token) {
+    if (!useAuthStore.getState().token) {
       router.replace('/login');
     }
   }, [token, router]);

@@ -21,7 +21,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma.service.js';
 import { Prisma } from '../../generated/prisma/client.js';
-import { computeDiscount, DiscountResult, PromotionRule } from './promotion.js';
+import { computeDiscount, PromotionRule } from './promotion.js';
 
 @Injectable()
 export class PromotionsService {
@@ -52,6 +52,7 @@ export class PromotionsService {
     code: string;
     type: 'PERCENT' | 'FIXED';
     value: number;
+    minOrderTotal: number;
     discountAmount: number;
   }> {
     const promo = await this.prisma.promotion.findUnique({ where: { code } });
@@ -78,6 +79,7 @@ export class PromotionsService {
       code: promo.code,
       type: promo.type,
       value: promo.value,
+      minOrderTotal: promo.minOrderTotal,
       discountAmount: result.discountAmount,
     };
   }
