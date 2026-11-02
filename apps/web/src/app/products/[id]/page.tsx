@@ -3,15 +3,15 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { apiClient } from '@/lib/api';
 import { Product, SizeOption, Topping } from '@/types';
 import {
-  AVAILABLE_TOPPINGS,
   SIZE_SURCHARGE,
   calculateLineTotal,
 } from '@/features/product/pricing';
 import { useCartStore } from '@/store/cart.store';
+import { useUiStore } from '@/store/ui.store';
+import { ProductDetailSkeleton } from '@/components/Skeleton';
 
 function ProductDetailContent() {
   const params = useParams();
@@ -27,6 +27,7 @@ function ProductDetailContent() {
   const [qty, setQty] = useState<number>(1);
 
   const addItem = useCartStore((state) => state.addItem);
+  const showToast = useUiStore((state) => state.showToast);
 
   useEffect(() => {
     async function load() {
@@ -52,7 +53,7 @@ function ProductDetailContent() {
   };
 
   if (loading) {
-    return <div className="p-8 text-center text-stone-500">Đang tải chi tiết sản phẩm...</div>;
+    return <ProductDetailSkeleton />;
   }
 
   if (error || !product) {
@@ -74,6 +75,7 @@ function ProductDetailContent() {
 
   const handleAddToCart = () => {
     addItem(product, size, selectedToppings, qty);
+    showToast(`Đã thêm ${product.name} vào giỏ`);
     router.push('/cart');
   };
 
@@ -123,7 +125,7 @@ function ProductDetailContent() {
             Topping
           </h2>
           <div className="mt-2 space-y-2">
-            {AVAILABLE_TOPPINGS.map((topping) => {
+            {(product.toppings ?? []).map((topping) => {
               const checked = selectedToppings.some((t) => t.id === topping.id);
               return (
                 <label
@@ -200,7 +202,7 @@ function ProductDetailContent() {
 
 export default function ProductDetailPage() {
   return (
-    <React.Suspense fallback={<div className="mx-auto max-w-4xl px-4 py-8 text-center text-stone-500">Đang tải sản phẩm...</div>}>
+    <React.Suspense fallback={<ProductDetailSkeleton />}>
       <ProductDetailContent />
     </React.Suspense>
   );

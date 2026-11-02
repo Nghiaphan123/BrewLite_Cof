@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -8,7 +8,10 @@ import QRCode from 'qrcode';
 import { useCartStore } from '@/store/cart.store';
 import { useAuthStore } from '@/store/auth.store';
 import { apiClient } from '@/lib/api';
+import { PENDING_QR_KEY } from '@/features/cart/cart-sync';
 import { ApiError } from '@/lib/api-errors';
+import { runWithLoading, useUiStore } from '@/store/ui.store';
+import { Spinner } from '@/components/Skeleton';
 
 type PaymentMethod = 'QR' | 'WALLET' | 'CARD';
 
@@ -16,6 +19,17 @@ interface PendingQrPayment {
   orderId: string;
   amount: number;
   image: string;
+  /** Giỏ lúc tạo đơn; giỏ đã đổi thì đơn này không còn đúng nữa. */
+  cartKey: string;
+}
+
+function readPendingQr(cartKey: string): PendingQrPayment | null {
+  try {
+    const pending = JSON.parse(sessionStorage.getItem(PENDING_QR_KEY) ?? 'null') as PendingQrPayment | null;
+    return pending?.cartKey === cartKey ? pending : null;
+  } catch {
+    return null;
+  }
 }
 
 function getErrorMessage(error: unknown): string {
@@ -26,17 +40,29 @@ function getErrorMessage(error: unknown): string {
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { items, promoCode, getTotalPrice, clearCart } = useCartStore();
+  const { items, promoCode, getDiscount, getTotalPrice, clearCart } = useCartStore();
   const addLoyaltyPoints = useAuthStore((state) => state.addLoyaltyPoints);
 
   const [method, setMethod] = useState<PaymentMethod>('QR');
-  const [pendingQr, setPendingQr] = useState<PendingQrPayment | null>(null);
+  const [createdQr, setCreatedQr] = useState<PendingQrPayment | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [requiresLogin, setRequiresLogin] = useState(false);
   const logout = useAuthStore((state) => state.logout);
 
   const total = getTotalPrice();
+  const cartKey = JSON.stringify([items.map((item) => [item.cartItemId, item.qty]), promoCode]);
+
+  // Tải lại trang khi đang chờ quét thì dùng lại đơn cũ, không tạo thêm đơn mới.
+  // Giỏ rỗng ở lần render đầu (kể cả trên server) nên không đọc sessionStorage lúc hydrate.
+  const pendingQr =
+    createdQr?.cartKey === cartKey ? createdQr : items.length > 0 ? readPendingQr(cartKey) : null;
+
+  useEffect(() => {
+    if (items.length > 0 && !readPendingQr(cartKey)) {
+      sessionStorage.removeItem(PENDING_QR_KEY);
+    }
+  }, [items.length, cartKey]);
 
   const handleConfirmPayment = async () => {
     if (items.length === 0 || loading) return;
@@ -44,67 +70,77 @@ export default function CheckoutPage() {
     setError(null);
     setRequiresLogin(false);
 
+    const isCreatingQr = method === 'QR' && !pendingQr;
+
     try {
-      if (method === 'QR' && !pendingQr) {
-        const order = await apiClient.createOrder({
-          items: items.map((item) => ({
-            productId: item.product.id,
-            size: item.size,
-            qty: item.qty,
-            toppings: item.toppings.map((topping) => topping.id),
-          })),
-          promoCode: promoCode || undefined,
-        });
-        const amount = order.total;
-        const payload = `BREWLITE-DEMO|order=${order.id}|amount=${amount}|currency=VND`;
-        const svg = await QRCode.toString(payload, {
-          type: 'svg',
-          width: 240,
-          margin: 2,
-          color: { dark: '#064e3b', light: '#ffffff' },
-        });
+      await runWithLoading(isCreatingQr ? 'Đang tạo mã QR...' : 'Đang xử lý thanh toán...', async () => {
+        if (isCreatingQr) {
+          const order = await apiClient.createOrder({
+            items: items.map((item) => ({
+              productId: item.product.id,
+              size: item.size,
+              qty: item.qty,
+              toppingIds: item.toppings.map((topping) => topping.id),
+            })),
+            promoCode: getDiscount() > 0 ? promoCode : undefined,
+          });
+          const amount = order.total;
+          const payload = `BREWLITE-DEMO|order=${order.id}|amount=${amount}|currency=VND`;
+          const svg = await QRCode.toString(payload, {
+            type: 'svg',
+            width: 240,
+            margin: 2,
+            color: { dark: '#064e3b', light: '#ffffff' },
+          });
 
-        setPendingQr({
-          orderId: order.id,
-          amount,
-          image: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`,
-        });
-        return;
-      }
+          const pending = {
+            orderId: order.id,
+            amount,
+            image: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`,
+            cartKey,
+          };
+          sessionStorage.setItem(PENDING_QR_KEY, JSON.stringify(pending));
+          setCreatedQr(pending);
+          return;
+        }
 
-      const order =
-        pendingQr ??
-        (await apiClient.createOrder({
-          items: items.map((item) => ({
-            productId: item.product.id,
-            size: item.size,
-            qty: item.qty,
-            toppings: item.toppings.map((topping) => topping.id),
-          })),
-          promoCode: promoCode || undefined,
-        }));
-      const orderId = 'orderId' in order ? order.orderId : order.id;
-      const amount = 'amount' in order ? order.amount : order.total;
-      const paymentMethod = method === 'QR' ? 'WALLET' : method;
-      const paymentResult = await apiClient.payOrder(
-        {
-          orderId,
-          method: paymentMethod,
-          amount,
-        },
-        `idem_${orderId}_${paymentMethod}`,
-      );
+        const order =
+          pendingQr ??
+          (await apiClient.createOrder({
+            items: items.map((item) => ({
+              productId: item.product.id,
+              size: item.size,
+              qty: item.qty,
+              toppingIds: item.toppings.map((topping) => topping.id),
+            })),
+            promoCode: getDiscount() > 0 ? promoCode : undefined,
+          }));
+        const orderId = 'orderId' in order ? order.orderId : order.id;
+        const amount = 'amount' in order ? order.amount : order.total;
+        const paymentMethod = method === 'QR' ? 'WALLET' : method;
+        const paymentResult = await apiClient.payOrder(
+          {
+            orderId,
+            method: paymentMethod,
+            amount,
+          },
+          `idem_${orderId}_${paymentMethod}`,
+        );
 
-      if (paymentResult.status === 'PAYMENT_FAILED') {
-        setError('Thanh toán thất bại. Giỏ hàng của bạn vẫn được giữ nguyên.');
-        setPendingQr(null);
-        return;
-      }
+        if (paymentResult.status === 'PAYMENT_FAILED') {
+          setError('Thanh toán thất bại. Giỏ hàng của bạn vẫn được giữ nguyên.');
+          sessionStorage.removeItem(PENDING_QR_KEY);
+          setCreatedQr(null);
+          return;
+        }
 
-      const earnedPoints = paymentResult.loyaltyPointsEarned ?? Math.floor(amount / 10000);
-      addLoyaltyPoints(earnedPoints);
-      clearCart();
-      router.push(`/orders/${orderId}?status=${paymentResult.status || 'PAID'}`);
+        const earnedPoints = paymentResult.loyaltyPointsEarned ?? Math.floor(amount / 1000);
+        addLoyaltyPoints(earnedPoints);
+        sessionStorage.removeItem(PENDING_QR_KEY);
+        clearCart();
+        useUiStore.getState().holdLoadingUntilNavigation();
+        router.push(`/orders/${orderId}?status=${paymentResult.status || 'PAID'}`);
+      });
     } catch (paymentError: unknown) {
       const message = getErrorMessage(paymentError);
       if (paymentError instanceof ApiError && paymentError.status === 401) {
@@ -216,7 +252,7 @@ export default function CheckoutPage() {
               <section
                 aria-label="Mã QR thanh toán demo"
                 data-testid="qr-payment-panel"
-                className="mt-6 flex flex-col items-center rounded-2xl border border-stone-200 bg-white p-5 text-center"
+                className="mt-6 flex animate-rise-in flex-col items-center rounded-2xl border border-stone-200 bg-white p-5 text-center"
               >
                 <h2 className="text-lg font-bold text-stone-900">Quét mã QR demo</h2>
                 <p className="mt-1 text-sm text-stone-600">
@@ -264,6 +300,7 @@ export default function CheckoutPage() {
               onClick={handleConfirmPayment}
               className="mt-6 min-h-12 w-full rounded-xl bg-emerald-900 px-4 py-3 font-semibold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
             >
+              {loading && <Spinner />}
               {loading
                 ? 'Đang xử lý...'
                 : isQrReady

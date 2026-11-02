@@ -1,4 +1,4 @@
-import { Order, Product, SizeOption, User } from '@/types';
+import { Order, Product, Promotion, SizeOption, Topping, User } from '@/types';
 import { ApiError, apiFetch, getApiErrorMessage } from '@/lib/api-errors';
 
 const configuredApiUrl = (
@@ -28,22 +28,20 @@ async function handleResponse<T>(res: Response): Promise<T> {
   return (data?.data !== undefined ? data.data : data) as T;
 }
 
-type ListResponse<T> = { items: T[]; total: number };
-type AuthResponse = {
-  accessToken?: string;
-  access_token?: string;
-  token?: string;
-  user?: User;
+export type ServerCart = {
+  items: Array<{
+    productId: string;
+    size: SizeOption;
+    qty: number;
+    toppingIds: string[];
+    toppings: Topping[];
+    product: Product;
+  }>;
+  promoCode: string;
+  promotion: Promotion | null;
 };
 
-function getAuthResult(result: AuthResponse): { accessToken: string; user?: User } {
-  const accessToken = result.accessToken ?? result.access_token ?? result.token;
-  if (!accessToken) {
-    throw new Error('Phản hồi xác thực không có access token.');
-  }
-  return { accessToken, user: result.user };
-}
-
+type ListResponse<T> = { items: T[]; total: number };
 /** API hiện trả danh sách theo dạng { items, total }; vẫn hỗ trợ mảng cũ để tương thích. */
 function getListItems<T>(
   result: ListResponse<T> | T[],
@@ -119,7 +117,7 @@ export const apiClient = {
 
   // [Task 6 & 10] POST /orders (Bảo vệ bởi JwtAuthGuard)
   async createOrder(payload: {
-    items: Array<{ productId: string; size: SizeOption; qty: number; toppings?: string[] }>;
+    items: Array<{ productId: string; size: SizeOption; qty: number; toppingIds: string[] }>;
     promoCode?: string;
   }): Promise<Order> {
     const res = await apiFetch(`${API_BASE_URL}/orders`, {
@@ -162,6 +160,38 @@ export const apiClient = {
     });
     const result = await handleResponse<ListResponse<Order> | Order[]>(res);
     return getListItems(result, 'lịch sử đơn hàng');
+  },
+
+  // POST /promotions/validate — kiểm tra mã, không tính lượt dùng
+  async validatePromotion(code: string, subtotal: number): Promise<Promotion & { discountAmount: number }> {
+    const res = await apiFetch(`${API_BASE_URL}/promotions/validate`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ code, subtotal }),
+    });
+    return handleResponse(res);
+  },
+
+  // GET /cart
+  async getCart(): Promise<ServerCart> {
+    const res = await apiFetch(`${API_BASE_URL}/cart`, {
+      headers: getAuthHeaders(),
+      cache: 'no-store',
+    });
+    return handleResponse<ServerCart>(res);
+  },
+
+  // PUT /cart — gửi nguyên giỏ, items rỗng là xóa giỏ
+  async saveCart(payload: {
+    items: Array<{ productId: string; size: SizeOption; qty: number; toppingIds: string[] }>;
+    promoCode?: string;
+  }): Promise<ServerCart> {
+    const res = await apiFetch(`${API_BASE_URL}/cart`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(payload),
+    });
+    return handleResponse<ServerCart>(res);
   },
 
   async getProfile(): Promise<User> {

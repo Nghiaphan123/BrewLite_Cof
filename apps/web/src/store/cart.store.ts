@@ -1,15 +1,16 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import { CartItem, Product, SizeOption, Topping } from '@/types';
+import { CartItem, Product, Promotion, SizeOption, Topping } from '@/types';
 import { calculateDiscount, calculateLineTotal, calculateUnitPrice } from '@/features/product/pricing';
 
 interface CartState {
   items: CartItem[];
   promoCode: string;
+  promotion: Promotion | null;
   addItem: (product: Product, size: SizeOption, toppings: Topping[], qty?: number) => void;
   updateQty: (cartItemId: string, qty: number) => void;
   removeItem: (cartItemId: string) => void;
-  setPromoCode: (code: string) => void;
+  setPromotion: (promotion: Promotion | null) => void;
   clearCart: () => void;
   getTotalItems: () => number;
   getSubtotal: () => number;
@@ -17,16 +18,19 @@ interface CartState {
   getTotalPrice: () => number;
 }
 
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export function buildCartItemId(productId: string, size: SizeOption, toppings: Topping[]): string {
   const toppingIds = toppings.map((t) => t.id).sort().join(',');
   return `${productId}__${size}__${toppingIds}`;
 }
 
 export const useCartStore = create<CartState>()(
-  persist<CartState, [], [], Pick<CartState, 'items' | 'promoCode'>>(
+  persist<CartState, [], [], Pick<CartState, 'items' | 'promoCode' | 'promotion'>>(
     (set, get) => ({
       items: [],
       promoCode: '',
+      promotion: null,
 
       addItem: (product, size, toppings, qty = 1) => {
         const cartItemId = buildCartItemId(product.id, size, toppings);
@@ -82,23 +86,34 @@ export const useCartStore = create<CartState>()(
         }));
       },
 
-      setPromoCode: (code) => set({ promoCode: code }),
+      setPromotion: (promotion) => set({ promotion, promoCode: promotion?.code ?? '' }),
 
-      clearCart: () => set({ items: [], promoCode: '' }),
+      clearCart: () => set({ items: [], promoCode: '', promotion: null }),
 
       getTotalItems: () => get().items.reduce((sum, item) => sum + item.qty, 0),
 
       getSubtotal: () => get().items.reduce((sum, item) => sum + item.lineTotal, 0),
 
-      getDiscount: () => calculateDiscount(get().getSubtotal(), get().promoCode),
+      getDiscount: () => calculateDiscount(get().getSubtotal(), get().promotion),
 
       getTotalPrice: () => Math.max(0, get().getSubtotal() - get().getDiscount()),
     }),
     {
       name: 'brewlite-cart',
       storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({ items: state.items, promoCode: state.promoCode }),
+      partialize: (state) => ({ items: state.items, promoCode: state.promoCode, promotion: state.promotion }),
       skipHydration: true,
+      // Bản cũ dùng mã topping riêng của web (pearl, cream...) mà API không nhận,
+      // và chỉ lưu tên mã giảm giá nên không tính lại được; người dùng nhập lại mã.
+      version: 2,
+      migrate: (persisted) => {
+        const saved = persisted as Pick<CartState, 'items'>;
+        return {
+          items: (saved.items ?? []).filter((item) => item.toppings.every((t) => UUID_PATTERN.test(t.id))),
+          promoCode: '',
+          promotion: null,
+        };
+      },
     },
   ),
 );

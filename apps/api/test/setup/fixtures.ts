@@ -53,8 +53,8 @@ export async function seedOrder(
   const total = overrides.total ?? 35000 * qty;
   const now = new Date();
   const year = now.getFullYear();
-  // Generate a unique code for test orders: BL-YYYY-XXXX (random 4 digits)
-  const code = `BL-${year}-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`;
+  // A UUID suffix: 4 random digits collide with earlier test rows and the order code sequence.
+  const code = `BL-${year}-TEST-${randomUUID()}`;
 
   return prisma.order.create({
     data: {

@@ -30,8 +30,9 @@ export function Navbar() {
           >
             <span>Giỏ hàng</span>
             <span
+              key={totalItems}
               data-testid="cart-badge"
-              className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-white px-1.5 text-xs font-bold text-emerald-800"
+              className="flex h-5 min-w-[20px] animate-pop items-center justify-center rounded-full bg-white px-1.5 text-xs font-bold text-emerald-800"
             >
               {totalItems}
             </span>

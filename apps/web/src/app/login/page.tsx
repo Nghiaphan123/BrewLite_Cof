@@ -5,6 +5,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { apiClient } from '@/lib/api';
 import { useAuthStore } from '@/store/auth.store';
+import { runWithLoading, useUiStore } from '@/store/ui.store';
+import { Spinner } from '@/components/Skeleton';
 
 const REDIRECT_TO_LOGIN_DELAY_MS = 1500;
 
@@ -50,6 +52,7 @@ function LoginForm() {
       throw new Error('Không nhận được token xác thực từ máy chủ');
     }
     setAuth(res.accessToken, res.user || { email });
+    useUiStore.getState().holdLoadingUntilNavigation();
     router.push(redirectUrl);
   };
 
@@ -59,7 +62,7 @@ function LoginForm() {
     setNotice(null);
     setLoading(true);
     try {
-      await (isRegister ? handleRegister() : handleLogin());
+      await (isRegister ? handleRegister() : runWithLoading('Đang đăng nhập...', handleLogin));
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Xác thực thất bại');
     } finally {
@@ -90,7 +93,7 @@ function LoginForm() {
         </div>
 
         {registered ? (
-          <div role="status" data-testid="register-success" className="py-10 text-center">
+          <div role="status" data-testid="register-success" className="animate-page-in py-10 text-center">
             <p className="text-lg font-bold text-[#002C22]">Đăng ký tài khoản thành công</p>
             <span
               aria-hidden="true"
@@ -165,6 +168,7 @@ function LoginForm() {
                 data-testid="auth-submit-btn"
                 className="w-full rounded-xl bg-[#002C22] py-3 font-bold text-white transition hover:bg-[#014034] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#002C22] disabled:opacity-60"
               >
+                {loading && <Spinner />}
                 {loading ? 'Đang xử lý...' : isRegister ? 'Đăng ký' : 'Đăng nhập'}
               </button>
             </form>

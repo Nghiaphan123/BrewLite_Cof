@@ -6,6 +6,7 @@ import { API_BASE_URL } from "@/lib/api";
 import { apiFetch, getApiErrorMessage } from "@/lib/api-errors";
 import { useCartStore } from "@/store/cart.store";
 import { useAuthStore } from "@/store/auth.store";
+import { useLogout } from "@/features/auth/useLogout";
 import type { Product } from "@/types";
 import { ProductCard } from "./ProductCard";
 
@@ -127,7 +128,8 @@ export function MenuPage() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const totalItems = useCartStore((state) => state.getTotalItems());
   const cartTotal = useCartStore((state) => state.getTotalPrice());
-  const { token, user, logout } = useAuthStore();
+  const { token, user } = useAuthStore();
+  const logoutWithLoading = useLogout();
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -231,7 +233,7 @@ export function MenuPage() {
                       role="menuitem"
                       onClick={() => {
                         setUserMenuOpen(false);
-                        logout();
+                        void logoutWithLoading();
                       }}
                       className="w-full rounded-lg px-2 py-2 text-left text-sm text-red-600 hover:bg-red-50"
                     >
@@ -255,7 +257,10 @@ export function MenuPage() {
             >
               <span aria-hidden="true">🛒</span>
               <span>Giỏ hàng</span>
-              <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-white px-1.5 text-xs font-bold text-emerald-950">
+              <span
+                key={totalItems}
+                className="flex h-6 min-w-6 animate-pop items-center justify-center rounded-full bg-white px-1.5 text-xs font-bold text-emerald-950"
+              >
                 {totalItems}
               </span>
             </Link>
@@ -369,7 +374,7 @@ export function MenuPage() {
           visibleProducts.length > 0 ? (
             <ul data-testid="menu-grid" className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
               {visibleProducts.map((product) => (
-                <li key={product.id}>
+                <li key={product.id} className="animate-rise-in">
                   <ProductCard product={product} />
                 </li>
               ))}
