@@ -126,7 +126,7 @@ export default function CartPage() {
                         type="button"
                         aria-label="Giảm số lượng"
                         onClick={() => updateQty(item.cartItemId, item.qty - 1)}
-                        className="h-8 w-8 rounded-full bg-white text-lg font-bold text-black transition hover:bg-black hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
+                        className="h-8 w-8 rounded-full bg-white text-lg font-bold text-[#002C22] transition hover:bg-[#002C22] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#002C22]"
                       >
                         −
                       </button>
@@ -135,7 +135,7 @@ export default function CartPage() {
                         type="button"
                         aria-label="Tăng số lượng"
                         onClick={() => updateQty(item.cartItemId, item.qty + 1)}
-                        className="h-8 w-8 rounded-full bg-white text-lg font-bold text-black transition hover:bg-black hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
+                        className="h-8 w-8 rounded-full bg-white text-lg font-bold text-[#002C22] transition hover:bg-[#002C22] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#002C22]"
                       >
                         +
                       </button>
@@ -173,7 +173,7 @@ export default function CartPage() {
                 <button
                   type="submit"
                   data-testid="apply-promo-btn"
-                  className="rounded-xl bg-black px-4 py-2.5 text-sm font-bold text-white transition hover:bg-stone-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
+                  className="rounded-xl bg-[#002C22] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#014034] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#002C22]"
                 >
                   Áp dụng
                 </button>

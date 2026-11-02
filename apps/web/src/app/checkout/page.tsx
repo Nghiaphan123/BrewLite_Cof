@@ -8,6 +8,7 @@ import QRCode from 'qrcode';
 import { useCartStore } from '@/store/cart.store';
 import { useAuthStore } from '@/store/auth.store';
 import { apiClient } from '@/lib/api';
+import { ApiError } from '@/lib/api-errors';
 
 type PaymentMethod = 'QR' | 'WALLET' | 'CARD';
 
@@ -95,7 +96,7 @@ export default function CheckoutPage() {
       );
 
       if (paymentResult.status === 'PAYMENT_FAILED') {
-        setError('Thanh toán thất bại (PAYMENT_FAILED). Giỏ hàng của bạn vẫn được giữ nguyên.');
+        setError('Thanh toán thất bại. Giỏ hàng của bạn vẫn được giữ nguyên.');
         setPendingQr(null);
         return;
       }
@@ -106,7 +107,7 @@ export default function CheckoutPage() {
       router.push(`/orders/${orderId}?status=${paymentResult.status || 'PAID'}`);
     } catch (paymentError: unknown) {
       const message = getErrorMessage(paymentError);
-      if (/invalid token|token expired|authentication required/i.test(message)) {
+      if (paymentError instanceof ApiError && paymentError.status === 401) {
         logout();
         setRequiresLogin(true);
         setError('Phiên đăng nhập không hợp lệ hoặc đã hết hạn. Hãy đăng nhập lại để tiếp tục.');

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { API_BASE_URL } from "@/lib/api";
+import { apiFetch, getApiErrorMessage } from "@/lib/api-errors";
 import { useCartStore } from "@/store/cart.store";
 import { useAuthStore } from "@/store/auth.store";
 import type { Product } from "@/types";
@@ -77,23 +78,14 @@ function getProductCategory(product: Product): Exclude<MenuTab, "Tất cả"> {
 }
 
 async function fetchProducts(signal: AbortSignal): Promise<MenuProduct[]> {
-  const response = await fetch(`${API_BASE_URL}/products`, {
+  const response = await apiFetch(`${API_BASE_URL}/products`, {
     signal,
     headers: { Accept: "application/json" },
   });
 
   if (!response.ok) {
     const body: unknown = await response.json().catch(() => null);
-    if (typeof body === "object" && body !== null && "message" in body) {
-      const message = body.message;
-      if (typeof message === "string") {
-        throw new Error(message);
-      }
-      if (Array.isArray(message) && message.every((item) => typeof item === "string")) {
-        throw new Error(message.join(", "));
-      }
-    }
-    throw new Error(`Không thể tải menu (HTTP ${response.status}).`);
+    throw new Error(getApiErrorMessage(response.status, body));
   }
 
   const body: unknown = await response.json();
@@ -330,7 +322,7 @@ export function MenuPage() {
             <button
               type="button"
               onClick={retry}
-              className="mt-4 rounded-md bg-zinc-900 px-4 py-2 font-medium text-white hover:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900"
+              className="mt-4 rounded-md bg-[#002C22] px-4 py-2 font-medium text-white hover:bg-[#014034] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#002C22]"
             >
               Thử lại
             </button>

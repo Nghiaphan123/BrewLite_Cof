@@ -157,7 +157,7 @@ function ProductDetailContent() {
               type="button"
               aria-label="Giảm số lượng"
               onClick={() => setQty((q) => Math.max(1, q - 1))}
-              className="h-9 w-9 rounded-full border border-black bg-white text-lg font-bold text-black transition hover:bg-black hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
+              className="h-9 w-9 rounded-full border border-[#002C22] bg-white text-lg font-bold text-[#002C22] transition hover:bg-[#002C22] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#002C22]"
             >
               −
             </button>
@@ -168,7 +168,7 @@ function ProductDetailContent() {
               type="button"
               aria-label="Tăng số lượng"
               onClick={() => setQty((q) => q + 1)}
-              className="h-9 w-9 rounded-full border border-black bg-white text-lg font-bold text-black transition hover:bg-black hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
+              className="h-9 w-9 rounded-full border border-[#002C22] bg-white text-lg font-bold text-[#002C22] transition hover:bg-[#002C22] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#002C22]"
             >
               +
             </button>

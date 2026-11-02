@@ -6,6 +6,16 @@ import Link from 'next/link';
 import { apiClient } from '@/lib/api';
 import { Order } from '@/types';
 
+const STATUS_LABELS: Record<Order['status'], string> = {
+  PENDING: 'Chờ xử lý',
+  PAID: 'Đã thanh toán',
+  PAYMENT_FAILED: 'Thanh toán thất bại',
+  PREPARING: 'Đang pha chế',
+  READY: 'Sẵn sàng lấy',
+  COMPLETED: 'Hoàn thành',
+  CANCELLED: 'Đã hủy',
+};
+
 export default function OrderHistoryPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -52,7 +62,7 @@ export default function OrderHistoryPage() {
               </div>
               <div className="text-right">
                 <span className="inline-block rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-800">
-                  {order.status}
+                  {STATUS_LABELS[order.status] ?? order.status}
                 </span>
                 <p className="mt-1 font-bold text-stone-900">
                   {Number(order.total || 0).toLocaleString('vi-VN')}₫

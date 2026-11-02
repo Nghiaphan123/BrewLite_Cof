@@ -105,7 +105,7 @@ describe('Integration Test: Frontend <-> Backend API', () => {
     await waitFor(() => {
       expect(screen.getByTestId('history-order-order-1')).toBeInTheDocument();
     });
-    expect(screen.getByText('PAID')).toBeInTheDocument();
+    expect(screen.getByText('Đã thanh toán')).toBeInTheDocument();
   });
 
   it('Trang Menu hiển thị thông báo lỗi khi API /products thất bại', async () => {
@@ -191,18 +191,59 @@ describe('Integration Test: Frontend <-> Backend API', () => {
     expect(useCartStore.getState().getTotalItems()).toBe(1);
   });
 
-  it('đăng nhập sau đăng ký để nhận JWT và tiếp tục thanh toán', async () => {
+  it('báo lỗi đăng nhập bằng tiếng Việt khi API trả AUTH_INVALID', async () => {
+    useAuthStore.getState().logout();
+    vi.spyOn(global, 'fetch').mockResolvedValueOnce({
+      ok: false,
+      status: 401,
+      json: async () => ({ message: 'Invalid credentials', code: 'AUTH_INVALID' }),
+    } as Response);
+
+    render(<LoginPage />);
+    expect(screen.getByRole('heading', { name: 'Đăng nhập tài khoản' })).toBeInTheDocument();
+    fireEvent.change(screen.getByTestId('auth-email'), { target: { value: 'a@brewlite.vn' } });
+    fireEvent.change(screen.getByTestId('auth-password'), { target: { value: 'sai123' } });
+    fireEvent.click(screen.getByTestId('auth-submit-btn'));
+
+    expect(await screen.findByTestId('auth-error')).toHaveTextContent('Email hoặc mật khẩu không đúng.');
+  });
+
+  it('dịch lỗi kiểm tra dữ liệu khi đăng ký', async () => {
+    vi.spyOn(global, 'fetch').mockResolvedValueOnce({
+      ok: false,
+      status: 400,
+      json: async () => ({
+        message: [
+          'password must contain at least one letter and one digit',
+          'password must be longer than or equal to 8 characters',
+        ],
+      }),
+    } as Response);
+
+    render(<LoginPage />);
+    fireEvent.click(screen.getByRole('button', { name: 'Chưa có tài khoản? Đăng ký ngay' }));
+    fireEvent.change(screen.getByTestId('auth-email'), { target: { value: 'a@brewlite.vn' } });
+    fireEvent.change(screen.getByTestId('auth-password'), { target: { value: '12345678' } });
+    fireEvent.click(screen.getByTestId('auth-submit-btn'));
+
+    expect(await screen.findByTestId('auth-error')).toHaveTextContent(
+      /^Mật khẩu phải có ít nhất 8 ký tự, gồm cả chữ và số\.$/,
+    );
+  });
+
+  it('đăng ký thành công thì báo thành công, hiện loading rồi quay lại đăng nhập', async () => {
+    useAuthStore.getState().logout();
     const fetchSpy = vi.spyOn(global, 'fetch')
       .mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          accessToken: 'valid-jwt-token',
           user: { id: 'u2', name: 'new', email: 'new@brewlite.vn', loyaltyPoints: 0 },
         }),
       } as Response);
 
     render(<LoginPage />);
     fireEvent.click(screen.getByRole('button', { name: 'Chưa có tài khoản? Đăng ký ngay' }));
+    expect(screen.getByRole('heading', { name: 'Đăng ký tài khoản' })).toBeInTheDocument();
     expect(screen.queryByTestId('auth-name')).not.toBeInTheDocument();
     fireEvent.change(screen.getByTestId('auth-email'), {
       target: { value: 'new@brewlite.vn' },
@@ -212,9 +253,11 @@ describe('Integration Test: Frontend <-> Backend API', () => {
     });
     fireEvent.click(screen.getByTestId('auth-submit-btn'));
 
-    await waitFor(() => {
-      expect(pushMock).toHaveBeenCalledWith('/');
-    });
+    expect(await screen.findByTestId('register-success')).toHaveTextContent(
+      'Đăng ký tài khoản thành công',
+    );
+    expect(screen.getByText('Đang chuyển đến trang đăng nhập...')).toBeInTheDocument();
+    expect(screen.queryByTestId('auth-error')).not.toBeInTheDocument();
     expect(fetchSpy.mock.calls[0][1]?.body).toBe(
       JSON.stringify({
         email: 'new@brewlite.vn',
@@ -222,8 +265,14 @@ describe('Integration Test: Frontend <-> Backend API', () => {
         name: 'new',
       }),
     );
-    expect(useAuthStore.getState().token).toBe('valid-jwt-token');
-    expect(localStorage.getItem('brewlite_token')).toBe('valid-jwt-token');
+
+    expect(
+      await screen.findByRole('heading', { name: 'Đăng nhập tài khoản' }, { timeout: 3000 }),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId('auth-email')).toHaveValue('new@brewlite.vn');
+    expect(screen.getByTestId('auth-password')).toHaveValue('');
+    expect(pushMock).not.toHaveBeenCalled();
+    expect(useAuthStore.getState().token).toBeNull();
   });
 
   it('hiển thị tên và thông tin tài khoản trong menu tài khoản', async () => {
