@@ -172,4 +172,24 @@ export const apiClient = {
     const result = await handleResponse<ListResponse<Order> | Order[]>(res);
     return getListItems(result, 'lịch sử đơn hàng');
   },
+
+  async getProfile(): Promise<User> {
+    const res = await fetch(`${API_BASE_URL}/auth/me`, {
+      headers: getAuthHeaders(),
+      cache: 'no-store',
+    });
+    return handleResponse<User>(res);
+  },
+
+  async changePassword(payload: {
+    currentPassword: string;
+    newPassword: string;
+  }): Promise<{ message: string }> {
+    const res = await fetch(`${API_BASE_URL}/auth/password`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(payload),
+    });
+    return handleResponse<{ message: string }>(res);
+  },
 };

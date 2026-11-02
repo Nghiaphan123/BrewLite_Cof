@@ -4,7 +4,7 @@ import { User } from '@/types';
 interface AuthState {
   token: string | null;
   user: User | null;
-  setAuth: (token: string, user?: User) => void;
+  setAuth: (token: string, user?: Partial<User>) => void;
   addLoyaltyPoints: (points: number) => void;
   logout: () => void;
 }
