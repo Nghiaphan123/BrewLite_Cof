@@ -126,8 +126,9 @@ export function MenuPage() {
   const [retryCount, setRetryCount] = useState(0);
   const [activeTab, setActiveTab] = useState<MenuTab>("Tất cả");
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const totalItems = useCartStore((state) => state.getTotalItems());
-  const cartTotal = useCartStore((state) => state.getTotalPrice());
+  // Tính từ state.items, không gọi getTotal...: các hàm đó đọc thẳng store nên lệch HTML của server lúc hydrate.
+  const totalItems = useCartStore((state) => state.items.reduce((sum, item) => sum + item.qty, 0));
+  const cartTotal = useCartStore((state) => (state.items.length > 0 ? state.getTotalPrice() : 0));
   const { token, user } = useAuthStore();
   const logoutWithLoading = useLogout();
   const userMenuRef = useRef<HTMLDivElement>(null);

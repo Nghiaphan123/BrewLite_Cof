@@ -510,6 +510,85 @@ describe('Integration Test: Frontend <-> Backend API', () => {
     expect(screen.getByRole('link', { name: /Quay lại giỏ hàng/ })).toHaveAttribute('href', '/cart');
   });
 
+  it.each([
+    ['method-wallet', 'WALLET'],
+    ['method-card', 'CARD'],
+  ])('đã tạo QR vẫn đổi được sang %s và thanh toán đúng đơn đó', async (testId, paymentMethod) => {
+    useCartStore.getState().addItem({ id: 'p1', name: 'Latte', price: 45000, imageUrl: '' }, 'S', [], 1);
+    const fetchSpy = vi.spyOn(global, 'fetch')
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ id: '1042', status: 'PENDING', total: 45000 }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ orderId: '1042', status: 'PAID' }),
+      } as Response);
+
+    render(<CheckoutPage />);
+    fireEvent.click(screen.getByTestId('confirm-payment-btn'));
+    await screen.findByTestId('qr-payment-panel');
+    await waitFor(() => expect(screen.getByTestId('confirm-payment-btn')).toBeEnabled());
+
+    expect(screen.getByTestId(testId)).toBeEnabled();
+    fireEvent.click(screen.getByTestId(testId));
+
+    expect(screen.queryByTestId('qr-payment-panel')).not.toBeInTheDocument();
+    expect(screen.getByTestId('method-note')).toHaveTextContent('không tạo thêm đơn mới');
+    expect(screen.getByTestId('confirm-payment-btn')).toHaveTextContent('Xác nhận thanh toán');
+
+    fireEvent.click(screen.getByTestId('confirm-payment-btn'));
+
+    await waitFor(() => expect(pushMock).toHaveBeenCalledWith('/orders/1042?status=PAID'));
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+    expect(JSON.parse(String(fetchSpy.mock.calls[1][1]?.body))).toMatchObject({
+      orderId: '1042',
+      method: paymentMethod,
+    });
+  });
+
+  it('đổi sang ví rồi quay lại QR: vẫn thấy đúng mã QR cũ', async () => {
+    useCartStore.getState().addItem({ id: 'p1', name: 'Latte', price: 45000, imageUrl: '' }, 'S', [], 1);
+    const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ id: '1042', status: 'PENDING', total: 45000 }),
+    } as Response);
+
+    render(<CheckoutPage />);
+    fireEvent.click(screen.getByTestId('confirm-payment-btn'));
+    await screen.findByTestId('qr-payment-panel');
+    await waitFor(() => expect(screen.getByTestId('confirm-payment-btn')).toBeEnabled());
+
+    fireEvent.click(screen.getByTestId('method-wallet'));
+    fireEvent.click(screen.getByTestId('method-qr'));
+
+    expect(screen.getByText('Đơn 1042 · 45.000₫')).toBeInTheDocument();
+    expect(screen.getByTestId('confirm-payment-btn')).toHaveTextContent('Tôi đã quét mã');
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('đang tạo QR: hiện khung chờ ngay trong trang, không che toàn màn hình', async () => {
+    useCartStore.getState().addItem({ id: 'p1', name: 'Latte', price: 45000, imageUrl: '' }, 'S', [], 1);
+    vi.spyOn(global, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ id: '1042', status: 'PENDING', total: 45000 }),
+    } as Response);
+
+    render(
+      <>
+        <CheckoutPage />
+        <AppFeedback />
+      </>,
+    );
+    fireEvent.click(screen.getByTestId('confirm-payment-btn'));
+
+    expect(screen.getByTestId('qr-loading')).toBeInTheDocument();
+    expect(screen.queryByTestId('app-loading')).not.toBeInTheDocument();
+    await screen.findByTestId('qr-payment-panel');
+    expect(screen.queryByTestId('qr-loading')).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.getByTestId('confirm-payment-btn')).toBeEnabled());
+  });
+
   it('tải lại trang khi đang chờ QR: dùng lại đơn cũ, không tạo đơn mới', async () => {
     useCartStore.getState().addItem({ id: 'p1', name: 'Latte', price: 45000, imageUrl: '' }, 'S', [], 1);
     const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValueOnce({
