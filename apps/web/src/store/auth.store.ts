@@ -4,7 +4,7 @@ import { User } from '@/types';
 interface AuthState {
   token: string | null;
   user: User | null;
-  setAuth: (token: string, user?: User) => void;
+  setAuth: (token: string, user?: Partial<User>) => void;
   addLoyaltyPoints: (points: number) => void;
   logout: () => void;
 }
@@ -21,8 +21,8 @@ const getStoredUser = (): User | null => {
 };
 
 export const useAuthStore = create<AuthState>((set) => ({
-  token: typeof window !== 'undefined' ? localStorage.getItem('brewlite_token') : null,
-  user: getStoredUser(),
+  token: null,
+  user: null,
 
   setAuth: (token, user) => {
     if (typeof window !== 'undefined') {
@@ -73,3 +73,10 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ token: null, user: null });
   },
 }));
+
+// Trạng thái ban đầu giữ null để lần render hydrate khớp HTML của server (server không có localStorage);
+// React render lại ngay sau đó với phiên thật. Vì lần commit đầu vẫn thấy null, effect chuyển hướng phải
+// đọc useAuthStore.getState().token thay vì giá trị token từ hook.
+if (typeof window !== 'undefined') {
+  useAuthStore.setState({ token: localStorage.getItem('brewlite_token'), user: getStoredUser() });
+}

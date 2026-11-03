@@ -32,22 +32,27 @@ describe('OrdersService read endpoints', () => {
         status: 'PAID',
         total: 95000,
         createdAt,
+        items: [
+          {
+            productId: 'product-1',
+            product: { name: 'Cà phê sữa' },
+            size: 'M',
+            qty: 2,
+            lineTotal: 90000,
+            toppings: [{ toppingId: 'topping-1', unitPrice: 5000, topping: { name: 'Trân châu đen' } }],
+          },
+        ],
       },
     ]);
 
     const result = await service.listMine(USER_ID);
 
-    expect(prisma.order.findMany).toHaveBeenCalledWith({
-      where: { userId: USER_ID },
-      orderBy: { createdAt: 'desc' },
-      select: {
-        id: true,
-        code: true,
-        status: true,
-        total: true,
-        createdAt: true,
-      },
-    });
+    expect(prisma.order.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { userId: USER_ID },
+        orderBy: { createdAt: 'desc' },
+      }),
+    );
     expect(result).toEqual({
       items: [
         {
@@ -56,6 +61,16 @@ describe('OrdersService read endpoints', () => {
           status: 'PAID',
           total: 95000,
           createdAt,
+          items: [
+            {
+              productId: 'product-1',
+              name: 'Cà phê sữa',
+              size: 'M',
+              qty: 2,
+              lineTotal: 90000,
+              toppings: [{ id: 'topping-1', name: 'Trân châu đen', price: 5000 }],
+            },
+          ],
         },
       ],
       total: 1,
@@ -87,6 +102,7 @@ describe('OrdersService read endpoints', () => {
           size: 'M',
           qty: 2,
           lineTotal: 80000,
+          toppings: [],
         },
       ],
       payments: [

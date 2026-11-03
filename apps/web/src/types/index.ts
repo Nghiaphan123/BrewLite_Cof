@@ -14,6 +14,15 @@ export interface Product {
   imageUrl: string;
   description?: string;
   stock?: number;
+  /** Chỉ có ở GET /products/:id. */
+  toppings?: Topping[];
+}
+
+export interface Promotion {
+  code: string;
+  type: 'PERCENT' | 'FIXED';
+  value: number;
+  minOrderTotal: number;
 }
 
 export interface CartItem {
@@ -51,7 +60,6 @@ export interface Order {
   discountAmount?: number;
   createdAt: string;
   items?: Array<{
-    id?: string;
     productId: string;
     productName?: string;
     name?: string;
@@ -59,5 +67,6 @@ export interface Order {
     qty: number;
     lineTotal: number;
     unitPrice?: number;
+    toppings?: Topping[];
   }>;
 }

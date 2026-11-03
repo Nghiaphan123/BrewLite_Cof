@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import type { ReactNode } from "react";
+import { Suspense } from "react";
+import { AppFeedback } from "@/components/AppFeedback";
 import { CartStoreHydration } from "@/components/CartStoreHydration";
+import { CartSync } from "@/components/CartSync";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -23,11 +26,17 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="vi"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} h-full bg-white antialiased`}
+      style={{ colorScheme: "light" }}
     >
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-full flex flex-col bg-white text-neutral-900">
         <CartStoreHydration />
+        <CartSync />
         {children}
+        {/* usePathname cần Suspense để các route động vẫn prerender được (cacheComponents). */}
+        <Suspense fallback={null}>
+          <AppFeedback />
+        </Suspense>
       </body>
     </html>
   );
