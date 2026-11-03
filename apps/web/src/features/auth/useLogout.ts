@@ -1,7 +1,7 @@
 import { useRouter } from 'next/navigation';
 import { clearLocalCart } from '@/features/cart/cart-sync';
 import { useAuthStore } from '@/store/auth.store';
-import { runWithLoading, useUiStore, wait } from '@/store/ui.store';
+import { runWithLoading, wait } from '@/store/ui.store';
 
 export function useLogout() {
   const router = useRouter();
@@ -9,11 +9,14 @@ export function useLogout() {
 
   return () =>
     runWithLoading('Đang đăng xuất...', async () => {
-      // Giữ phiên tới khi màn hình load đã che trang, để trang hiện tại không nháy trạng thái "chưa đăng nhập".
+      // Chờ một nhịp ngắn để màn hình load che kịp trước khi xóa phiên,
+      // tránh nháy trạng thái "chưa đăng nhập" trên trang hiện tại.
       await wait(300);
       logout();
       clearLocalCart();
-      useUiStore.getState().holdLoadingUntilNavigation();
-      router.push('/login');
+      // Dùng replace thay push để không để lại /admin trong history sau khi đăng xuất.
+      // Không gọi holdLoadingUntilNavigation ở đây — overlay sẽ tự tắt khi
+      // runWithLoading kết thúc; dùng hold ở đây khiến overlay treo vô hạn.
+      router.replace('/login');
     });
 }

@@ -7,15 +7,18 @@ import { MenuPage } from '@/features/menu/menu-page';
 
 export default function HomePage() {
   const token = useAuthStore((state) => state.token);
+  const user = useAuthStore((state) => state.user);
   const router = useRouter();
 
   useEffect(() => {
     if (!useAuthStore.getState().token) {
       router.replace('/login');
+    } else if (useAuthStore.getState().user?.role === 'ADMIN') {
+      router.replace('/admin');
     }
-  }, [token, router]);
+  }, [token, user, router]);
 
-  if (!token) {
+  if (!token || user?.role === 'ADMIN') {
     return null;
   }
 

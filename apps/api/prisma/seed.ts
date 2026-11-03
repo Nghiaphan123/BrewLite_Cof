@@ -5,8 +5,8 @@
 // twice does not create duplicates (NFR-12, test DB-T02).
 //
 // Data volume follows decision 12 (performance method): about 30 products and
-// 10 users, bcrypt cost 10. Prices are whole VND (ADR 006). Stock counts finished
-// drinks (ADR 007). Promotions follow ADR 009.
+// 10 users, bcrypt cost 10. Prices are whole VND. Stock counts finished
+// drinks. Promotions follow.
 //
 // All data is synthetic. Do not put real customer data here.
 import { PrismaPg } from '@prisma/adapter-pg';
@@ -101,13 +101,25 @@ async function seedToppings(): Promise<void> {
   for (const [index, name] of toppings.entries()) {
     await prisma.topping.upsert({
       where: { id: id('20000000', index + 1) },
-      update: { name, price: TOPPING_PRICE, active: true },
-      create: { id: id('20000000', index + 1), name, price: TOPPING_PRICE },
+      update: { name, price: TOPPING_PRICE, active: true, stock: 50 },
+      create: { id: id('20000000', index + 1), name, price: TOPPING_PRICE, stock: 50 },
     });
   }
 }
 
 async function seedUsers(): Promise<void> {
+  const adminPasswordHash = await bcrypt.hash('123456', BCRYPT_COST);
+  await prisma.user.upsert({
+    where: { email: 'admin@brewlite.vn' },
+    update: { name: 'admin', role: 'ADMIN', passwordHash: adminPasswordHash },
+    create: {
+      id: id('30000000', 999),
+      name: 'admin',
+      email: 'admin@brewlite.vn',
+      passwordHash: adminPasswordHash,
+      role: 'ADMIN',
+    },
+  });
   const passwordHash = await bcrypt.hash(SEED_USER_PASSWORD, BCRYPT_COST);
   for (let n = 1; n <= SEED_USER_COUNT; n++) {
     const email = `customer${n.toString().padStart(2, '0')}@brewlite.test`;

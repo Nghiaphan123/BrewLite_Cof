@@ -1,4 +1,4 @@
-import { Order, Product, Promotion, SizeOption, Topping, User } from '@/types';
+import { Order, OrderStatus, Product, Promotion, SizeOption, Topping, User } from '@/types';
 import { ApiError, apiFetch, getApiErrorMessage } from '@/lib/api-errors';
 
 const configuredApiUrl = (
@@ -212,5 +212,77 @@ export const apiClient = {
       body: JSON.stringify(payload),
     });
     return handleResponse<{ message: string }>(res);
+  },
+
+  // ---------------------------------------------------- Admin APIs
+  async getAdminToppings(): Promise<Topping[]> {
+    const res = await apiFetch(`${API_BASE_URL}/admin/toppings`, {
+      headers: getAuthHeaders(),
+      cache: 'no-store',
+    });
+    return handleResponse<Topping[]>(res);
+  },
+
+  async updateAdminToppingStock(id: string, stock: number): Promise<Topping> {
+    const res = await apiFetch(`${API_BASE_URL}/admin/toppings/${id}/stock`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ stock }),
+    });
+    return handleResponse<Topping>(res);
+  },
+
+  async getAdminUsers(): Promise<User[]> {
+    const res = await apiFetch(`${API_BASE_URL}/admin/users`, {
+      headers: getAuthHeaders(),
+      cache: 'no-store',
+    });
+    return handleResponse<User[]>(res);
+  },
+
+  async getAdminPromotions(): Promise<Promotion[]> {
+    const res = await apiFetch(`${API_BASE_URL}/admin/promotions`, {
+      headers: getAuthHeaders(),
+      cache: 'no-store',
+    });
+    return handleResponse<Promotion[]>(res);
+  },
+
+  async createAdminPromotion(payload: {
+    code: string;
+    type: 'PERCENT' | 'FIXED';
+    value: number;
+    minOrderTotal?: number;
+    validFrom?: string;
+    validTo: string;
+    active?: boolean;
+    usageLimit?: number | null;
+  }): Promise<Promotion> {
+    const res = await apiFetch(`${API_BASE_URL}/admin/promotions`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(payload),
+    });
+    return handleResponse<Promotion>(res);
+  },
+
+  async getAdminOrders(): Promise<Order[]> {
+    const res = await apiFetch(`${API_BASE_URL}/admin/orders`, {
+      headers: getAuthHeaders(),
+      cache: 'no-store',
+    });
+    return handleResponse<Order[]>(res);
+  },
+
+  async updateAdminOrderStatus(
+    id: string,
+    status: OrderStatus,
+  ): Promise<{ id: string; status: OrderStatus }> {
+    const res = await apiFetch(`${API_BASE_URL}/admin/orders/${id}/status`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ status }),
+    });
+    return handleResponse<{ id: string; status: OrderStatus }>(res);
   },
 };

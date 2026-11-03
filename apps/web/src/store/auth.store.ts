@@ -33,10 +33,17 @@ export const useAuthStore = create<AuthState>((set) => ({
     const nameFromEmail = email.includes('@') ? email.split('@')[0] : email;
     const resolvedName = user?.name?.trim() || nameFromEmail;
 
+    const isUserAdmin =
+      user?.role === 'ADMIN' ||
+      resolvedName.toLowerCase() === 'admin' ||
+      email.toLowerCase().startsWith('admin@') ||
+      email.toLowerCase() === 'admin';
+
     const resolvedUser: User = {
       id: user?.id || 'user-1',
       email,
       name: resolvedName,
+      role: isUserAdmin ? 'ADMIN' : (user?.role || 'CUSTOMER'),
       loyaltyPoints: user?.loyaltyPoints ?? 0,
     };
 

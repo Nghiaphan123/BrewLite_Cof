@@ -4,6 +4,8 @@ export interface Topping {
   id: string;
   name: string;
   price: number;
+  stock?: number;
+  active?: boolean;
 }
 
 export interface Product {
@@ -19,10 +21,16 @@ export interface Product {
 }
 
 export interface Promotion {
+  id?: string;
   code: string;
   type: 'PERCENT' | 'FIXED';
   value: number;
   minOrderTotal: number;
+  validFrom?: string;
+  validTo?: string;
+  active?: boolean;
+  usageLimit?: number | null;
+  usedCount?: number;
 }
 
 export interface CartItem {
@@ -39,8 +47,12 @@ export interface User {
   id: string;
   name?: string;
   email: string;
+  role?: 'ADMIN' | 'CUSTOMER' | string;
   loyaltyPoints?: number;
   createdAt?: string;
+  _count?: {
+    orders: number;
+  };
 }
 
 export type OrderStatus =
@@ -54,19 +66,34 @@ export type OrderStatus =
 
 export interface Order {
   id: string;
+  code?: string;
   userId?: string;
+  user?: {
+    id: string;
+    name: string;
+    email: string;
+  };
   status: OrderStatus;
+  subtotal?: number;
   total: number;
   discountAmount?: number;
+  promoCode?: string | null;
   createdAt: string;
+  updatedAt?: string;
   items?: Array<{
+    id?: string;
     productId: string;
     productName?: string;
     name?: string;
+    imageUrl?: string;
     size: SizeOption;
     qty: number;
     lineTotal: number;
     unitPrice?: number;
-    toppings?: Topping[];
+    toppings?: Array<{
+      id?: string;
+      name?: string;
+      unitPrice?: number;
+    }>;
   }>;
 }

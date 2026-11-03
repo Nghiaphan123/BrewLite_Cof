@@ -1,0 +1,6 @@
+-- AlterTable
+ALTER TABLE "users" ADD COLUMN "role" TEXT NOT NULL DEFAULT 'CUSTOMER';
+
+-- AlterTable
+ALTER TABLE "toppings" ADD COLUMN "stock" INTEGER NOT NULL DEFAULT 50;
+

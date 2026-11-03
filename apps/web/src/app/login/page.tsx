@@ -53,7 +53,16 @@ function LoginForm() {
     }
     setAuth(res.accessToken, res.user || { email });
     useUiStore.getState().holdLoadingUntilNavigation();
-    router.push(redirectUrl);
+        const isAdmin =
+      res.user?.role === 'ADMIN' ||
+      email.toLowerCase().trim() === 'admin' ||
+      email.toLowerCase().trim().startsWith('admin@');
+
+    if (isAdmin && (redirectUrl === '/' || redirectUrl === '/menu')) {
+      router.push('/admin');
+    } else {
+      router.push(redirectUrl);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -120,11 +129,11 @@ function LoginForm() {
             <form onSubmit={handleSubmit} className="mt-4 space-y-4">
               <div>
                 <label htmlFor="auth-email" className="block text-sm font-bold uppercase text-black">
-                  Email
+                  Email hoặc tên đăng nhập
                 </label>
                 <input
                   id="auth-email"
-                  type="email"
+                  type="text"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}

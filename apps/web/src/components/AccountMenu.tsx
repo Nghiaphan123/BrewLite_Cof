@@ -146,6 +146,19 @@ export function AccountMenu() {
             aria-label="Tùy chọn tài khoản"
             className="absolute right-0 z-50 mt-2 w-52 overflow-hidden rounded-xl border border-stone-200 bg-white py-1 shadow-lg"
           >
+            {user?.role === 'ADMIN' && (
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setMenuOpen(false);
+                  router.push('/admin');
+                }}
+                className="flex w-full items-center gap-2 border-b border-stone-100 bg-amber-50 px-4 py-2.5 text-left text-sm font-bold text-amber-900 hover:bg-amber-100"
+              >
+                <span>🛡️</span> Trang quản trị (Admin)
+              </button>
+            )}
             <button
               type="button"
               role="menuitem"
@@ -201,67 +214,67 @@ export function AccountMenu() {
               </button>
             </div>
 
-              <form className="mt-5 space-y-4" onSubmit={handleChangePassword}>
-                <label className="block text-sm font-medium text-stone-700">
-                  Mật khẩu hiện tại
-                  <input
-                    type="password"
-                    required
-                    minLength={8}
-                    autoComplete="current-password"
-                    data-testid="current-password"
-                    value={currentPassword}
-                    onChange={(event) => setCurrentPassword(event.target.value)}
-                    className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-stone-900"
-                  />
-                </label>
-                <label className="block text-sm font-medium text-stone-700">
-                  Mật khẩu mới
-                  <input
-                    type="password"
-                    required
-                    minLength={8}
-                    pattern="^(?=.*[A-Za-z])(?=.*\d).{8,}$"
-                    title="Mật khẩu cần ít nhất 8 ký tự, gồm chữ cái và chữ số."
-                    autoComplete="new-password"
-                    data-testid="new-password"
-                    value={newPassword}
-                    onChange={(event) => setNewPassword(event.target.value)}
-                    className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-stone-900"
-                  />
-                </label>
-                <label className="block text-sm font-medium text-stone-700">
-                  Nhập lại mật khẩu mới
-                  <input
-                    type="password"
-                    required
-                    minLength={8}
-                    autoComplete="new-password"
-                    data-testid="confirm-password"
-                    value={confirmPassword}
-                    onChange={(event) => setConfirmPassword(event.target.value)}
-                    className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-stone-900"
-                  />
-                </label>
-                {passwordError && (
-                  <p role="alert" data-testid="password-error" className="text-sm text-red-700">
-                    {passwordError}
-                  </p>
-                )}
-                {passwordSuccess && (
-                  <p role="status" data-testid="password-success" className="text-sm text-emerald-800">
-                    {passwordSuccess}
-                  </p>
-                )}
-                <button
-                  type="submit"
-                  disabled={passwordLoading}
-                  className="w-full rounded-xl bg-emerald-900 px-4 py-3 font-semibold text-white hover:bg-emerald-800 disabled:opacity-60"
-                >
-                  {passwordLoading && <Spinner />}
-                  {passwordLoading ? 'Đang lưu...' : 'Cập nhật mật khẩu'}
-                </button>
-              </form>
+            <form className="mt-5 space-y-4" onSubmit={handleChangePassword}>
+              <label className="block text-sm font-medium text-stone-700">
+                Mật khẩu hiện tại
+                <input
+                  type="password"
+                  required
+                  minLength={8}
+                  autoComplete="current-password"
+                  data-testid="current-password"
+                  value={currentPassword}
+                  onChange={(event) => setCurrentPassword(event.target.value)}
+                  className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-stone-900"
+                />
+              </label>
+              <label className="block text-sm font-medium text-stone-700">
+                Mật khẩu mới
+                <input
+                  type="password"
+                  required
+                  minLength={8}
+                  pattern="^(?=.*[A-Za-z])(?=.*\d).{8,}$"
+                  title="Mật khẩu cần ít nhất 8 ký tự, gồm chữ cái và chữ số."
+                  autoComplete="new-password"
+                  data-testid="new-password"
+                  value={newPassword}
+                  onChange={(event) => setNewPassword(event.target.value)}
+                  className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-stone-900"
+                />
+              </label>
+              <label className="block text-sm font-medium text-stone-700">
+                Nhập lại mật khẩu mới
+                <input
+                  type="password"
+                  required
+                  minLength={8}
+                  autoComplete="new-password"
+                  data-testid="confirm-password"
+                  value={confirmPassword}
+                  onChange={(event) => setConfirmPassword(event.target.value)}
+                  className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-stone-900"
+                />
+              </label>
+              {passwordError && (
+                <p role="alert" data-testid="password-error" className="text-sm text-red-700">
+                  {passwordError}
+                </p>
+              )}
+              {passwordSuccess && (
+                <p role="status" data-testid="password-success" className="text-sm text-emerald-800">
+                  {passwordSuccess}
+                </p>
+              )}
+              <button
+                type="submit"
+                disabled={passwordLoading}
+                className="w-full rounded-xl bg-emerald-900 px-4 py-3 font-semibold text-white hover:bg-emerald-800 disabled:opacity-60"
+              >
+                {passwordLoading && <Spinner />}
+                {passwordLoading ? 'Đang lưu...' : 'Cập nhật mật khẩu'}
+              </button>
+            </form>
           </section>
         </div>
       )}

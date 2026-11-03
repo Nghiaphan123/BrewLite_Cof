@@ -68,6 +68,7 @@ model User {
   /// Stored in lower case by the application.
   email         String   @unique
   passwordHash  String   @map("password_hash")
+  role          String   @default("CUSTOMER") @map("role")
   /// Running balance; changed only together with a LoyaltyTransaction row.
   loyaltyPoints Int      @default(0) @map("loyalty_points")
   createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
@@ -103,6 +104,7 @@ model Topping {
   name   String  @unique
   /// Whole VND.
   price  Int
+  stock  Int     @default(50) @map("stock")
   active Boolean @default(true)
 
   orderItems OrderItemTopping[]
