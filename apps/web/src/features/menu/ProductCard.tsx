@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { useCartStore } from "@/store/cart.store";
+import { useUiStore } from "@/store/ui.store";
 import type { Product } from "@/types";
 
 export type MenuProduct = Product & {
@@ -19,11 +20,13 @@ const formatPrice = (price: number): string =>
 
 export function ProductCard({ product }: ProductCardProps) {
   const addItem = useCartStore((state) => state.addItem);
+  const showToast = useUiStore((state) => state.showToast);
   const [added, setAdded] = useState(false);
 
   function addToCart() {
     addItem(product, "M", []);
     setAdded(true);
+    showToast(`Đã thêm ${product.name} vào giỏ`);
   }
 
   return (
