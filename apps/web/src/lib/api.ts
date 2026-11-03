@@ -152,26 +152,6 @@ export const apiClient = {
     return handleResponse(res);
   },
 
-  async getProfile(): Promise<User> {
-    const res = await fetch(`${API_BASE_URL}/auth/me`, {
-      headers: getAuthHeaders(),
-      cache: 'no-store',
-    });
-    return handleResponse<User>(res);
-  },
-
-  async changePassword(payload: {
-    currentPassword: string;
-    newPassword: string;
-  }): Promise<{ message: string }> {
-    const res = await fetch(`${API_BASE_URL}/auth/password`, {
-      method: 'PATCH',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(payload),
-    });
-    return handleResponse<{ message: string }>(res);
-  },
-
   // [Task 9] GET /orders/me
   async getMyOrders(): Promise<Order[]> {
     const res = await apiFetch(`${API_BASE_URL}/orders/me`, {

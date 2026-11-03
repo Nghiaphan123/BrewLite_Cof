@@ -106,7 +106,7 @@ const status: Order['status'] =
               {order.items.map((item, idx) => (
                 <div key={idx} className="flex items-start justify-between gap-3 rounded-xl border border-stone-200 p-3 text-sm">
                   <div className="min-w-0 flex-1">
-                    <p className="font-semibold text-stone-900">{item.name || 'Sản phẩm'}</p>
+                    <p className="font-semibold text-stone-900">{item.name || item.productName || 'Sản phẩm'}</p>
                     <p className="text-xs text-stone-500">Size: {item.size || 'M'} • Số lượng: {item.qty}</p>
                     {item.toppings && item.toppings.length > 0 && (
                       <p data-testid="order-item-toppings" className="text-xs text-stone-500">

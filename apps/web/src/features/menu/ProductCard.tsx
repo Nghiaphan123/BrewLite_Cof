@@ -77,10 +77,11 @@ export function ProductCard({ product }: ProductCardProps) {
           type="button"
           aria-label={`Thêm nhanh ${product.name} vào giỏ`}
           onClick={addToCart}
-          className="mt-2 flex min-h-10 items-center justify-center gap-2 rounded-xl border border-emerald-900 px-3 py-2 text-xs font-semibold text-emerald-950 transition hover:bg-emerald-900 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-800 sm:text-sm"
+          className="mt-2 flex min-h-11 items-center justify-center gap-2 rounded-xl border border-emerald-900 px-2 py-2 text-xs font-semibold text-emerald-950 transition hover:bg-emerald-900 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-800 sm:px-3 sm:text-sm"
         >
           <span aria-hidden="true">{added ? "✓" : "+"}</span>
-          {added ? "Đã thêm · size M" : "Thêm nhanh · size M"}
+          <span className="sm:hidden">{added ? "Đã thêm" : "Thêm nhanh"}</span>
+          <span className="hidden sm:inline">{added ? "Đã thêm · size M" : "Thêm nhanh · size M"}</span>
         </button>
       </div>
     </article>

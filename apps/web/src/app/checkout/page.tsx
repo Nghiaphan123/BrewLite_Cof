@@ -187,29 +187,29 @@ export default function CheckoutPage() {
         : 'Xác nhận thanh toán';
 
   return (
-    <main className="min-h-full bg-[#faf8f3] px-4 py-6 sm:py-10">
+    <main className="min-h-full bg-[#faf8f3] px-0 pb-6 pt-3 sm:px-4 sm:py-10">
       <div className="mx-auto max-w-2xl">
         <Link
           href="/cart"
-          className="inline-flex min-h-10 items-center gap-2 rounded-lg px-2 text-sm font-semibold text-emerald-900 transition hover:bg-emerald-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-800"
+          className="mx-3 inline-flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm font-semibold text-emerald-900 transition hover:bg-emerald-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-800 sm:mx-0"
         >
           <span aria-hidden="true">←</span>
           Quay lại giỏ hàng
         </Link>
 
-        <div className="mt-4 overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-sm">
-          <div className="bg-emerald-950 px-6 py-6 text-white sm:px-8">
+        <div className="mt-2 overflow-hidden border-y border-stone-200 bg-white shadow-sm sm:mt-4 sm:rounded-3xl sm:border">
+          <div className="bg-emerald-950 px-5 py-5 text-white sm:px-8 sm:py-6">
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-200">
               Hoàn tất đơn hàng
             </p>
-            <h1 className="mt-1 text-3xl font-bold">Thanh toán</h1>
-            <p className="mt-3 text-sm text-emerald-100">
+            <h1 className="mt-1 text-2xl font-bold sm:text-3xl">Thanh toán</h1>
+            <p className="mt-2 text-sm leading-5 text-emerald-100 sm:mt-3">
               Chọn phương thức thanh toán cho đơn BrewLite của bạn.
             </p>
           </div>
 
-          <div className="p-5 sm:p-8">
-            <div className="flex items-center justify-between rounded-2xl bg-[#faf8f3] px-4 py-4">
+          <div className="p-4 sm:p-8">
+            <div className="flex items-center justify-between gap-3 rounded-2xl bg-[#faf8f3] px-4 py-4">
               <span className="text-sm font-medium text-stone-600">Tổng thanh toán</span>
               <span className="text-xl font-bold text-emerald-900" data-testid="checkout-total">
                 {(pendingQr?.amount ?? total).toLocaleString('vi-VN')}₫
@@ -220,7 +220,7 @@ export default function CheckoutPage() {
               <legend className="text-sm font-semibold text-stone-800">
                 Phương thức thanh toán
               </legend>
-              <div className="mt-3 grid gap-3 sm:grid-cols-3">
+              <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3">
                 <label className={`flex cursor-pointer items-start gap-3 rounded-2xl border p-4 transition ${method === 'QR' ? 'border-emerald-800 bg-emerald-50 ring-1 ring-emerald-800' : 'border-stone-200 hover:border-emerald-400'}`}>
                   <input
                     type="radio"
@@ -293,7 +293,7 @@ export default function CheckoutPage() {
                 role="status"
                 aria-label="Đang tạo mã QR"
                 data-testid="qr-loading"
-                className="mt-6 flex animate-page-in flex-col items-center rounded-2xl border border-stone-200 bg-white p-5"
+                className="mt-5 flex animate-page-in flex-col items-center rounded-2xl border border-stone-200 bg-white p-4 sm:mt-6 sm:p-5"
               >
                 <div className="h-5 w-40 animate-pulse rounded bg-stone-200" />
                 <div className="mt-2 h-4 w-64 max-w-full animate-pulse rounded bg-stone-200" />
@@ -306,7 +306,7 @@ export default function CheckoutPage() {
                 ref={qrPanelRef}
                 aria-label="Mã QR thanh toán demo"
                 data-testid="qr-payment-panel"
-                className="mt-6 flex animate-rise-in flex-col items-center rounded-2xl border border-stone-200 bg-white p-5 text-center"
+                className="mt-5 flex animate-rise-in flex-col items-center rounded-2xl border border-stone-200 bg-white p-4 text-center sm:mt-6 sm:p-5"
               >
                 <h2 className="text-lg font-bold text-stone-900">Quét mã QR demo</h2>
                 <p className="mt-1 text-sm text-stone-600">
@@ -320,7 +320,7 @@ export default function CheckoutPage() {
                   width={240}
                   height={240}
                   unoptimized
-                  className="mt-4 h-60 w-60 rounded-xl border border-stone-200 bg-white p-2"
+                  className="mt-4 size-56 max-w-full rounded-xl border border-stone-200 bg-white p-2 sm:size-60"
                 />
                 <p className="mt-3 max-w-sm text-xs leading-5 text-stone-500">
                   Sau khi quét để xem thông tin đơn, nhấn xác nhận để hoàn tất thanh toán mô phỏng.
@@ -347,18 +347,20 @@ export default function CheckoutPage() {
               </Link>
             )}
 
-            <button
-              type="button"
-              disabled={loading || items.length === 0}
-              data-testid="confirm-payment-btn"
-              onClick={handleConfirmPayment}
-              className="mt-6 min-h-12 w-full rounded-xl bg-emerald-900 px-4 py-3 font-semibold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <span key={buttonLabel} className="inline-block animate-page-in">
-                {loading && <Spinner />}
-                {buttonLabel}
-              </span>
-            </button>
+            <div className="sticky bottom-0 z-20 -mx-4 mt-5 border-t border-stone-200 bg-white/95 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur sm:static sm:mx-0 sm:mt-6 sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none">
+              <button
+                type="button"
+                disabled={loading || items.length === 0}
+                data-testid="confirm-payment-btn"
+                onClick={handleConfirmPayment}
+                className="min-h-12 w-full rounded-xl bg-emerald-900 px-4 py-3 font-semibold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <span key={buttonLabel} className="inline-block animate-page-in">
+                  {loading && <Spinner />}
+                  {buttonLabel}
+                </span>
+              </button>
+            </div>
           </div>
         </div>
       </div>

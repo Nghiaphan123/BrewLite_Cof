@@ -107,6 +107,15 @@ describe('Integration Test: Frontend <-> Backend API', () => {
             status: 'PAID',
             total: 35000,
             createdAt: '2026-10-26T00:00:00.000Z',
+            items: [
+              {
+                productId: 'product-1',
+                productName: 'Cà phê sữa',
+                size: 'M',
+                qty: 2,
+                lineTotal: 35000,
+              },
+            ],
           },
         ],
         total: 1,
@@ -119,6 +128,9 @@ describe('Integration Test: Frontend <-> Backend API', () => {
       expect(screen.getByTestId('history-order-order-1')).toBeInTheDocument();
     });
     expect(screen.getByText('Đã thanh toán')).toBeInTheDocument();
+    expect(screen.getByText('Cà phê sữa')).toBeInTheDocument();
+    expect(screen.getByText('Size: M • SL: 2')).toBeInTheDocument();
+    expect(screen.getAllByText('35.000₫')).toHaveLength(2);
   });
 
   it('Trang Menu hiển thị thông báo lỗi khi API /products thất bại', async () => {
