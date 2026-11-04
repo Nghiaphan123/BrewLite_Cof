@@ -9,7 +9,7 @@
  * Contract (api-contract.md §6–§7, ADR 0005 C4):
  * - register: 201 { user: { id, email, loyaltyPoints: 0 } }
  * - login: 200 { accessToken, expiresIn, user: { id, email, loyaltyPoints } }
- * - Errors: 409 EMAIL_TAKEN, 401 AUTH_INVALID (same body for unknown email/wrong password)
+ * - Errors: 409 EMAIL_TAKEN, 401 AUTH_USER_NOT_FOUND (unknown email), 401 AUTH_WRONG_PASSWORD (wrong password)
  */
 import {
   Injectable,
@@ -98,19 +98,24 @@ export class AuthService {
       where: { email: normalizedEmail },
     });
 
-    const invalidCredentials = (): never => {
+    if (!user) {
       throw new UnauthorizedException({
         statusCode: 401,
         error: 'Unauthorized',
-        message: 'Invalid credentials',
-        code: 'AUTH_INVALID',
+        message: 'Account not found',
+        code: 'AUTH_USER_NOT_FOUND',
       });
-    };
-
-    if (!user) return invalidCredentials();
+    }
 
     const isValid = await bcrypt.compare(password, user.passwordHash);
-    if (!isValid) return invalidCredentials();
+    if (!isValid) {
+      throw new UnauthorizedException({
+        statusCode: 401,
+        error: 'Unauthorized',
+        message: 'Invalid password',
+        code: 'AUTH_WRONG_PASSWORD',
+      });
+    }
 
     const payload = { sub: user.id, email: user.email };
     const accessToken = await this.jwt.signAsync(payload, {

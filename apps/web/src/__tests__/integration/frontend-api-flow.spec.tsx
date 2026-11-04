@@ -378,7 +378,136 @@ describe('Integration Test: Frontend <-> Backend API', () => {
     fireEvent.change(screen.getByTestId('auth-password'), { target: { value: 'sai123' } });
     fireEvent.click(screen.getByTestId('auth-submit-btn'));
 
-    expect(await screen.findByTestId('auth-error')).toHaveTextContent('Email hoặc mật khẩu không đúng.');
+    expect(await screen.findByTestId('auth-error')).toHaveTextContent(
+      'Thông tin tài khoản hoặc mật khẩu không chính xác. Xin vui lòng thử lại!',
+    );
+  });
+
+  it('báo lỗi và chỉ đỏ ô Email khi email không tồn tại trong hệ thống (AUTH_USER_NOT_FOUND)', async () => {
+    useAuthStore.getState().logout();
+    vi.spyOn(global, 'fetch').mockResolvedValueOnce({
+      ok: false,
+      status: 401,
+      json: async () => ({ message: 'Account not found', code: 'AUTH_USER_NOT_FOUND' }),
+    } as Response);
+
+    render(<LoginPage />);
+    const emailInput = screen.getByTestId('auth-email');
+    const passwordInput = screen.getByTestId('auth-password');
+    fireEvent.change(emailInput, { target: { value: 'chua-dang-ky@brewlite.vn' } });
+    fireEvent.change(passwordInput, { target: { value: 'matkhau123' } });
+    fireEvent.click(screen.getByTestId('auth-submit-btn'));
+
+    expect(await screen.findByTestId('auth-error')).toHaveTextContent(
+      'Thông tin tài khoản không chính xác. Vui lòng thử lại!',
+    );
+    expect(emailInput.className).toContain('border-red-500');
+    expect(emailInput).toHaveAttribute('aria-invalid', 'true');
+    // Ô Mật khẩu bình thường
+    expect(passwordInput.className).not.toContain('border-red-500');
+    expect(passwordInput).not.toHaveAttribute('aria-invalid');
+
+    // Nhập lại Email -> xóa trạng thái lỗi Email và thông báo
+    fireEvent.change(emailInput, { target: { value: 'email-moi@brewlite.vn' } });
+    expect(emailInput.className).not.toContain('border-red-500');
+    expect(screen.queryByTestId('auth-error')).not.toBeInTheDocument();
+  });
+
+  it('báo lỗi và chỉ đỏ ô Mật khẩu khi email đúng nhưng mật khẩu sai (AUTH_WRONG_PASSWORD)', async () => {
+    useAuthStore.getState().logout();
+    vi.spyOn(global, 'fetch').mockResolvedValueOnce({
+      ok: false,
+      status: 401,
+      json: async () => ({ message: 'Invalid password', code: 'AUTH_WRONG_PASSWORD' }),
+    } as Response);
+
+    render(<LoginPage />);
+    const emailInput = screen.getByTestId('auth-email');
+    const passwordInput = screen.getByTestId('auth-password');
+    fireEvent.change(emailInput, { target: { value: 'da-co@brewlite.vn' } });
+    fireEvent.change(passwordInput, { target: { value: 'sai-mat-khau' } });
+    fireEvent.click(screen.getByTestId('auth-submit-btn'));
+
+    expect(await screen.findByTestId('auth-error')).toHaveTextContent(
+      'Mật khẩu không chính xác. Xin vui lòng thử lại!',
+    );
+    expect(passwordInput.className).toContain('border-red-500');
+    expect(passwordInput).toHaveAttribute('aria-invalid', 'true');
+    // Ô Email bình thường
+    expect(emailInput.className).not.toContain('border-red-500');
+    expect(emailInput).not.toHaveAttribute('aria-invalid');
+
+    // Nhập lại Mật khẩu -> xóa trạng thái lỗi Mật khẩu và thông báo
+    fireEvent.change(passwordInput, { target: { value: 'matkhau-dung' } });
+    expect(passwordInput.className).not.toContain('border-red-500');
+    expect(screen.queryByTestId('auth-error')).not.toBeInTheDocument();
+  });
+
+  it('đánh dấu lỗi đỏ cho hai ô khi máy chủ báo sai tài khoản hoặc mật khẩu', async () => {
+    useAuthStore.getState().logout();
+    vi.spyOn(global, 'fetch').mockResolvedValueOnce({
+      ok: false,
+      status: 401,
+      json: async () => ({ message: 'Invalid credentials', code: 'AUTH_INVALID' }),
+    } as Response);
+
+    render(<LoginPage />);
+    const emailInput = screen.getByTestId('auth-email');
+    const passwordInput = screen.getByTestId('auth-password');
+    fireEvent.change(emailInput, { target: { value: 'a@brewlite.vn' } });
+    fireEvent.change(passwordInput, { target: { value: 'sai123' } });
+    fireEvent.click(screen.getByTestId('auth-submit-btn'));
+
+    await screen.findByTestId('auth-error');
+    expect(emailInput.className).toContain('border-red-500');
+    expect(passwordInput.className).toContain('border-red-500');
+    expect(emailInput).toHaveAttribute('aria-invalid', 'true');
+    expect(passwordInput).toHaveAttribute('aria-invalid', 'true');
+
+    // Nhập lại ô Mật khẩu: ô Mật khẩu hết đỏ, ô Email còn đỏ cho đến khi sửa
+    fireEvent.change(passwordInput, { target: { value: 'matkhaumoi1' } });
+    expect(passwordInput.className).not.toContain('border-red-500');
+    expect(emailInput.className).toContain('border-red-500');
+
+    // Nhập lại tiếp ô Email: ô Email hết đỏ và thông báo biến mất
+    fireEvent.change(emailInput, { target: { value: 'emailmoi@brewlite.vn' } });
+    expect(emailInput.className).not.toContain('border-red-500');
+    expect(screen.queryByTestId('auth-error')).not.toBeInTheDocument();
+  });
+
+  it('không gọi API và báo lỗi tại chỗ khi trường bắt buộc còn trống', async () => {
+    useAuthStore.getState().logout();
+    const fetchSpy = vi.spyOn(global, 'fetch');
+
+    render(<LoginPage />);
+    fireEvent.click(screen.getByTestId('auth-submit-btn'));
+
+    expect(await screen.findByTestId('auth-error')).toHaveTextContent(
+      'Vui lòng nhập email. Vui lòng nhập mật khẩu.',
+    );
+    expect(screen.getByTestId('auth-email').className).toContain('border-red-500');
+    expect(screen.getByTestId('auth-password').className).toContain('border-red-500');
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it('đăng nhập thành công không để lại trạng thái lỗi trên input', async () => {
+    useAuthStore.getState().logout();
+    vi.spyOn(global, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ accessToken: 'valid-jwt-token', user: { id: 'u2', email: 'a@brewlite.vn' } }),
+    } as Response);
+
+    render(<LoginPage />);
+    const emailInput = screen.getByTestId('auth-email');
+    const passwordInput = screen.getByTestId('auth-password');
+    fireEvent.change(emailInput, { target: { value: 'a@brewlite.vn' } });
+    fireEvent.change(passwordInput, { target: { value: 'password123' } });
+    fireEvent.click(screen.getByTestId('auth-submit-btn'));
+
+    await waitFor(() => expect(pushMock).toHaveBeenCalledWith('/'));
+    expect(screen.queryByTestId('auth-error')).not.toBeInTheDocument();
+    expect(emailInput.className).not.toContain('border-red-500');
+    expect(passwordInput.className).not.toContain('border-red-500');
   });
 
   it('dịch lỗi kiểm tra dữ liệu khi đăng ký', async () => {

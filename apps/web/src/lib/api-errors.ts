@@ -1,6 +1,8 @@
 // API trả thông báo tiếng Anh theo hợp đồng; người dùng chỉ thấy bản tiếng Việt ở đây.
 const MESSAGES_BY_CODE: Record<string, string> = {
-  AUTH_INVALID: 'Email hoặc mật khẩu không đúng.',
+  AUTH_USER_NOT_FOUND: 'Thông tin tài khoản không chính xác. Vui lòng thử lại!',
+  AUTH_WRONG_PASSWORD: 'Mật khẩu không chính xác. Xin vui lòng thử lại!',
+  AUTH_INVALID: 'Thông tin tài khoản hoặc mật khẩu không chính xác. Xin vui lòng thử lại!',
   AUTH_REQUIRED: 'Vui lòng đăng nhập để tiếp tục.',
   AUTH_EXPIRED: 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.',
   EMAIL_TAKEN: 'Email này đã được đăng ký.',
@@ -70,6 +72,7 @@ export class ApiError extends Error {
   constructor(
     message: string,
     readonly status: number,
+    readonly code?: string,
   ) {
     super(message);
     this.name = 'ApiError';

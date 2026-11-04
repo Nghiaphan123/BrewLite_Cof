@@ -230,7 +230,7 @@ export function MenuPage() {
                       Thông tin chi tiết
                     </Link>
                     <button
-                      type="button"
+                      type="button" 
                       role="menuitem"
                       onClick={() => {
                         setUserMenuOpen(false);

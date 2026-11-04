@@ -21,7 +21,7 @@ export async function loginAs(
     .post('/api/v1/auth/login')
     .send({ email, password });
 
-  if (res.status === 401 && res.body.code === 'AUTH_INVALID') {
+  if (res.status === 401 && (res.body.code === 'AUTH_INVALID' || res.body.code === 'AUTH_USER_NOT_FOUND')) {
     // User might not be registered; try register then login
     await request(app.getHttpServer())
       .post('/api/v1/auth/register')

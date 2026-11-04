@@ -22,7 +22,8 @@ function getAuthHeaders(): HeadersInit {
 async function handleResponse<T>(res: Response): Promise<T> {
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    throw new ApiError(getApiErrorMessage(res.status, data), res.status);
+    const code = typeof data?.code === 'string' ? data.code : undefined;
+    throw new ApiError(getApiErrorMessage(res.status, data), res.status, code);
   }
   // Hỗ trợ cả trường hợp backend trả trực tiếp data hoặc bọc trong { data: ... }
   return (data?.data !== undefined ? data.data : data) as T;

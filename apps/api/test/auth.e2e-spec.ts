@@ -102,24 +102,24 @@ describe('Auth (Task 7)', () => {
     expect(login.status).toBe(200);
   });
 
-  it('login with wrong password -> 401, body.code = AUTH_INVALID', async () => {
+  it('login with wrong password -> 401, body.code = AUTH_WRONG_PASSWORD', async () => {
     const res = await request(app.getHttpServer())
       .post('/api/v1/auth/login')
       .send({ email: testEmail, password: 'wrong-password-1' });
 
     expect(res.status).toBe(401);
-    expect(res.body.code).toBe('AUTH_INVALID');
+    expect(res.body.code).toBe('AUTH_WRONG_PASSWORD');
+    expect(res.body.message).toBe('Invalid password');
   });
 
-  it('login with an unknown email -> 401, identical body to wrong password', async () => {
+  it('login with an unknown email -> 401, body.code = AUTH_USER_NOT_FOUND', async () => {
     const res = await request(app.getHttpServer())
       .post('/api/v1/auth/login')
       .send({ email: 'unknown@example.com', password: testPassword });
 
     expect(res.status).toBe(401);
-    expect(res.body.code).toBe('AUTH_INVALID');
-    // Message should be identical (no account enumeration)
-    expect(res.body.message).toBe('Invalid credentials');
+    expect(res.body.code).toBe('AUTH_USER_NOT_FOUND');
+    expect(res.body.message).toBe('Account not found');
   });
 
   it('POST /api/v1/payments without Authorization -> 401, body.code = AUTH_REQUIRED', async () => {
