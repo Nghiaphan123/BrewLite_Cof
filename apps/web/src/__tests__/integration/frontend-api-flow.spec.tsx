@@ -423,6 +423,7 @@ describe('Integration Test: Frontend <-> Backend API', () => {
       .mockResolvedValueOnce({
         ok: true,
         json: async () => ({
+          accessToken: 'valid-jwt-token',
           user: { id: 'u2', name: 'new', email: 'new@brewlite.vn', loyaltyPoints: 0 },
         }),
       } as Response);

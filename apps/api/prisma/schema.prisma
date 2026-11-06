@@ -59,6 +59,11 @@ enum PromotionType {
   FIXED
 }
 
+enum LoyaltyTransactionType {
+  EARN
+  REVERSAL
+}
+
 // ---------------------------------------------------------------- Models
 
 /// A registered customer. Only the bcrypt hash of the password is stored.
@@ -73,9 +78,10 @@ model User {
   loyaltyPoints Int      @default(0) @map("loyalty_points")
   createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
-  orders    Order[]
-  payments  Payment[]
-  cart      Cart?
+  orders               Order[]
+  payments             Payment[]
+  cart                 Cart?
+  loyaltyTransactions  LoyaltyTransaction[]
 
   @@map("users")
 }
@@ -160,8 +166,9 @@ model Order {
 
   user     User          @relation(fields: [userId], references: [id], onDelete: Restrict)
   promotion Promotion?   @relation(fields: [promotionId], references: [id], onDelete: Restrict)
-  items    OrderItem[]
-  payments Payment[]
+  items               OrderItem[]
+  payments            Payment[]
+  loyaltyTransactions LoyaltyTransaction[]
 
   /// GET /orders/me lists a user's orders newest first.
   @@index([userId, createdAt(sort: Desc)])
@@ -248,4 +255,22 @@ model Promotion {
   orders Order[]
 
   @@map("promotions")
+}
+
+/// One point change for a paid order. The init migration already created this table.
+/// EARN points are >= 0. REVERSAL points are <= 0. One row per order and type.
+model LoyaltyTransaction {
+  id        String                 @id @default(uuid()) @db.Uuid
+  userId    String                 @map("user_id") @db.Uuid
+  orderId   String                 @map("order_id") @db.Uuid
+  type      LoyaltyTransactionType
+  points    Int
+  createdAt DateTime               @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Restrict)
+  order Order @relation(fields: [orderId], references: [id], onDelete: Restrict)
+
+  @@unique([orderId, type])
+  @@index([userId])
+  @@map("loyalty_transactions")
 }

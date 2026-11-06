@@ -41,7 +41,7 @@ import {
 import { PrismaService } from '../../common/prisma.service.js';
 import { assertTransition } from '../orders/order-state-machine.js';
 import { hashPaymentRequest } from './payment-hash.js';
-import { PaymentMethod, PaymentStatus } from '../../generated/prisma/enums.js';
+import { LoyaltyTransactionType, PaymentMethod, PaymentStatus } from '../../generated/prisma/enums.js';
 import { loyaltyPointsFor } from './loyalty.js';
 
 export interface ProcessPaymentInput {
@@ -201,6 +201,14 @@ export class PaymentsService {
             await tx.user.update({
               where: { id: userId },
               data: { loyaltyPoints: { increment: pointsEarned } },
+            });
+            await tx.loyaltyTransaction.create({
+              data: {
+                userId,
+                orderId,
+                type: LoyaltyTransactionType.EARN,
+                points: pointsEarned,
+              },
             });
           }
         }

@@ -1,0 +1,39 @@
+# CI evidence
+
+**Status:** Workflow file exists. No pipeline run is recorded.  
+**Related:** [ADR 0007](../architecture/adr/0007-hosting-platform.md), [NFR-05](../requirements/srs.md), [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml)
+
+Assignment 2 Task 4.4 asks for a pull request that ran CI, plus proof of one successful pipeline and one pipeline that caught a failure. The workflow file is present. Opening a pull request is what creates the runs. Do not paste a run that has not happened.
+
+Do not add a screenshot of another project, a cropped log, or a made-up Actions URL.
+
+## What to attach later
+
+| Evidence | Link or path | Status |
+| --- | --- | --- |
+| Workflow file | `.github/workflows/ci.yml` | Present |
+| Pull request whose checks ran | | Not run |
+| Successful run: install, lint, unit test, build | | Not run |
+| Failed run that blocked merge | | Not run |
+| CD workflow | `.github/workflows/cd.yml` | Present. Not run. |
+
+The failed run must be a real failure of lint, test, or build. A cancelled run does not count. The log must not contain `JWT_SECRET` or `DATABASE_URL`.
+
+## Local commands the pipeline is expected to run
+
+These commands exist today. They are not a substitute for the Actions evidence.
+
+```powershell
+cd apps/api
+npm test
+npm run test:e2e
+npm run lint
+npm run build
+
+cd ../web
+npm test
+npm run lint
+npm run build
+```
+
+`apps/web` has `npm test` (Vitest). The menu-to-confirmation browser test is `tests/e2e`. This CI workflow does not start it. It runs after the database, API, and web are up.

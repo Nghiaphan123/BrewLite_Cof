@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useTransition } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { apiClient } from '@/lib/api';
 import { useAuthStore } from '@/store/auth.store';
@@ -9,6 +9,10 @@ import { Order, OrderStatus, Promotion, Topping, User } from '@/types';
 import { Spinner } from '@/components/Skeleton';
 
 type AdminTab = 'toppings' | 'users' | 'promotions' | 'orders';
+
+function isAdminTab(value: string | null): value is AdminTab {
+  return value === 'toppings' || value === 'users' || value === 'promotions' || value === 'orders';
+}
 
 function formatVND(value: number): string {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
@@ -37,14 +41,14 @@ function AdminDashboard() {
 
   const { token, user } = useAuthStore();
   const logoutWithLoading = useLogout();
-  const [, startTransition] = useTransition();
 
-  const [activeTab, setActiveTab] = useState<AdminTab>(
-    tabFromQuery && ['toppings', 'users', 'promotions', 'orders'].includes(tabFromQuery)
-      ? tabFromQuery
-      : 'toppings'
+  const [selectedTab, setSelectedTab] = useState<AdminTab>(
+    isAdminTab(tabFromQuery) ? tabFromQuery : 'toppings'
   );
-  const [loading, setLoading] = useState(true);
+  const activeTab = isAdminTab(tabFromQuery) ? tabFromQuery : selectedTab;
+  const [loadedTab, setLoadedTab] = useState<AdminTab | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const loading = refreshing || loadedTab !== activeTab;
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -76,37 +80,14 @@ function AdminDashboard() {
   // Search filter
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Sync tab with query params
-  useEffect(() => {
-    if (tabFromQuery && ['toppings', 'users', 'promotions', 'orders'].includes(tabFromQuery)) {
-      setActiveTab(tabFromQuery);
-    }
-  }, [tabFromQuery]);
-
-  // Initial Load & Access Check
-  useEffect(() => {
-    if (!token) {
-      setLoading(false);
-      return;
-    }
-
-    if (user && user.role !== 'ADMIN') {
-      setLoading(false);
-      return;
-    }
-
-    fetchTabData(activeTab);
-  }, [token, user, activeTab]);
-
   const switchTab = (tab: AdminTab) => {
-    setActiveTab(tab);
+    setSelectedTab(tab);
     setSearchTerm('');
+    setError(null);
     router.replace(`/admin?tab=${tab}`);
   };
 
-  const fetchTabData = async (tab: AdminTab) => {
-    setLoading(true);
-    setError(null);
+  const fetchTabData = useCallback(async (tab: AdminTab) => {
     try {
       if (tab === 'toppings') {
         const data = await apiClient.getAdminToppings();
@@ -129,9 +110,18 @@ function AdminDashboard() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Không thể tải dữ liệu');
     } finally {
-      setLoading(false);
+      setLoadedTab(tab);
+      setRefreshing(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!token || (user && user.role !== 'ADMIN')) return;
+    const timer = window.setTimeout(() => {
+      void fetchTabData(activeTab);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [token, user, activeTab, fetchTabData]);
 
   const showSuccess = (msg: string) => {
     setSuccessMessage(msg);
@@ -280,7 +270,11 @@ function AdminDashboard() {
 
             <div className="flex items-center gap-2 self-start sm:self-auto">
               <button
-                onClick={() => fetchTabData(activeTab)}
+                onClick={() => {
+                  setError(null);
+                  setRefreshing(true);
+                  void fetchTabData(activeTab);
+                }}
                 disabled={loading}
                 className="inline-flex items-center gap-2 rounded-lg border border-stone-300 bg-white px-3.5 py-2 text-xs font-semibold text-stone-700 shadow-xs hover:bg-stone-50 disabled:opacity-50"
               >

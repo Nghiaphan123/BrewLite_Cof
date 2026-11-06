@@ -1,10 +1,11 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import type { ReactNode } from "react";
 import { Suspense } from "react";
 import { AppFeedback } from "@/components/AppFeedback";
 import { CartStoreHydration } from "@/components/CartStoreHydration";
 import { CartSync } from "@/components/CartSync";
+import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -20,6 +21,16 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "BrewLite | Cà phê và thức uống",
   description: "Chọn thức uống yêu thích và đặt hàng tới BrewLite.",
+  applicationName: "BrewLite",
+  appleWebApp: {
+    capable: true,
+    title: "BrewLite",
+    statusBarStyle: "default",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#6F4E37",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
@@ -32,6 +43,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body className="min-h-full flex flex-col bg-white text-neutral-900">
         <CartStoreHydration />
         <CartSync />
+        <ServiceWorkerRegister />
         {children}
         {/* usePathname cần Suspense để các route động vẫn prerender được (cacheComponents). */}
         <Suspense fallback={null}>
