@@ -8,55 +8,58 @@ import { apiClient } from '@/lib/api';
 import { Order } from '@/types';
 import { DetailLinesSkeleton } from '@/components/Skeleton';
 
+const STATUS_LABELS: Record<Order['status'], string> = {
+  PENDING: 'Chờ xử lý',
+  PAID: 'Đã thanh toán',
+  PAYMENT_FAILED: 'Thanh toán thất bại',
+  PREPARING: 'Đang pha chế',
+  READY: 'Sẵn sàng lấy',
+  COMPLETED: 'Hoàn thành',
+  CANCELLED: 'Đã hủy',
+};
+
+/** Các trạng thái có nghĩa là đơn đã được trả tiền thành công. */
+const PAID_STATUSES: Order['status'][] = ['PAID', 'PREPARING', 'READY', 'COMPLETED'];
+
+function isOrderStatus(value: string | null | undefined): value is Order['status'] {
+  return !!value && value in STATUS_LABELS;
+}
+
 function OrderConfirmationContent() {
   const params = useParams();
   const searchParams = useSearchParams();
   const orderId = String(params?.id || '');
   const statusParam = searchParams?.get('status');
+  // Có ?status= nghĩa là vừa chuyển từ trang thanh toán sang (màn hình xác nhận).
+  const fromCheckout = searchParams?.has('status') ?? false;
 
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     apiClient
       .getMyOrders()
       .then((orders) => {
-        const found = orders.find((o) => String(o.id) === String(orderId));
-        if (found) {
-          setOrder(found);
-        }
+        // URL dùng id của đơn; vẫn nhận mã đơn (BL-YYYY-NNNN) để link dạng mã cũng mở được.
+        const found = orders.find((o) => String(o.id) === orderId || o.code === orderId);
+        setOrder(found ?? null);
       })
-      .catch(() => {
-        // ignore
+      .catch((err: unknown) => {
+        setLoadError(err instanceof Error ? err.message : 'Không thể tải đơn hàng.');
       })
       .finally(() => setLoading(false));
   }, [orderId]);
 
-const status: Order['status'] =
-  order?.status || (statusParam as Order['status']) || 'PAID';
-
-  const getStatusLabel = (s: Order['status']) => {
-    switch (s) {
-      case 'PENDING':
-        return 'Chờ xử lý';
-      case 'PAID':
-        return 'Đã thanh toán';
-      case 'PAYMENT_FAILED':
-        return 'Thanh toán thất bại';
-      case 'PREPARING':
-        return 'Đang pha chế';
-      case 'READY':
-        return 'Sẵn sàng lấy';
-      case 'COMPLETED':
-        return 'Hoàn thành';
-      case 'CANCELLED':
-        return 'Đã hủy';
-      default:
-        return s;
-    }
-  };
-
-  const isConfirmation = searchParams?.has('status') || statusParam === 'PAID' || statusParam === 'PENDING';
+  // Trạng thái lấy từ server là chuẩn. ?status= chỉ dùng khi server chưa trả về,
+  // và chỉ khi nó là một trạng thái hợp lệ. Không bao giờ tự đoán là "Đã thanh toán".
+  const status: Order['status'] | null =
+    order?.status ?? (isOrderStatus(statusParam) ? statusParam : null);
+  const notFound = !loading && !loadError && !order;
+  const isPaid = status !== null && PAID_STATUSES.includes(status);
+  const showSuccess = fromCheckout && !notFound && isPaid;
+  const showFailure = fromCheckout && !notFound && status === 'PAYMENT_FAILED';
+  const displayCode = order?.code || orderId;
 
   return (
     <main className="mx-auto max-w-md px-4 py-8">
@@ -66,7 +69,7 @@ const status: Order['status'] =
         </Link>
       </div>
       <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
-        {isConfirmation && (
+        {showSuccess && (
           <>
             <div className="mx-auto flex h-14 w-14 animate-pop items-center justify-center rounded-full bg-emerald-100 text-3xl text-emerald-700">
               ✓
@@ -76,66 +79,86 @@ const status: Order['status'] =
           </>
         )}
 
-        {!isConfirmation && (
+        {showFailure && (
+          <>
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-100 text-3xl text-red-700">
+              !
+            </div>
+            <h1 className="mt-4 text-center text-2xl font-bold text-stone-900">Thanh toán chưa thành công</h1>
+            <p className="mt-2 text-center text-sm text-stone-600">
+              Giỏ hàng của bạn vẫn được giữ nguyên, bạn có thể thử thanh toán lại.
+            </p>
+          </>
+        )}
+
+        {!showSuccess && !showFailure && (
           <h1 className="text-xl font-bold text-stone-900">Chi tiết đơn hàng</h1>
         )}
 
-        <div className="mt-6 space-y-2 rounded-xl bg-stone-50 p-4 text-sm text-left">
-          <p className="font-semibold text-stone-800" data-testid="confirm-order-id">
-            Mã đơn: #{orderId}
-          </p>
-          <p className="font-semibold text-emerald-700" data-testid="confirm-order-status">
-            Trạng thái: {getStatusLabel(status)}
-          </p>
-          {order?.createdAt && (
-            <p className="text-stone-600">
-              Thời gian: {new Date(order.createdAt).toLocaleString('vi-VN')}
-            </p>
-          )}
-          {order?.total !== undefined && (
-            <p className="text-stone-800">
-              Tổng tiền: <span className="font-bold">{Number(order.total).toLocaleString('vi-VN')}₫</span>
-            </p>
-          )}
-        </div>
+        {loading && <DetailLinesSkeleton label="Đang tải chi tiết đơn hàng" />}
 
-        {order?.items && order.items.length > 0 ? (
-          <div className="mt-4">
-            <h2 className="mb-2 text-sm font-bold text-stone-900">Sản phẩm đã mua</h2>
-            <div className="space-y-2">
-              {order.items.map((item, idx) => (
-                <div key={idx} className="flex items-start justify-between gap-3 rounded-xl border border-stone-200 p-3 text-sm">
-                  <div className="min-w-0 flex-1">
-                    <p className="font-semibold text-stone-900">{item.name || item.productName || 'Sản phẩm'}</p>
-                    <p className="text-xs text-stone-500">Size: {item.size || 'M'} • Số lượng: {item.qty}</p>
-                    {item.toppings && item.toppings.length > 0 && (
-                      <p data-testid="order-item-toppings" className="text-xs text-stone-500">
-                        Topping: {item.toppings.map((topping) => topping.name).join(', ')}
-                      </p>
-                    )}
-                  </div>
-                  <p className="shrink-0 font-bold text-stone-900">{Number(item.lineTotal || 0).toLocaleString('vi-VN')}₫</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : (
-          !loading && (
-            <p className="mt-4 text-center text-sm text-stone-500">Không tìm thấy thông tin sản phẩm trong đơn hàng này</p>
-          )
+        {loadError && (
+          <p
+            role="alert"
+            data-testid="order-load-error"
+            className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+          >
+            {loadError}
+          </p>
         )}
 
-        {loading && !order && (
-          <DetailLinesSkeleton label="Đang tải chi tiết đơn hàng" />
-        )}
-
-        {!loading && !order && (
-          <div className="mt-4 space-y-2 text-center">
-            <p className="text-sm text-stone-500">Không tìm thấy đơn hàng trong lịch sử của bạn</p>
+        {notFound && (
+          <div data-testid="order-not-found" className="mt-4 space-y-2 text-center">
+            <p className="text-sm text-stone-500">Không tìm thấy đơn hàng này trong lịch sử của bạn.</p>
             <Link href="/orders" className="text-sm font-semibold text-emerald-900 hover:underline">
               Xem lịch sử đơn hàng
             </Link>
           </div>
+        )}
+
+        {order && (
+          <>
+            <div className="mt-6 space-y-2 rounded-xl bg-stone-50 p-4 text-left text-sm">
+              <p className="font-semibold text-stone-800" data-testid="confirm-order-id">
+                Mã đơn: #{displayCode}
+              </p>
+              <p className="font-semibold text-emerald-700" data-testid="confirm-order-status">
+                Trạng thái: {STATUS_LABELS[order.status] ?? order.status}
+              </p>
+              {order.createdAt && (
+                <p className="text-stone-600">
+                  Thời gian: {new Date(order.createdAt).toLocaleString('vi-VN')}
+                </p>
+              )}
+              <p className="text-stone-800">
+                Tổng tiền: <span className="font-bold">{Number(order.total).toLocaleString('vi-VN')}₫</span>
+              </p>
+            </div>
+
+            {order.items && order.items.length > 0 ? (
+              <div className="mt-4">
+                <h2 className="mb-2 text-sm font-bold text-stone-900">Sản phẩm đã mua</h2>
+                <div className="space-y-2">
+                  {order.items.map((item, idx) => (
+                    <div key={idx} className="flex items-start justify-between gap-3 rounded-xl border border-stone-200 p-3 text-sm">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold text-stone-900">{item.name || item.productName || 'Sản phẩm'}</p>
+                        <p className="text-xs text-stone-500">Size: {item.size || 'M'} • Số lượng: {item.qty}</p>
+                        {item.toppings && item.toppings.length > 0 && (
+                          <p data-testid="order-item-toppings" className="text-xs text-stone-500">
+                            Topping: {item.toppings.map((topping) => topping.name).join(', ')}
+                          </p>
+                        )}
+                      </div>
+                      <p className="shrink-0 font-bold text-stone-900">{Number(item.lineTotal || 0).toLocaleString('vi-VN')}₫</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <p className="mt-4 text-center text-sm text-stone-500">Không tìm thấy thông tin sản phẩm trong đơn hàng này</p>
+            )}
+          </>
         )}
 
         <Link
