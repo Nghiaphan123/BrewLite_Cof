@@ -20,6 +20,7 @@ function LoginForm() {
   const redirectUrl = getSafeRedirect(searchParams?.get('redirect'));
 
   const [isRegister, setIsRegister] = useState(false);
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +38,8 @@ function LoginForm() {
   }, []);
 
   const handleRegister = async () => {
-    await apiClient.register({ email, password });
+    // Mục 9: gửi đúng tên khách nhập (backlog Task 7), không tự đoán tên từ email nữa.
+    await apiClient.register({ name: name.trim(), email, password });
     setPassword('');
     setRegistered(true);
     redirectTimer.current = setTimeout(() => {
@@ -128,6 +130,26 @@ function LoginForm() {
             )}
 
             <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+              {isRegister && (
+                <div>
+                  <label htmlFor="auth-name" className="block text-sm font-bold uppercase text-black">
+                    Họ và tên
+                  </label>
+                  <input
+                    id="auth-name"
+                    type="text"
+                    required
+                    minLength={2}
+                    maxLength={80}
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    data-testid="auth-name"
+                    className={INPUT_CLASS}
+                    placeholder="Nguyễn Văn A"
+                    autoComplete="name"
+                  />
+                </div>
+              )}
               <div>
                 <label htmlFor="auth-email" className="block text-sm font-bold uppercase text-black">
                   Email hoặc tên đăng nhập

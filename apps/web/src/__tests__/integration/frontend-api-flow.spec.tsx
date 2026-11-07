@@ -190,6 +190,15 @@ describe('Integration Test: Frontend <-> Backend API', () => {
     expect(fetchSpy).toHaveBeenCalledTimes(2);
   });
 
+  it('chuyển sang đăng nhập rồi quay lại đăng ký: ô "Họ và tên" chỉ có ở form đăng ký', () => {
+    render(<LoginPage />);
+    expect(screen.queryByTestId('auth-name')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Chưa có tài khoản? Đăng ký ngay' }));
+    expect(screen.getByTestId('auth-name')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Đã có tài khoản? Đăng nhập' }));
+    expect(screen.queryByTestId('auth-name')).not.toBeInTheDocument();
+  });
+
   it('thanh toán lại sau khi thất bại: dùng lại đúng đơn cũ với Idempotency-Key mới', async () => {
     useCartStore.getState().addItem({ id: 'p1', name: 'Latte', price: 45000, imageUrl: '' }, 'S', [], 1);
     const fetchSpy = vi
@@ -445,6 +454,7 @@ describe('Integration Test: Frontend <-> Backend API', () => {
 
     render(<LoginPage />);
     fireEvent.click(screen.getByRole('button', { name: 'Chưa có tài khoản? Đăng ký ngay' }));
+    fireEvent.change(screen.getByTestId('auth-name'), { target: { value: 'Nguyễn Văn A' } });
     fireEvent.change(screen.getByTestId('auth-email'), { target: { value: 'a@brewlite.vn' } });
     fireEvent.change(screen.getByTestId('auth-password'), { target: { value: '12345678' } });
     fireEvent.click(screen.getByTestId('auth-submit-btn'));
@@ -467,7 +477,9 @@ describe('Integration Test: Frontend <-> Backend API', () => {
     render(<LoginPage />);
     fireEvent.click(screen.getByRole('button', { name: 'Chưa có tài khoản? Đăng ký ngay' }));
     expect(screen.getByRole('heading', { name: 'Đăng ký tài khoản' })).toBeInTheDocument();
-    expect(screen.queryByTestId('auth-name')).not.toBeInTheDocument();
+    // Mục 9 (backlog Task 7): form đăng ký phải hỏi tên khách hàng.
+    expect(screen.getByTestId('auth-name')).toBeRequired();
+    fireEvent.change(screen.getByTestId('auth-name'), { target: { value: '  Nguyễn Văn A  ' } });
     fireEvent.change(screen.getByTestId('auth-email'), {
       target: { value: 'new@brewlite.vn' },
     });
@@ -483,9 +495,9 @@ describe('Integration Test: Frontend <-> Backend API', () => {
     expect(screen.queryByTestId('auth-error')).not.toBeInTheDocument();
     expect(fetchSpy.mock.calls[0][1]?.body).toBe(
       JSON.stringify({
+        name: 'Nguyễn Văn A',
         email: 'new@brewlite.vn',
         password: 'password123',
-        name: 'new',
       }),
     );
 
