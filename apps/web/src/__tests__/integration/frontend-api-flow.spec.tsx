@@ -190,6 +190,43 @@ describe('Integration Test: Frontend <-> Backend API', () => {
     expect(fetchSpy).toHaveBeenCalledTimes(2);
   });
 
+  it('thanh toán lại sau khi thất bại: dùng lại đúng đơn cũ với Idempotency-Key mới', async () => {
+    useCartStore.getState().addItem({ id: 'p1', name: 'Latte', price: 45000, imageUrl: '' }, 'S', [], 1);
+    const fetchSpy = vi
+      .spyOn(global, 'fetch')
+      // POST /orders: chỉ được gọi một lần cho cả hai lần thanh toán
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ id: '1042', status: 'PENDING', total: 45000 }),
+      } as Response)
+      // Lần thanh toán 1: thất bại
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ orderId: '1042', status: 'PAYMENT_FAILED' }),
+      } as Response)
+      // Lần thanh toán 2: thành công
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ orderId: '1042', status: 'PAID', loyaltyPointsEarned: 45 }),
+      } as Response);
+
+    render(<CheckoutPage />);
+    fireEvent.click(screen.getByTestId('method-wallet'));
+    fireEvent.click(screen.getByTestId('confirm-payment-btn'));
+    expect(await screen.findByTestId('checkout-error')).toHaveTextContent('thử lại với cùng đơn hàng');
+    await waitFor(() => expect(screen.getByTestId('confirm-payment-btn')).toBeEnabled());
+
+    fireEvent.click(screen.getByTestId('confirm-payment-btn'));
+    await waitFor(() => expect(pushMock).toHaveBeenCalledWith('/orders/1042?status=PAID'));
+
+    expect(fetchSpy).toHaveBeenCalledTimes(3);
+    const firstKey = (fetchSpy.mock.calls[1][1]?.headers as Record<string, string>)['Idempotency-Key'];
+    const retryKey = (fetchSpy.mock.calls[2][1]?.headers as Record<string, string>)['Idempotency-Key'];
+    expect(firstKey).toBe('idem_1042_WALLET');
+    expect(retryKey).toBe('idem_1042_WALLET_retry1');
+    expect(JSON.parse(String(fetchSpy.mock.calls[2][1]?.body))).toMatchObject({ orderId: '1042' });
+  });
+
   it('xóa phiên không hợp lệ và hướng dẫn đăng nhập lại khi tạo QR bị từ chối', async () => {
     useCartStore.getState().addItem(
       { id: 'p1', name: 'Cà phê sữa', price: 29000, imageUrl: '' },

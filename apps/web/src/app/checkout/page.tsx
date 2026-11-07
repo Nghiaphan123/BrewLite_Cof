@@ -9,6 +9,7 @@ import { useCartStore } from '@/store/cart.store';
 import { useAuthStore } from '@/store/auth.store';
 import { apiClient } from '@/lib/api';
 import { PENDING_QR_KEY } from '@/features/cart/cart-sync';
+import { buildIdempotencyKey } from '@/features/checkout/idempotency-key';
 import { ApiError } from '@/lib/api-errors';
 import { runWithLoading, useUiStore, wait } from '@/store/ui.store';
 import { Spinner } from '@/components/Skeleton';
@@ -23,6 +24,35 @@ interface PendingQrPayment {
   image: string;
   /** Giỏ lúc tạo đơn; giỏ đã đổi thì đơn này không còn đúng nữa. */
   cartKey: string;
+  /** Số lần thanh toán đơn này đã thất bại; dùng để tạo Idempotency-Key mới cho lần thử lại. */
+  failedAttempts?: number;
+}
+
+type CreatedOrder = { id: string; total: number };
+
+/** Tạo mã QR demo cho đơn và lưu đơn đang chờ vào sessionStorage (giữ được khi tải lại trang). */
+async function buildPendingPayment(
+  order: CreatedOrder,
+  cartKey: string,
+  failedAttempts = 0,
+): Promise<PendingQrPayment> {
+  const amount = order.total;
+  const payload = `BREWLITE-DEMO|order=${order.id}|amount=${amount}|currency=VND`;
+  const svg = await QRCode.toString(payload, {
+    type: 'svg',
+    width: 240,
+    margin: 2,
+    color: { dark: '#064e3b', light: '#ffffff' },
+  });
+  const pending: PendingQrPayment = {
+    orderId: order.id,
+    amount,
+    image: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`,
+    cartKey,
+    failedAttempts,
+  };
+  sessionStorage.setItem(PENDING_QR_KEY, JSON.stringify(pending));
+  return pending;
 }
 
 function readPendingQr(cartKey: string): PendingQrPayment | null {
@@ -75,8 +105,8 @@ export default function CheckoutPage() {
     }
   }, [items.length, cartKey]);
 
-  const createQr = async () => {
-    const order = await apiClient.createOrder({
+  const createOrderFromCart = () =>
+    apiClient.createOrder({
       items: items.map((item) => ({
         productId: item.product.id,
         size: item.size,
@@ -85,23 +115,10 @@ export default function CheckoutPage() {
       })),
       promoCode: getDiscount() > 0 ? promoCode : undefined,
     });
-    const amount = order.total;
-    const payload = `BREWLITE-DEMO|order=${order.id}|amount=${amount}|currency=VND`;
-    const svg = await QRCode.toString(payload, {
-      type: 'svg',
-      width: 240,
-      margin: 2,
-      color: { dark: '#064e3b', light: '#ffffff' },
-    });
 
-    const pending = {
-      orderId: order.id,
-      amount,
-      image: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`,
-      cartKey,
-    };
-    sessionStorage.setItem(PENDING_QR_KEY, JSON.stringify(pending));
-    setCreatedQr(pending);
+  const createQr = async () => {
+    const order = await createOrderFromCart();
+    setCreatedQr(await buildPendingPayment(order, cartKey));
   };
 
   const chooseMethod = (next: PaymentMethod) => {
@@ -125,19 +142,12 @@ export default function CheckoutPage() {
       }
 
       await runWithLoading('Đang xử lý thanh toán...', async () => {
-        const order =
-          pendingQr ??
-          (await apiClient.createOrder({
-            items: items.map((item) => ({
-              productId: item.product.id,
-              size: item.size,
-              qty: item.qty,
-              toppingIds: item.toppings.map((topping) => topping.id),
-            })),
-            promoCode: getDiscount() > 0 ? promoCode : undefined,
-          }));
-        const orderId = 'orderId' in order ? order.orderId : order.id;
-        const amount = 'amount' in order ? order.amount : order.total;
+        // Có đơn đang chờ (mã QR, hoặc đơn vừa thanh toán thất bại) thì dùng lại đơn đó,
+        // để thử lại không sinh thêm đơn PENDING mới bị bỏ rơi trong hệ thống.
+        const order = pendingQr ?? (await buildPendingPayment(await createOrderFromCart(), cartKey));
+        if (!pendingQr) setCreatedQr(order);
+        const { orderId, amount } = order;
+        const failedAttempts = order.failedAttempts ?? 0;
         const paymentMethod = method === 'QR' ? 'WALLET' : method;
         const paymentResult = await apiClient.payOrder(
           {
@@ -145,13 +155,16 @@ export default function CheckoutPage() {
             method: paymentMethod,
             amount,
           },
-          `idem_${orderId}_${paymentMethod}`,
+          buildIdempotencyKey(orderId, paymentMethod, failedAttempts),
         );
 
         if (paymentResult.status === 'PAYMENT_FAILED') {
-          setError('Thanh toán thất bại. Giỏ hàng của bạn vẫn được giữ nguyên.');
-          sessionStorage.removeItem(PENDING_QR_KEY);
-          setCreatedQr(null);
+          setError('Thanh toán thất bại. Giỏ hàng của bạn vẫn được giữ nguyên, bấm xác nhận để thử lại với cùng đơn hàng.');
+          // Giữ đơn để lần sau thanh toán lại chính đơn này (PAYMENT_FAILED → PAID, ADR 0004 D5),
+          // và tăng số lần thất bại để lần thử tới dùng Idempotency-Key mới.
+          const retry = { ...order, failedAttempts: failedAttempts + 1 };
+          sessionStorage.setItem(PENDING_QR_KEY, JSON.stringify(retry));
+          setCreatedQr(retry);
           return;
         }
 
