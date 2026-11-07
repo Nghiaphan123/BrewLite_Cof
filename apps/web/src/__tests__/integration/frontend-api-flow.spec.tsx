@@ -226,7 +226,7 @@ describe('Integration Test: Frontend <-> Backend API', () => {
     await waitFor(() => expect(screen.getByTestId('confirm-payment-btn')).toBeEnabled());
 
     fireEvent.click(screen.getByTestId('confirm-payment-btn'));
-    await waitFor(() => expect(pushMock).toHaveBeenCalledWith('/orders/1042?status=PAID'));
+    await waitFor(() => expect(pushMock).toHaveBeenCalledWith('/orders/1042/confirmation'));
 
     expect(fetchSpy).toHaveBeenCalledTimes(3);
     const firstKey = (fetchSpy.mock.calls[1][1]?.headers as Record<string, string>)['Idempotency-Key'];
@@ -599,7 +599,7 @@ describe('Integration Test: Frontend <-> Backend API', () => {
 
     fireEvent.click(screen.getByTestId('confirm-payment-btn'));
 
-    await waitFor(() => expect(pushMock).toHaveBeenCalledWith('/orders/1042?status=PAID'));
+    await waitFor(() => expect(pushMock).toHaveBeenCalledWith('/orders/1042/confirmation'));
     expect(fetchSpy).toHaveBeenCalledTimes(2);
     expect(JSON.parse(String(fetchSpy.mock.calls[1][1]?.body))).toMatchObject({
       orderId: '1042',
@@ -775,7 +775,7 @@ describe('Integration Test: Frontend <-> Backend API', () => {
     fireEvent.click(screen.getByTestId('confirm-payment-btn'));
 
     await waitFor(() => {
-      expect(pushMock).toHaveBeenCalledWith('/orders/1042?status=PAID');
+      expect(pushMock).toHaveBeenCalledWith('/orders/1042/confirmation');
     });
 
     // Kiểm tra header Authorization Bearer JWT và Idempotency-Key đã được gửi
@@ -811,5 +811,24 @@ describe('Integration Test: Frontend <-> Backend API', () => {
 
     expect(screen.queryByTestId('checkout-discount')).not.toBeInTheDocument();
     expect(screen.getByTestId('checkout-total')).toHaveTextContent('45.000₫');
+  });
+
+  it('thanh toán thành công: chuyển sang trang xác nhận theo mã đơn BL-YYYY-NNNN', async () => {
+    useCartStore.getState().addItem({ id: 'p1', name: 'Latte', price: 45000, imageUrl: '' }, 'S', [], 1);
+    vi.spyOn(global, 'fetch')
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ id: 'uuid-1042', code: 'BL-2026-0042', status: 'PENDING', total: 45000 }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ orderId: 'uuid-1042', status: 'PAID' }),
+      } as Response);
+
+    render(<CheckoutPage />);
+    fireEvent.click(screen.getByTestId('method-card'));
+    fireEvent.click(screen.getByTestId('confirm-payment-btn'));
+
+    await waitFor(() => expect(pushMock).toHaveBeenCalledWith('/orders/BL-2026-0042/confirmation'));
   });
 });

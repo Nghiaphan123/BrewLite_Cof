@@ -161,6 +161,16 @@ export const apiClient = {
     return getListItems(result, 'lịch sử đơn hàng');
   },
 
+  // [Task 9] GET /orders/:code — chi tiết một đơn của chính mình, kèm điểm thưởng đã nhận.
+  // Đơn không tồn tại và đơn của người khác đều trả 404 ORDER_NOT_FOUND (không lộ thông tin).
+  async getOrderByCode(code: string): Promise<Order> {
+    const res = await apiFetch(`${API_BASE_URL}/orders/${encodeURIComponent(code)}`, {
+      headers: getAuthHeaders(),
+      cache: 'no-store',
+    });
+    return handleResponse<Order>(res);
+  },
+
   // POST /promotions/validate — kiểm tra mã, không tính lượt dùng
   async validatePromotion(code: string, subtotal: number): Promise<Promotion & { discountAmount: number }> {
     const res = await apiFetch(`${API_BASE_URL}/promotions/validate`, {

@@ -80,6 +80,12 @@ export interface Order {
   promoCode?: string | null;
   createdAt: string;
   updatedAt?: string;
+  /** Chỉ có ở GET /orders/:code: lần thanh toán thành công gần nhất, hoặc null nếu chưa trả tiền. */
+  payment?: {
+    method: 'WALLET' | 'CARD';
+    paidAt: string;
+    loyaltyPointsEarned: number;
+  } | null;
   items?: Array<{
     id?: string;
     productId: string;

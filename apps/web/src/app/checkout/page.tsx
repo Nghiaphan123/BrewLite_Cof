@@ -28,9 +28,11 @@ interface PendingQrPayment {
   cartKey: string;
   /** Số lần thanh toán đơn này đã thất bại; dùng để tạo Idempotency-Key mới cho lần thử lại. */
   failedAttempts?: number;
+  /** Mã đơn BL-YYYY-NNNN; trang xác nhận dùng mã này trong URL (GET /orders/:code). */
+  orderCode?: string;
 }
 
-type CreatedOrder = { id: string; total: number };
+type CreatedOrder = { id: string; total: number; code?: string };
 
 /** Tạo mã QR demo cho đơn và lưu đơn đang chờ vào sessionStorage (giữ được khi tải lại trang). */
 async function buildPendingPayment(
@@ -52,6 +54,7 @@ async function buildPendingPayment(
     image: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`,
     cartKey,
     failedAttempts,
+    orderCode: order.code,
   };
   sessionStorage.setItem(PENDING_QR_KEY, JSON.stringify(pending));
   return pending;
@@ -180,7 +183,9 @@ export default function CheckoutPage() {
         sessionStorage.removeItem(PENDING_QR_KEY);
         clearCart();
         useUiStore.getState().holdLoadingUntilNavigation();
-        router.push(`/orders/${orderId}?status=${paymentResult.status || 'PAID'}`);
+        // Mục 10: sang màn hình Xác nhận riêng (wireframes.md §8). Trang đó tự đọc trạng thái,
+        // giảm giá và điểm thưởng từ server, nên URL không cần (và không nên) mang ?status=.
+        router.push(`/orders/${encodeURIComponent(order.orderCode ?? orderId)}/confirmation`);
       });
     } catch (paymentError: unknown) {
       const message = getErrorMessage(paymentError);
