@@ -10,6 +10,8 @@ import { useAuthStore } from '@/store/auth.store';
 import { apiClient } from '@/lib/api';
 import { PENDING_QR_KEY } from '@/features/cart/cart-sync';
 import { buildIdempotencyKey } from '@/features/checkout/idempotency-key';
+import { estimateLoyaltyPoints } from '@/features/checkout/loyalty';
+import { formatVnd } from '@/features/orders/order-display';
 import { ApiError } from '@/lib/api-errors';
 import { runWithLoading, useUiStore, wait } from '@/store/ui.store';
 import { Spinner } from '@/components/Skeleton';
@@ -72,7 +74,7 @@ function getErrorMessage(error: unknown): string {
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { items, promoCode, getDiscount, getTotalPrice, clearCart } = useCartStore();
+  const { items, promoCode, getSubtotal, getDiscount, getTotalPrice, clearCart } = useCartStore();
   const addLoyaltyPoints = useAuthStore((state) => state.addLoyaltyPoints);
 
   const [method, setMethod] = useState<PaymentMethod>('QR');
@@ -85,12 +87,17 @@ export default function CheckoutPage() {
 
   // getTotalPrice đọc thẳng store; dựa vào items để lần render hydrate khớp HTML của server.
   const total = items.length > 0 ? getTotalPrice() : 0;
+  const subtotal = items.length > 0 ? getSubtotal() : 0;
+  const discount = items.length > 0 ? getDiscount() : 0;
   const cartKey = JSON.stringify([items.map((item) => [item.cartItemId, item.qty]), promoCode]);
 
   // Tải lại trang khi đang chờ quét thì dùng lại đơn cũ, không tạo thêm đơn mới.
   // Giỏ rỗng ở lần render đầu (kể cả trên server) nên không đọc sessionStorage lúc hydrate.
   const pendingQr =
     createdQr?.cartKey === cartKey ? createdQr : items.length > 0 ? readPendingQr(cartKey) : null;
+  // Đã tạo đơn thì số tiền phải trả là số server đã tính; chưa tạo thì dùng giá tạm tính trong giỏ.
+  const payable = pendingQr?.amount ?? total;
+  const expectedPoints = estimateLoyaltyPoints(payable);
 
   // Mã QR vừa tạo có thể nằm dưới màn hình, nên cuộn tới để người dùng thấy ngay.
   useEffect(() => {
@@ -168,7 +175,7 @@ export default function CheckoutPage() {
           return;
         }
 
-        const earnedPoints = paymentResult.loyaltyPointsEarned ?? Math.floor(amount / 1000);
+        const earnedPoints = paymentResult.loyaltyPointsEarned ?? estimateLoyaltyPoints(amount);
         addLoyaltyPoints(earnedPoints);
         sessionStorage.removeItem(PENDING_QR_KEY);
         clearCart();
@@ -222,11 +229,29 @@ export default function CheckoutPage() {
           </div>
 
           <div className="p-4 sm:p-8">
-            <div className="flex items-center justify-between gap-3 rounded-2xl bg-[#faf8f3] px-4 py-4">
-              <span className="text-sm font-medium text-stone-600">Tổng thanh toán</span>
-              <span className="text-xl font-bold text-emerald-900" data-testid="checkout-total">
-                {(pendingQr?.amount ?? total).toLocaleString('vi-VN')}₫
-              </span>
+            {/* Mục 8 (backlog Task 10d): cho khách thấy số tiền được giảm và số điểm sẽ nhận. */}
+            <div className="rounded-2xl bg-[#faf8f3] px-4 py-4 text-sm">
+              <div className="flex items-center justify-between gap-3 text-stone-600">
+                <span>Tạm tính</span>
+                <span data-testid="checkout-subtotal">{formatVnd(subtotal)}</span>
+              </div>
+              {discount > 0 && (
+                <div className="mt-1 flex items-center justify-between gap-3 text-emerald-700">
+                  <span>Giảm giá ({promoCode.toUpperCase()})</span>
+                  <span data-testid="checkout-discount">−{formatVnd(discount)}</span>
+                </div>
+              )}
+              <div className="mt-3 flex items-center justify-between gap-3 border-t border-stone-200 pt-3">
+                <span className="font-medium text-stone-600">Tổng thanh toán</span>
+                <span className="text-xl font-bold text-emerald-900" data-testid="checkout-total">
+                  {formatVnd(payable)}
+                </span>
+              </div>
+              {expectedPoints > 0 && (
+                <p data-testid="checkout-points" className="mt-2 text-xs font-medium text-amber-900">
+                  Thanh toán thành công, bạn sẽ nhận +{expectedPoints.toLocaleString('vi-VN')} điểm thưởng.
+                </p>
+              )}
             </div>
 
             <fieldset className="mt-6" disabled={loading}>

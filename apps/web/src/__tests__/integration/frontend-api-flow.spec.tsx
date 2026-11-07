@@ -789,4 +789,27 @@ describe('Integration Test: Frontend <-> Backend API', () => {
     expect(useCartStore.getState().getTotalItems()).toBe(0);
     expect(useAuthStore.getState().user?.loyaltyPoints).toBe(15);
   });
+
+  it('trang thanh toán hiện tạm tính, số tiền giảm giá và điểm thưởng dự kiến', () => {
+    useCartStore.getState().addItem({ id: 'p1', name: 'Latte', price: 45000, imageUrl: '' }, 'S', [], 2);
+    useCartStore.getState().setPromotion({ code: 'WELCOME20K', type: 'FIXED' as const, value: 20000, minOrderTotal: 50000 });
+
+    render(<CheckoutPage />);
+
+    expect(screen.getByTestId('checkout-subtotal')).toHaveTextContent('90.000₫');
+    expect(screen.getByTestId('checkout-discount')).toHaveTextContent('−20.000₫');
+    expect(screen.getByText(/Giảm giá \(WELCOME20K\)/)).toBeInTheDocument();
+    expect(screen.getByTestId('checkout-total')).toHaveTextContent('70.000₫');
+    // 1 điểm cho mỗi 1.000₫ đã trả (loyalty.ts ở backend): 70.000₫ → 70 điểm
+    expect(screen.getByTestId('checkout-points')).toHaveTextContent('+70 điểm thưởng');
+  });
+
+  it('không có mã giảm giá thì không hiện dòng giảm giá', () => {
+    useCartStore.getState().addItem({ id: 'p1', name: 'Latte', price: 45000, imageUrl: '' }, 'S', [], 1);
+
+    render(<CheckoutPage />);
+
+    expect(screen.queryByTestId('checkout-discount')).not.toBeInTheDocument();
+    expect(screen.getByTestId('checkout-total')).toHaveTextContent('45.000₫');
+  });
 });

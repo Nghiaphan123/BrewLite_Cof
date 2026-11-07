@@ -7,23 +7,13 @@ import { useParams, useSearchParams } from 'next/navigation';
 import { apiClient } from '@/lib/api';
 import { Order } from '@/types';
 import { DetailLinesSkeleton } from '@/components/Skeleton';
-
-const STATUS_LABELS: Record<Order['status'], string> = {
-  PENDING: 'Chờ xử lý',
-  PAID: 'Đã thanh toán',
-  PAYMENT_FAILED: 'Thanh toán thất bại',
-  PREPARING: 'Đang pha chế',
-  READY: 'Sẵn sàng lấy',
-  COMPLETED: 'Hoàn thành',
-  CANCELLED: 'Đã hủy',
-};
-
-/** Các trạng thái có nghĩa là đơn đã được trả tiền thành công. */
-const PAID_STATUSES: Order['status'][] = ['PAID', 'PREPARING', 'READY', 'COMPLETED'];
-
-function isOrderStatus(value: string | null | undefined): value is Order['status'] {
-  return !!value && value in STATUS_LABELS;
-}
+import {
+  STATUS_LABELS,
+  formatVnd,
+  getOrderDiscount,
+  isOrderStatus,
+  isPaidStatus,
+} from '@/features/orders/order-display';
 
 function OrderConfirmationContent() {
   const params = useParams();
@@ -56,7 +46,8 @@ function OrderConfirmationContent() {
   const status: Order['status'] | null =
     order?.status ?? (isOrderStatus(statusParam) ? statusParam : null);
   const notFound = !loading && !loadError && !order;
-  const isPaid = status !== null && PAID_STATUSES.includes(status);
+  const isPaid = isPaidStatus(status);
+  const discount = order ? getOrderDiscount(order) : 0;
   const showSuccess = fromCheckout && !notFound && isPaid;
   const showFailure = fromCheckout && !notFound && status === 'PAYMENT_FAILED';
   const displayCode = order?.code || orderId;
@@ -130,8 +121,13 @@ function OrderConfirmationContent() {
                   Thời gian: {new Date(order.createdAt).toLocaleString('vi-VN')}
                 </p>
               )}
+              {discount > 0 && (
+                <p data-testid="order-discount" className="text-emerald-700">
+                  Giảm giá: −{formatVnd(discount)}
+                </p>
+              )}
               <p className="text-stone-800">
-                Tổng tiền: <span className="font-bold">{Number(order.total).toLocaleString('vi-VN')}₫</span>
+                Tổng tiền: <span className="font-bold">{formatVnd(order.total)}</span>
               </p>
             </div>
 

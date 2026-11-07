@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { exceedsStock, isOutOfStock, qtyInCart, remainingForCart } from '@/features/product/stock';
+import { getOrderDiscount, getOrderSubtotal, isPaidStatus } from '@/features/orders/order-display';
+import { estimateLoyaltyPoints } from '@/features/checkout/loyalty';
 import type { CartItem, Product } from '@/types';
 
 const latte: Product = { id: 'p1', name: 'Latte', price: 45000, imageUrl: '', stock: 5 };
@@ -31,5 +33,42 @@ describe('tồn kho (mục 5)', () => {
     expect(exceedsStock(latte, [line(latte, 6)])).toBe(true);
     expect(exceedsStock(latte, [line(latte, 5)])).toBe(false);
     expect(exceedsStock({ id: 'p1' }, [line(latte, 50)])).toBe(false);
+  });
+});
+
+describe('giảm giá và điểm thưởng (mục 8)', () => {
+  const items = [
+    { productId: 'p1', size: 'M' as const, qty: 1, lineTotal: 50000 },
+    { productId: 'p2', size: 'L' as const, qty: 1, lineTotal: 40000 },
+  ];
+
+  it('dùng subtotal/discountAmount nếu API trả sẵn (POST /orders)', () => {
+    const order = { subtotal: 90000, discountAmount: 20000, total: 70000, items };
+    expect(getOrderSubtotal(order)).toBe(90000);
+    expect(getOrderDiscount(order)).toBe(20000);
+  });
+
+  it('tự tính từ các dòng khi API không trả (GET /orders/:code)', () => {
+    const order = { total: 70000, items };
+    expect(getOrderSubtotal(order)).toBe(90000);
+    expect(getOrderDiscount(order)).toBe(20000);
+  });
+
+  it('không có dòng nào thì không suy ra giảm giá', () => {
+    expect(getOrderDiscount({ total: 70000 })).toBe(0);
+  });
+
+  it('điểm dự kiến giống quy tắc backend: 1 điểm / 1.000₫, làm tròn xuống', () => {
+    expect(estimateLoyaltyPoints(70000)).toBe(70);
+    expect(estimateLoyaltyPoints(45999)).toBe(45);
+    expect(estimateLoyaltyPoints(999)).toBe(0);
+    expect(estimateLoyaltyPoints(-1)).toBe(0);
+  });
+
+  it('nhận ra các trạng thái đã thanh toán', () => {
+    expect(isPaidStatus('PAID')).toBe(true);
+    expect(isPaidStatus('READY')).toBe(true);
+    expect(isPaidStatus('PAYMENT_FAILED')).toBe(false);
+    expect(isPaidStatus(null)).toBe(false);
   });
 });
