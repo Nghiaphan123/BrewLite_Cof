@@ -190,6 +190,52 @@ describe('Integration Test: Frontend <-> Backend API', () => {
     expect(fetchSpy).toHaveBeenCalledTimes(2);
   });
 
+  it('chuyển sang đăng nhập rồi quay lại đăng ký: ô "Họ và tên" chỉ có ở form đăng ký', () => {
+    render(<LoginPage />);
+    expect(screen.queryByTestId('auth-name')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Chưa có tài khoản? Đăng ký ngay' }));
+    expect(screen.getByTestId('auth-name')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Đã có tài khoản? Đăng nhập' }));
+    expect(screen.queryByTestId('auth-name')).not.toBeInTheDocument();
+  });
+
+  it('thanh toán lại sau khi thất bại: dùng lại đúng đơn cũ với Idempotency-Key mới', async () => {
+    useCartStore.getState().addItem({ id: 'p1', name: 'Latte', price: 45000, imageUrl: '' }, 'S', [], 1);
+    const fetchSpy = vi
+      .spyOn(global, 'fetch')
+      // POST /orders: chỉ được gọi một lần cho cả hai lần thanh toán
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ id: '1042', status: 'PENDING', total: 45000 }),
+      } as Response)
+      // Lần thanh toán 1: thất bại
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ orderId: '1042', status: 'PAYMENT_FAILED' }),
+      } as Response)
+      // Lần thanh toán 2: thành công
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ orderId: '1042', status: 'PAID', loyaltyPointsEarned: 45 }),
+      } as Response);
+
+    render(<CheckoutPage />);
+    fireEvent.click(screen.getByTestId('method-wallet'));
+    fireEvent.click(screen.getByTestId('confirm-payment-btn'));
+    expect(await screen.findByTestId('checkout-error')).toHaveTextContent('thử lại với cùng đơn hàng');
+    await waitFor(() => expect(screen.getByTestId('confirm-payment-btn')).toBeEnabled());
+
+    fireEvent.click(screen.getByTestId('confirm-payment-btn'));
+    await waitFor(() => expect(pushMock).toHaveBeenCalledWith('/orders/1042/confirmation'));
+
+    expect(fetchSpy).toHaveBeenCalledTimes(3);
+    const firstKey = (fetchSpy.mock.calls[1][1]?.headers as Record<string, string>)['Idempotency-Key'];
+    const retryKey = (fetchSpy.mock.calls[2][1]?.headers as Record<string, string>)['Idempotency-Key'];
+    expect(firstKey).toBe('idem_1042_WALLET');
+    expect(retryKey).toBe('idem_1042_WALLET_retry1');
+    expect(JSON.parse(String(fetchSpy.mock.calls[2][1]?.body))).toMatchObject({ orderId: '1042' });
+  });
+
   it('xóa phiên không hợp lệ và hướng dẫn đăng nhập lại khi tạo QR bị từ chối', async () => {
     useCartStore.getState().addItem(
       { id: 'p1', name: 'Cà phê sữa', price: 29000, imageUrl: '' },
@@ -408,6 +454,7 @@ describe('Integration Test: Frontend <-> Backend API', () => {
 
     render(<LoginPage />);
     fireEvent.click(screen.getByRole('button', { name: 'Chưa có tài khoản? Đăng ký ngay' }));
+    fireEvent.change(screen.getByTestId('auth-name'), { target: { value: 'Nguyễn Văn A' } });
     fireEvent.change(screen.getByTestId('auth-email'), { target: { value: 'a@brewlite.vn' } });
     fireEvent.change(screen.getByTestId('auth-password'), { target: { value: '12345678' } });
     fireEvent.click(screen.getByTestId('auth-submit-btn'));
@@ -430,7 +477,9 @@ describe('Integration Test: Frontend <-> Backend API', () => {
     render(<LoginPage />);
     fireEvent.click(screen.getByRole('button', { name: 'Chưa có tài khoản? Đăng ký ngay' }));
     expect(screen.getByRole('heading', { name: 'Đăng ký tài khoản' })).toBeInTheDocument();
-    expect(screen.queryByTestId('auth-name')).not.toBeInTheDocument();
+    // Mục 9 (backlog Task 7): form đăng ký phải hỏi tên khách hàng.
+    expect(screen.getByTestId('auth-name')).toBeRequired();
+    fireEvent.change(screen.getByTestId('auth-name'), { target: { value: '  Nguyễn Văn A  ' } });
     fireEvent.change(screen.getByTestId('auth-email'), {
       target: { value: 'new@brewlite.vn' },
     });
@@ -446,9 +495,9 @@ describe('Integration Test: Frontend <-> Backend API', () => {
     expect(screen.queryByTestId('auth-error')).not.toBeInTheDocument();
     expect(fetchSpy.mock.calls[0][1]?.body).toBe(
       JSON.stringify({
+        name: 'Nguyễn Văn A',
         email: 'new@brewlite.vn',
         password: 'password123',
-        name: 'new',
       }),
     );
 
@@ -550,7 +599,7 @@ describe('Integration Test: Frontend <-> Backend API', () => {
 
     fireEvent.click(screen.getByTestId('confirm-payment-btn'));
 
-    await waitFor(() => expect(pushMock).toHaveBeenCalledWith('/orders/1042?status=PAID'));
+    await waitFor(() => expect(pushMock).toHaveBeenCalledWith('/orders/1042/confirmation'));
     expect(fetchSpy).toHaveBeenCalledTimes(2);
     expect(JSON.parse(String(fetchSpy.mock.calls[1][1]?.body))).toMatchObject({
       orderId: '1042',
@@ -726,7 +775,7 @@ describe('Integration Test: Frontend <-> Backend API', () => {
     fireEvent.click(screen.getByTestId('confirm-payment-btn'));
 
     await waitFor(() => {
-      expect(pushMock).toHaveBeenCalledWith('/orders/1042?status=PAID');
+      expect(pushMock).toHaveBeenCalledWith('/orders/1042/confirmation');
     });
 
     // Kiểm tra header Authorization Bearer JWT và Idempotency-Key đã được gửi
@@ -739,5 +788,47 @@ describe('Integration Test: Frontend <-> Backend API', () => {
     // Giỏ hàng được làm trống và điểm thưởng được cộng thêm 5 (10 + 5 = 15)
     expect(useCartStore.getState().getTotalItems()).toBe(0);
     expect(useAuthStore.getState().user?.loyaltyPoints).toBe(15);
+  });
+
+  it('trang thanh toán hiện tạm tính, số tiền giảm giá và điểm thưởng dự kiến', () => {
+    useCartStore.getState().addItem({ id: 'p1', name: 'Latte', price: 45000, imageUrl: '' }, 'S', [], 2);
+    useCartStore.getState().setPromotion({ code: 'WELCOME20K', type: 'FIXED' as const, value: 20000, minOrderTotal: 50000 });
+
+    render(<CheckoutPage />);
+
+    expect(screen.getByTestId('checkout-subtotal')).toHaveTextContent('90.000₫');
+    expect(screen.getByTestId('checkout-discount')).toHaveTextContent('−20.000₫');
+    expect(screen.getByText(/Giảm giá \(WELCOME20K\)/)).toBeInTheDocument();
+    expect(screen.getByTestId('checkout-total')).toHaveTextContent('70.000₫');
+    // 1 điểm cho mỗi 1.000₫ đã trả (loyalty.ts ở backend): 70.000₫ → 70 điểm
+    expect(screen.getByTestId('checkout-points')).toHaveTextContent('+70 điểm thưởng');
+  });
+
+  it('không có mã giảm giá thì không hiện dòng giảm giá', () => {
+    useCartStore.getState().addItem({ id: 'p1', name: 'Latte', price: 45000, imageUrl: '' }, 'S', [], 1);
+
+    render(<CheckoutPage />);
+
+    expect(screen.queryByTestId('checkout-discount')).not.toBeInTheDocument();
+    expect(screen.getByTestId('checkout-total')).toHaveTextContent('45.000₫');
+  });
+
+  it('thanh toán thành công: chuyển sang trang xác nhận theo mã đơn BL-YYYY-NNNN', async () => {
+    useCartStore.getState().addItem({ id: 'p1', name: 'Latte', price: 45000, imageUrl: '' }, 'S', [], 1);
+    vi.spyOn(global, 'fetch')
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ id: 'uuid-1042', code: 'BL-2026-0042', status: 'PENDING', total: 45000 }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ orderId: 'uuid-1042', status: 'PAID' }),
+      } as Response);
+
+    render(<CheckoutPage />);
+    fireEvent.click(screen.getByTestId('method-card'));
+    fireEvent.click(screen.getByTestId('confirm-payment-btn'));
+
+    await waitFor(() => expect(pushMock).toHaveBeenCalledWith('/orders/BL-2026-0042/confirmation'));
   });
 });
