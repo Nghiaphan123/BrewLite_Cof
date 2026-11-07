@@ -192,7 +192,8 @@ function ProductDetailContent() {
             onClick={handleAddToCart}
             className="w-full rounded-xl bg-emerald-700 py-3 font-semibold text-white hover:bg-emerald-800"
           >
-            Thêm vào giỏ
+            {/* Task 4: nhãn nút ghi kèm tổng tiền để khách biết sẽ thêm bao nhiêu vào giỏ. */}
+            Thêm vào giỏ · {totalPrice.toLocaleString('vi-VN')}₫
           </button>
         </div>
       </div>
