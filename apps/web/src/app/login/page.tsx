@@ -4,6 +4,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { apiClient } from '@/lib/api';
+import { getSafeRedirect } from '@/lib/safe-redirect';
 import { useAuthStore } from '@/store/auth.store';
 import { runWithLoading, useUiStore } from '@/store/ui.store';
 import { Spinner } from '@/components/Skeleton';
@@ -16,7 +17,7 @@ const INPUT_CLASS =
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectUrl = searchParams?.get('redirect') || '/';
+  const redirectUrl = getSafeRedirect(searchParams?.get('redirect'));
 
   const [isRegister, setIsRegister] = useState(false);
   const [email, setEmail] = useState('');
