@@ -10,6 +10,7 @@ import {
   SIZE_SURCHARGE,
   calculateLineTotal,
 } from '@/features/product/pricing';
+import { isOutOfStock, remainingForCart } from '@/features/product/stock';
 import { useCartStore } from '@/store/cart.store';
 import { useUiStore } from '@/store/ui.store';
 import { ProductDetailSkeleton } from '@/components/Skeleton';
@@ -28,6 +29,7 @@ function ProductDetailContent() {
   const [qty, setQty] = useState<number>(1);
 
   const addItem = useCartStore((state) => state.addItem);
+  const cartItems = useCartStore((state) => state.items);
   const showToast = useUiStore((state) => state.showToast);
 
   useEffect(() => {
@@ -72,10 +74,17 @@ function ProductDetailContent() {
     );
   }
 
-  const totalPrice = calculateLineTotal(product.price, size, selectedToppings, qty);
+  // Mục 5: không cho thêm quá số ly còn trong kho (đã trừ số ly cùng món đang có trong giỏ).
+  const outOfStock = isOutOfStock(product);
+  const remaining = remainingForCart(product, cartItems);
+  const canAdd = remaining > 0;
+  // Giỏ có thể đổi sau khi chọn số lượng, nên luôn kẹp lại trong khoảng 1..remaining.
+  const effectiveQty = Math.max(1, Math.min(qty, remaining || 1));
+  const totalPrice = calculateLineTotal(product.price, size, selectedToppings, effectiveQty);
 
   const handleAddToCart = () => {
-    addItem(product, size, selectedToppings, qty);
+    if (!canAdd) return;
+    addItem(product, size, selectedToppings, effectiveQty);
     showToast(`Đã thêm ${product.name} vào giỏ`);
     router.push('/cart');
   };
@@ -101,11 +110,16 @@ function ProductDetailContent() {
               priority
               sizes="(max-width: 448px) 100vw, 448px"
               unoptimized
-              className="object-cover"
+              className={`object-cover ${outOfStock ? 'grayscale' : ''}`}
             />
           ) : (
             <span aria-hidden="true" className="flex h-full items-center justify-center text-6xl">
               ☕
+            </span>
+          )}
+          {outOfStock && (
+            <span className="absolute left-3 top-3 rounded-full bg-stone-900/85 px-3 py-1 text-xs font-bold text-white">
+              Hết hàng
             </span>
           )}
         </div>
@@ -115,6 +129,15 @@ function ProductDetailContent() {
           <p className="mt-1 text-stone-600">
             Giá gốc: <span className="font-semibold">{product.price.toLocaleString('vi-VN')}₫</span>
           </p>
+          {outOfStock ? (
+            <p role="status" data-testid="stock-notice" className="mt-3 rounded-lg bg-stone-100 px-3 py-2 text-sm font-medium text-stone-700">
+              Món này tạm hết hàng. Bạn vui lòng chọn món khác nhé.
+            </p>
+          ) : !canAdd ? (
+            <p role="status" data-testid="stock-notice" className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm font-medium text-amber-900">
+              Giỏ hàng của bạn đã có hết số ly còn lại của món này.
+            </p>
+          ) : null}
 
           {/* Chọn Size S / M / L */}
           <div className="mt-6">
@@ -179,19 +202,20 @@ function ProductDetailContent() {
               <button
                 type="button"
                 aria-label="Giảm số lượng"
-                onClick={() => setQty((q) => Math.max(1, q - 1))}
+                onClick={() => setQty(Math.max(1, effectiveQty - 1))}
                 className="h-9 w-9 rounded-full border border-[#002C22] bg-white text-lg font-bold text-[#002C22] transition hover:bg-[#002C22] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#002C22]"
               >
                 −
               </button>
               <span data-testid="detail-qty" className="min-w-6 text-center font-bold text-black">
-                {qty}
+                {effectiveQty}
               </span>
               <button
                 type="button"
                 aria-label="Tăng số lượng"
-                onClick={() => setQty((q) => q + 1)}
-                className="h-9 w-9 rounded-full border border-[#002C22] bg-white text-lg font-bold text-[#002C22] transition hover:bg-[#002C22] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#002C22]"
+                disabled={effectiveQty >= remaining}
+                onClick={() => setQty(Math.min(effectiveQty + 1, remaining))}
+                className="h-9 w-9 rounded-full border border-[#002C22] bg-white text-lg font-bold text-[#002C22] transition hover:bg-[#002C22] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#002C22] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-white disabled:hover:text-[#002C22]"
               >
                 +
               </button>
@@ -211,10 +235,15 @@ function ProductDetailContent() {
               type="button"
               data-testid="add-to-cart-btn"
               onClick={handleAddToCart}
-              className="w-full rounded-xl bg-emerald-700 py-3 font-semibold text-white hover:bg-emerald-800"
+              disabled={!canAdd}
+              className="w-full rounded-xl bg-emerald-700 py-3 font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-stone-300 disabled:text-stone-600"
             >
               {/* Task 4: nhãn nút ghi kèm tổng tiền để khách biết sẽ thêm bao nhiêu vào giỏ. */}
-              Thêm vào giỏ · {totalPrice.toLocaleString('vi-VN')}₫
+              {outOfStock
+                ? 'Hết hàng'
+                : canAdd
+                  ? `Thêm vào giỏ · ${totalPrice.toLocaleString('vi-VN')}₫`
+                  : 'Đã đủ số lượng còn lại'}
             </button>
           </div>
         </div>
