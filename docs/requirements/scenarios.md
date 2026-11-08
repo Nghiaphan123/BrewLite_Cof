@@ -235,7 +235,7 @@ A scenario without a testable outcome is not a scenario; it is a wish. If a flow
 | #   | Actor    | Action / System response                                                                                                                                         |
 | --- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1   | Customer | Clicks "retry" on the failed order.                                                                                                                              |
-| 2   | System   | Creates a **new** payment attempt against the same order, with a **new** `Idempotency-Key` (ADR 0004 D5). On success, order transitions `PAYMENT_FAILED → PAID`. |
+| 2   | System   | Creates a **new** payment attempt against the same order, with a **new** `Idempotency-Key` (ADR 0004 D5). The order goes back through `PENDING` (PDF §9.1): on success `PAYMENT_FAILED → PENDING → PAID`. |
 
 **Outcome:** Order `PAID`. The history shows one order, not two.
 
