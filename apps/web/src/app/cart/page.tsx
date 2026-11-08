@@ -256,7 +256,8 @@ export default function CartPage() {
               onClick={handleProceedCheckout}
               className="mt-5 min-h-12 w-full rounded-xl bg-emerald-900 px-4 py-3 font-semibold text-white transition hover:bg-emerald-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-900"
             >
-              Tiến hành thanh toán
+              {/* US-05: nút Thanh toán hiển thị tổng tiền (đã trừ giảm giá). */}
+              Thanh toán · {getTotalPrice().toLocaleString('vi-VN')}₫
             </button>
             <p className="mt-3 text-center text-xs text-stone-500">Thanh toán an toàn · Hỗ trợ ví và thẻ</p>
           </aside>
