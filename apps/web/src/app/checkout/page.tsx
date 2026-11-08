@@ -9,6 +9,9 @@ import { useCartStore } from '@/store/cart.store';
 import { useAuthStore } from '@/store/auth.store';
 import { apiClient } from '@/lib/api';
 import { PENDING_QR_KEY } from '@/features/cart/cart-sync';
+import { buildIdempotencyKey } from '@/features/checkout/idempotency-key';
+import { estimateLoyaltyPoints } from '@/features/checkout/loyalty';
+import { formatVnd } from '@/features/orders/order-display';
 import { ApiError } from '@/lib/api-errors';
 import { runWithLoading, useUiStore, wait } from '@/store/ui.store';
 import { Spinner } from '@/components/Skeleton';
@@ -23,6 +26,38 @@ interface PendingQrPayment {
   image: string;
   /** Giỏ lúc tạo đơn; giỏ đã đổi thì đơn này không còn đúng nữa. */
   cartKey: string;
+  /** Số lần thanh toán đơn này đã thất bại; dùng để tạo Idempotency-Key mới cho lần thử lại. */
+  failedAttempts?: number;
+  /** Mã đơn BL-YYYY-NNNN; trang xác nhận dùng mã này trong URL (GET /orders/:code). */
+  orderCode?: string;
+}
+
+type CreatedOrder = { id: string; total: number; code?: string };
+
+/** Tạo mã QR demo cho đơn và lưu đơn đang chờ vào sessionStorage (giữ được khi tải lại trang). */
+async function buildPendingPayment(
+  order: CreatedOrder,
+  cartKey: string,
+  failedAttempts = 0,
+): Promise<PendingQrPayment> {
+  const amount = order.total;
+  const payload = `BREWLITE-DEMO|order=${order.id}|amount=${amount}|currency=VND`;
+  const svg = await QRCode.toString(payload, {
+    type: 'svg',
+    width: 240,
+    margin: 2,
+    color: { dark: '#064e3b', light: '#ffffff' },
+  });
+  const pending: PendingQrPayment = {
+    orderId: order.id,
+    amount,
+    image: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`,
+    cartKey,
+    failedAttempts,
+    orderCode: order.code,
+  };
+  sessionStorage.setItem(PENDING_QR_KEY, JSON.stringify(pending));
+  return pending;
 }
 
 function readPendingQr(cartKey: string): PendingQrPayment | null {
@@ -42,7 +77,7 @@ function getErrorMessage(error: unknown): string {
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { items, promoCode, getDiscount, getTotalPrice, clearCart } = useCartStore();
+  const { items, promoCode, getSubtotal, getDiscount, getTotalPrice, clearCart } = useCartStore();
   const addLoyaltyPoints = useAuthStore((state) => state.addLoyaltyPoints);
 
   const [method, setMethod] = useState<PaymentMethod>('QR');
@@ -55,12 +90,17 @@ export default function CheckoutPage() {
 
   // getTotalPrice đọc thẳng store; dựa vào items để lần render hydrate khớp HTML của server.
   const total = items.length > 0 ? getTotalPrice() : 0;
+  const subtotal = items.length > 0 ? getSubtotal() : 0;
+  const discount = items.length > 0 ? getDiscount() : 0;
   const cartKey = JSON.stringify([items.map((item) => [item.cartItemId, item.qty]), promoCode]);
 
   // Tải lại trang khi đang chờ quét thì dùng lại đơn cũ, không tạo thêm đơn mới.
   // Giỏ rỗng ở lần render đầu (kể cả trên server) nên không đọc sessionStorage lúc hydrate.
   const pendingQr =
     createdQr?.cartKey === cartKey ? createdQr : items.length > 0 ? readPendingQr(cartKey) : null;
+  // Đã tạo đơn thì số tiền phải trả là số server đã tính; chưa tạo thì dùng giá tạm tính trong giỏ.
+  const payable = pendingQr?.amount ?? total;
+  const expectedPoints = estimateLoyaltyPoints(payable);
 
   // Mã QR vừa tạo có thể nằm dưới màn hình, nên cuộn tới để người dùng thấy ngay.
   useEffect(() => {
@@ -75,8 +115,8 @@ export default function CheckoutPage() {
     }
   }, [items.length, cartKey]);
 
-  const createQr = async () => {
-    const order = await apiClient.createOrder({
+  const createOrderFromCart = () =>
+    apiClient.createOrder({
       items: items.map((item) => ({
         productId: item.product.id,
         size: item.size,
@@ -85,23 +125,10 @@ export default function CheckoutPage() {
       })),
       promoCode: getDiscount() > 0 ? promoCode : undefined,
     });
-    const amount = order.total;
-    const payload = `BREWLITE-DEMO|order=${order.id}|amount=${amount}|currency=VND`;
-    const svg = await QRCode.toString(payload, {
-      type: 'svg',
-      width: 240,
-      margin: 2,
-      color: { dark: '#064e3b', light: '#ffffff' },
-    });
 
-    const pending = {
-      orderId: order.id,
-      amount,
-      image: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`,
-      cartKey,
-    };
-    sessionStorage.setItem(PENDING_QR_KEY, JSON.stringify(pending));
-    setCreatedQr(pending);
+  const createQr = async () => {
+    const order = await createOrderFromCart();
+    setCreatedQr(await buildPendingPayment(order, cartKey));
   };
 
   const chooseMethod = (next: PaymentMethod) => {
@@ -125,19 +152,12 @@ export default function CheckoutPage() {
       }
 
       await runWithLoading('Đang xử lý thanh toán...', async () => {
-        const order =
-          pendingQr ??
-          (await apiClient.createOrder({
-            items: items.map((item) => ({
-              productId: item.product.id,
-              size: item.size,
-              qty: item.qty,
-              toppingIds: item.toppings.map((topping) => topping.id),
-            })),
-            promoCode: getDiscount() > 0 ? promoCode : undefined,
-          }));
-        const orderId = 'orderId' in order ? order.orderId : order.id;
-        const amount = 'amount' in order ? order.amount : order.total;
+        // Có đơn đang chờ (mã QR, hoặc đơn vừa thanh toán thất bại) thì dùng lại đơn đó,
+        // để thử lại không sinh thêm đơn PENDING mới bị bỏ rơi trong hệ thống.
+        const order = pendingQr ?? (await buildPendingPayment(await createOrderFromCart(), cartKey));
+        if (!pendingQr) setCreatedQr(order);
+        const { orderId, amount } = order;
+        const failedAttempts = order.failedAttempts ?? 0;
         const paymentMethod = method === 'QR' ? 'WALLET' : method;
         const paymentResult = await apiClient.payOrder(
           {
@@ -145,22 +165,27 @@ export default function CheckoutPage() {
             method: paymentMethod,
             amount,
           },
-          `idem_${orderId}_${paymentMethod}`,
+          buildIdempotencyKey(orderId, paymentMethod, failedAttempts),
         );
 
         if (paymentResult.status === 'PAYMENT_FAILED') {
-          setError('Thanh toán thất bại. Giỏ hàng của bạn vẫn được giữ nguyên.');
-          sessionStorage.removeItem(PENDING_QR_KEY);
-          setCreatedQr(null);
+          setError('Thanh toán thất bại. Giỏ hàng của bạn vẫn được giữ nguyên, bấm xác nhận để thử lại với cùng đơn hàng.');
+          // Giữ đơn để lần sau thanh toán lại chính đơn này (PAYMENT_FAILED → PAID, ADR 0004 D5),
+          // và tăng số lần thất bại để lần thử tới dùng Idempotency-Key mới.
+          const retry = { ...order, failedAttempts: failedAttempts + 1 };
+          sessionStorage.setItem(PENDING_QR_KEY, JSON.stringify(retry));
+          setCreatedQr(retry);
           return;
         }
 
-        const earnedPoints = paymentResult.loyaltyPointsEarned ?? Math.floor(amount / 1000);
+        const earnedPoints = paymentResult.loyaltyPointsEarned ?? estimateLoyaltyPoints(amount);
         addLoyaltyPoints(earnedPoints);
         sessionStorage.removeItem(PENDING_QR_KEY);
         clearCart();
         useUiStore.getState().holdLoadingUntilNavigation();
-        router.push(`/orders/${orderId}?status=${paymentResult.status || 'PAID'}`);
+        // Mục 10: sang màn hình Xác nhận riêng (wireframes.md §8). Trang đó tự đọc trạng thái,
+        // giảm giá và điểm thưởng từ server, nên URL không cần (và không nên) mang ?status=.
+        router.push(`/orders/${encodeURIComponent(order.orderCode ?? orderId)}/confirmation`);
       });
     } catch (paymentError: unknown) {
       const message = getErrorMessage(paymentError);
@@ -209,11 +234,29 @@ export default function CheckoutPage() {
           </div>
 
           <div className="p-4 sm:p-8">
-            <div className="flex items-center justify-between gap-3 rounded-2xl bg-[#faf8f3] px-4 py-4">
-              <span className="text-sm font-medium text-stone-600">Tổng thanh toán</span>
-              <span className="text-xl font-bold text-emerald-900" data-testid="checkout-total">
-                {(pendingQr?.amount ?? total).toLocaleString('vi-VN')}₫
-              </span>
+            {/* Mục 8 (backlog Task 10d): cho khách thấy số tiền được giảm và số điểm sẽ nhận. */}
+            <div className="rounded-2xl bg-[#faf8f3] px-4 py-4 text-sm">
+              <div className="flex items-center justify-between gap-3 text-stone-600">
+                <span>Tạm tính</span>
+                <span data-testid="checkout-subtotal">{formatVnd(subtotal)}</span>
+              </div>
+              {discount > 0 && (
+                <div className="mt-1 flex items-center justify-between gap-3 text-emerald-700">
+                  <span>Giảm giá ({promoCode.toUpperCase()})</span>
+                  <span data-testid="checkout-discount">−{formatVnd(discount)}</span>
+                </div>
+              )}
+              <div className="mt-3 flex items-center justify-between gap-3 border-t border-stone-200 pt-3">
+                <span className="font-medium text-stone-600">Tổng thanh toán</span>
+                <span className="text-xl font-bold text-emerald-900" data-testid="checkout-total">
+                  {formatVnd(payable)}
+                </span>
+              </div>
+              {expectedPoints > 0 && (
+                <p data-testid="checkout-points" className="mt-2 text-xs font-medium text-amber-900">
+                  Thanh toán thành công, bạn sẽ nhận +{expectedPoints.toLocaleString('vi-VN')} điểm thưởng.
+                </p>
+              )}
             </div>
 
             <fieldset className="mt-6" disabled={loading}>
