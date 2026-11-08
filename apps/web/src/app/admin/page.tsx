@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState, useTransition } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { apiClient } from '@/lib/api';
 import { useAuthStore } from '@/store/auth.store';
@@ -9,12 +9,6 @@ import { Order, OrderStatus, Promotion, Topping, User } from '@/types';
 import { Spinner } from '@/components/Skeleton';
 
 type AdminTab = 'toppings' | 'users' | 'promotions' | 'orders';
-
-const ADMIN_TABS: readonly string[] = ['toppings', 'users', 'promotions', 'orders'];
-
-function isAdminTab(value: string | null | undefined): value is AdminTab {
-  return !!value && ADMIN_TABS.includes(value);
-}
 
 function formatVND(value: number): string {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
@@ -39,21 +33,18 @@ function formatDate(dateStr?: string | Date): string {
 function AdminDashboard() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const tabFromQuery = searchParams?.get('tab');
+  const tabFromQuery = searchParams?.get('tab') as AdminTab | null;
 
   const { token, user } = useAuthStore();
   const logoutWithLoading = useLogout();
+  const [, startTransition] = useTransition();
 
-  // ?tab= trên URL là nguồn chính của tab đang mở; selectedTab chỉ dùng khi URL không có tab hợp lệ.
-  // Tính trực tiếp khi render thay vì chép URL vào state bằng useEffect (lint react-hooks/set-state-in-effect).
-  const [selectedTab, setSelectedTab] = useState<AdminTab>('toppings');
-  const activeTab: AdminTab = isAdminTab(tabFromQuery) ? tabFromQuery : selectedTab;
-  // `loading` được tính ra, không lưu thành state riêng: đang tải khi tab đang mở chưa tải xong
-  // lần nào, hoặc khi admin bấm "Làm mới dữ liệu". Nhờ vậy effect tải dữ liệu không phải gọi
-  // setLoading(true) ngay lập tức (lint react-hooks/set-state-in-effect).
-  const [loadedTab, setLoadedTab] = useState<AdminTab | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
-  const loading = refreshing || loadedTab !== activeTab;
+  const [activeTab, setActiveTab] = useState<AdminTab>(
+    tabFromQuery && ['toppings', 'users', 'promotions', 'orders'].includes(tabFromQuery)
+      ? tabFromQuery
+      : 'toppings'
+  );
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -85,57 +76,61 @@ function AdminDashboard() {
   // Search filter
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Khai báo trước useEffect bên dưới: gọi một hằng số trước khi nó được khai báo
-  // (temporal dead zone) là lỗi lint react-hooks/immutability. useCallback giữ hàm ổn định
-  // giữa các lần render để có thể đưa vào mảng phụ thuộc của effect.
-  // Mọi setState đều nằm trong callback của Promise (.then/.catch/.finally), tức chỉ chạy khi
-  // API đã trả kết quả. Đó là cách effect được phép cập nhật state theo react-hooks/set-state-in-effect.
-  const fetchTabData = useCallback((tab: AdminTab): Promise<void> => {
-    const request: Promise<void> =
-      tab === 'toppings'
-        ? apiClient.getAdminToppings().then((data) => {
-            setToppings(data);
-            const edits: Record<string, number> = {};
-            data.forEach((t) => {
-              edits[t.id] = t.stock ?? 0;
-            });
-            setStockEdits(edits);
-          })
-        : tab === 'users'
-          ? apiClient.getAdminUsers().then(setUsers)
-          : tab === 'promotions'
-            ? apiClient.getAdminPromotions().then(setPromotions)
-            : apiClient.getAdminOrders().then(setOrders);
-
-    return request
-      .then(() => setError(null))
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Không thể tải dữ liệu'))
-      .finally(() => {
-        setLoadedTab(tab);
-        setRefreshing(false);
-      });
-  }, []);
-
-  const refreshTabData = () => {
-    setRefreshing(true);
-    setError(null);
-    void fetchTabData(activeTab);
-  };
+  // Sync tab with query params
+  useEffect(() => {
+    if (tabFromQuery && ['toppings', 'users', 'promotions', 'orders'].includes(tabFromQuery)) {
+      setActiveTab(tabFromQuery);
+    }
+  }, [tabFromQuery]);
 
   // Initial Load & Access Check
   useEffect(() => {
-    // Chưa đăng nhập hoặc không phải admin thì trang hiện màn hình chặn ở dưới và không dùng
-    // `loading`, nên chỉ cần không tải dữ liệu (không gọi setState ngay trong effect).
-    if (!token || (user && user.role !== 'ADMIN')) return;
+    if (!token) {
+      setLoading(false);
+      return;
+    }
 
-    void fetchTabData(activeTab);
-  }, [token, user, activeTab, fetchTabData]);
+    if (user && user.role !== 'ADMIN') {
+      setLoading(false);
+      return;
+    }
+
+    fetchTabData(activeTab);
+  }, [token, user, activeTab]);
 
   const switchTab = (tab: AdminTab) => {
-    setSelectedTab(tab);
-    setError(null);
+    setActiveTab(tab);
     setSearchTerm('');
     router.replace(`/admin?tab=${tab}`);
+  };
+
+  const fetchTabData = async (tab: AdminTab) => {
+    setLoading(true);
+    setError(null);
+    try {
+      if (tab === 'toppings') {
+        const data = await apiClient.getAdminToppings();
+        setToppings(data);
+        const edits: Record<string, number> = {};
+        data.forEach((t) => {
+          edits[t.id] = t.stock ?? 0;
+        });
+        setStockEdits(edits);
+      } else if (tab === 'users') {
+        const data = await apiClient.getAdminUsers();
+        setUsers(data);
+      } else if (tab === 'promotions') {
+        const data = await apiClient.getAdminPromotions();
+        setPromotions(data);
+      } else if (tab === 'orders') {
+        const data = await apiClient.getAdminOrders();
+        setOrders(data);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Không thể tải dữ liệu');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const showSuccess = (msg: string) => {
@@ -285,7 +280,7 @@ function AdminDashboard() {
 
             <div className="flex items-center gap-2 self-start sm:self-auto">
               <button
-                onClick={refreshTabData}
+                onClick={() => fetchTabData(activeTab)}
                 disabled={loading}
                 className="inline-flex items-center gap-2 rounded-lg border border-stone-300 bg-white px-3.5 py-2 text-xs font-semibold text-stone-700 shadow-xs hover:bg-stone-50 disabled:opacity-50"
               >

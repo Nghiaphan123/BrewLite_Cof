@@ -9,7 +9,6 @@ import { useCartStore } from '@/store/cart.store';
 import { useAuthStore } from '@/store/auth.store';
 import { apiClient } from '@/lib/api';
 import { Spinner } from '@/components/Skeleton';
-import { exceedsStock, isOutOfStock, remainingForCart } from '@/features/product/stock';
 
 const REMOVE_ANIMATION_MS = 220;
 
@@ -149,13 +148,6 @@ export default function CartPage() {
                     <p className="mt-2 text-sm font-bold text-emerald-800">
                       {item.lineTotal.toLocaleString('vi-VN')}₫
                     </p>
-                    {exceedsStock(item.product, items) && (
-                      <p role="alert" data-testid={`stock-warning-${item.cartItemId}`} className="mt-1 text-xs font-medium text-red-600">
-                        {isOutOfStock(item.product)
-                          ? 'Món này đã hết hàng, vui lòng xóa khỏi giỏ.'
-                          : `Chỉ còn ${item.product.stock} ly, vui lòng giảm số lượng.`}
-                      </p>
-                    )}
                   </div>
 
                   <div className="flex items-center justify-between gap-3 sm:justify-end">
@@ -176,10 +168,8 @@ export default function CartPage() {
                       <button
                         type="button"
                         aria-label="Tăng số lượng"
-                        // Mục 5: đã lấy hết số ly còn trong kho (tính chung mọi dòng cùng món) thì khoá nút +.
-                        disabled={remainingForCart(item.product, items) <= 0}
                         onClick={() => updateQty(item.cartItemId, item.qty + 1)}
-                        className="h-8 w-8 rounded-full bg-white text-lg font-bold text-[#002C22] transition hover:bg-[#002C22] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#002C22] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-white disabled:hover:text-[#002C22]"
+                        className="h-8 w-8 rounded-full bg-white text-lg font-bold text-[#002C22] transition hover:bg-[#002C22] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#002C22]"
                       >
                         +
                       </button>
