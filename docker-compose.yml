@@ -38,7 +38,7 @@ services:
       JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
       PAYMENT_PROVIDER: ${PAYMENT_PROVIDER:-mock}
-      PAYMENT_MOCK_CONTROL: ${PAYMENT_MOCK_CONTROL:-false}
+      PAYMENT_MOCK_MODE: ${PAYMENT_MOCK_MODE:-success}
     ports:
       - "${API_PORT:-3001}:${API_PORT:-3001}"
     depends_on:

@@ -6,16 +6,7 @@ import Link from 'next/link';
 import { apiClient } from '@/lib/api';
 import { Order } from '@/types';
 import { OrderListSkeleton } from '@/components/Skeleton';
-
-const STATUS_LABELS: Record<Order['status'], string> = {
-  PENDING: 'Chờ xử lý',
-  PAID: 'Đã thanh toán',
-  PAYMENT_FAILED: 'Thanh toán thất bại',
-  PREPARING: 'Đang pha chế',
-  READY: 'Sẵn sàng lấy',
-  COMPLETED: 'Hoàn thành',
-  CANCELLED: 'Đã hủy',
-};
+import { STATUS_LABELS } from '@/features/orders/order-display';
 
 export default function OrderHistoryPage() {
   const [orders, setOrders] = useState<Order[]>([]);
