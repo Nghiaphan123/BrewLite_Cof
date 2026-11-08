@@ -162,4 +162,64 @@ describe('POST /api/v1/payments idempotency (graded test b)', () => {
     const productAfter = await prisma.product.findUnique({ where: { id: product.id } });
     expect(productAfter?.stock).toBe(10);
   });
+
+  /**
+   * PDF §9.1: a failed payment is retried through PENDING
+   * (PAYMENT_FAILED -> PENDING -> PAID | PAYMENT_FAILED), on the same order and
+   * with a new Idempotency-Key for each attempt.
+   */
+  it('retry after failure: a second failure is accepted, then a success pays the same order', async () => {
+    const product = await seedProduct(prisma, { stock: 10 });
+    const order = await seedOrder(prisma, userId, product.id);
+    const pay = (key: string) =>
+      request(app.getHttpServer())
+        .post('/api/v1/payments')
+        .set('Authorization', `Bearer ${token}`)
+        .set('Idempotency-Key', key)
+        .send({ orderId: order.id, method: 'WALLET' });
+
+    const firstKey = randomUUID();
+    process.env.PAYMENT_MOCK_MODE = 'failure';
+    const first = await pay(firstKey);
+    const second = await pay(randomUUID());
+    delete process.env.PAYMENT_MOCK_MODE;
+
+    expect(first.status).toBe(200);
+    expect(first.body.status).toBe('PAYMENT_FAILED');
+    // Before the fix this was 409 INVALID_STATE_TRANSITION (PAYMENT_FAILED -> PAYMENT_FAILED).
+    expect(second.status).toBe(200);
+    expect(second.body.status).toBe('PAYMENT_FAILED');
+
+    const third = await pay(randomUUID());
+    expect(third.status).toBe(200);
+    expect(third.body.status).toBe('PAID');
+
+    const orderAfter = await prisma.order.findUnique({ where: { id: order.id } });
+    expect(orderAfter?.status).toBe('PAID');
+    expect(await prisma.payment.count({ where: { orderId: order.id } })).toBe(3);
+    expect((await prisma.product.findUnique({ where: { id: product.id } }))?.stock).toBe(9);
+
+    // Replaying the first (failed) attempt answers what that attempt answered,
+    // not the order's current PAID status.
+    const replay = await pay(firstKey);
+    expect(replay.status).toBe(200);
+    expect(replay.body.status).toBe('PAYMENT_FAILED');
+    expect(replay.body.replayed).toBe(true);
+  });
+
+  it('a CANCELLED order cannot be paid (409 INVALID_STATE_TRANSITION)', async () => {
+    const product = await seedProduct(prisma, { stock: 10 });
+    const order = await seedOrder(prisma, userId, product.id);
+    await prisma.order.update({ where: { id: order.id }, data: { status: 'CANCELLED' } });
+
+    const res = await request(app.getHttpServer())
+      .post('/api/v1/payments')
+      .set('Authorization', `Bearer ${token}`)
+      .set('Idempotency-Key', randomUUID())
+      .send({ orderId: order.id, method: 'CARD' });
+
+    expect(res.status).toBe(409);
+    expect(res.body.code).toBe('INVALID_STATE_TRANSITION');
+    expect((await prisma.product.findUnique({ where: { id: product.id } }))?.stock).toBe(10);
+  });
 });

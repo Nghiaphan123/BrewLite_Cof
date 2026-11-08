@@ -15,7 +15,8 @@
  *    - same hash  -> return the stored response (replay, replayed: true)
  *    - diff hash  -> 409 IDEMPOTENCY_CONFLICT
  * 4. Otherwise, in one $transaction:
- *    - assertTransition(order.status, PAID | PAYMENT_FAILED)
+ *    - a PAYMENT_FAILED order is retried through PENDING (PDF §9.1), then
+ *      assertTransition(PENDING, PAID | PAYMENT_FAILED)
  *    - on success: decrement stock under optimistic lock (Product.version),
  *      accrue loyalty (floor(total/1000)), update order, create Payment row.
  *    - on failure: update order to PAYMENT_FAILED, create Payment row (FAILED),
@@ -43,6 +44,14 @@ import { assertTransition } from '../orders/order-state-machine.js';
 import { hashPaymentRequest } from './payment-hash.js';
 import { PaymentMethod, PaymentStatus } from '../../generated/prisma/enums.js';
 import { loyaltyPointsFor } from './loyalty.js';
+
+/**
+ * What a replayed request answers: the outcome of that attempt. A payment that
+ * succeeded and was later refunded (order cancelled) was still a PAID answer.
+ */
+function replayStatus(paymentStatus: PaymentStatus): 'PAID' | 'PAYMENT_FAILED' {
+  return paymentStatus === PaymentStatus.FAILED ? 'PAYMENT_FAILED' : 'PAID';
+}
 
 export interface ProcessPaymentInput {
   userId: string;
@@ -97,13 +106,13 @@ export class PaymentsService {
         });
       }
 
-      // Replay: return the stored response. The status is the ORDER's status,
-      // not the payment's, because a failed attempt leaves the order
-      // PAYMENT_FAILED and a successful one leaves it PAID (ADR 0004 D2).
+      // Replay: return the stored response of THIS attempt. It must not follow
+      // the order's current status: after a failed attempt and a successful
+      // retry, replaying the failed attempt's key still answers PAYMENT_FAILED.
       return {
         paymentId: existingPayment.id,
         orderId: existingPayment.orderId,
-        status: existingPayment.order.status === 'PAID' ? 'PAID' : 'PAYMENT_FAILED',
+        status: replayStatus(existingPayment.status),
         method: existingPayment.method,
         amount: existingPayment.amount,
         replayed: true,
@@ -160,8 +169,17 @@ export class PaymentsService {
           }
         }
 
+        // A retry after a failed attempt goes back through PENDING, as in the
+        // PDF §9.1 diagram: PAYMENT_FAILED -> PENDING -> PAID | PAYMENT_FAILED.
+        // Both edges are checked, so a second failure is legal (not a 409).
+        let currentStatus = order.status;
+        if (currentStatus === 'PAYMENT_FAILED') {
+          assertTransition(currentStatus, 'PENDING');
+          currentStatus = 'PENDING';
+        }
+
         const nextOrderStatus = isMockSuccess ? 'PAID' : 'PAYMENT_FAILED';
-        assertTransition(order.status, nextOrderStatus);
+        assertTransition(currentStatus, nextOrderStatus);
 
         if (isMockSuccess) {
           for (const item of order.items) {
@@ -265,7 +283,7 @@ export class PaymentsService {
           return {
             paymentId: existing.id,
             orderId: existing.orderId,
-            status: existing.order.status === 'PAID' ? 'PAID' : 'PAYMENT_FAILED',
+            status: replayStatus(existing.status),
             method: existing.method,
             amount: existing.amount,
             replayed: true,

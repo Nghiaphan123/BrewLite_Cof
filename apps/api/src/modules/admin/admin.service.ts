@@ -13,10 +13,14 @@ import {
 import { PrismaService } from '../../common/prisma.service.js';
 import { CreatePromotionDto } from './dto/create-promotion.dto.js';
 import { OrderStatus } from '../../generated/prisma/enums.js';
+import { OrdersService } from '../orders/orders.service.js';
 
 @Injectable()
 export class AdminService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly ordersService: OrdersService,
+  ) { }
 
   // -------------------------------------------------- Toppings
   async listToppings() {
@@ -182,27 +186,19 @@ export class AdminService {
     }));
   }
 
+  /**
+   * Goes through OrdersService.transition, so the admin page obeys the same
+   * state machine as everything else (PDF §9.1): illegal or payment-only
+   * transitions get 409 INVALID_STATE_TRANSITION, a missing order gets 404.
+   */
   async updateOrderStatus(id: string, status: OrderStatus) {
-    const existing = await this.prisma.order.findUnique({ where: { id } });
-    if (!existing) {
-      throw new NotFoundException({
-        statusCode: 404,
-        error: 'Not Found',
-        message: 'Order not found',
-        code: 'ORDER_NOT_FOUND',
-      });
-    }
-
-    return this.prisma.order.update({
-      where: { id },
-      data: { status },
-      select: {
-        id: true,
-        code: true,
-        status: true,
-        updatedAt: true,
-      },
-    });
+    const updated = await this.ordersService.transition(id, status);
+    return {
+      id: updated.id,
+      code: updated.code,
+      status: updated.status,
+      updatedAt: updated.updatedAt,
+    };
   }
 }
 

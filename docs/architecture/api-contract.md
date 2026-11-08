@@ -340,7 +340,7 @@ The current password must be verified before storing a bcrypt hash of the new pa
 
 **Rules:**
 - Failure is `200` with `status: "PAYMENT_FAILED"`, not `402` (ADR 0004 D2). The frontend checks the body `status`, not `res.ok`.
-- The order remains retrievable; the cart is preserved (`scenarios.md` S-PAY-2). The user retries with a **new** `Idempotency-Key` (ADR 0004 D5); the order goes `PAYMENT_FAILED → PAID` on success.
+- The order remains retrievable; the cart is preserved (`scenarios.md` S-PAY-2). The user retries with a **new** `Idempotency-Key` (ADR 0004 D5); the order goes `PAYMENT_FAILED → PENDING → PAID` on success, or back to `PAYMENT_FAILED` if the retry fails too (PDF §9.1). A replay of an earlier attempt's key answers that attempt's own result.
 - `loyaltyPointsEarned` = `floor(amount / 1000)` (ADR 0004 D7). `userLoyaltyPoints` is the post-accrual total.
 - A replay with the same key and same body returns the **same** response body (including `paymentId`), even if the original was a failure. Idempotency covers both outcomes, not just success.
 
@@ -483,7 +483,7 @@ These are listed so the frontend and API agree on the shape before Task 10 adds 
 | Method | Path                   | Purpose                  | Notes                                                                            |
 | ------ | ---------------------- | ------------------------ | -------------------------------------------------------------------------------- |
 | `POST` | `/orders/:code/cancel` | Cancel a `PENDING` order | ADR 0004 D6 says no auto-cancel; explicit cancel is a possible Phase 2 addition. |
-| `POST` | `/orders/:id/transition` | Drive an order status transition (test enabler for graded test a) | Internal/test endpoint; auth JWT (currently a test fixture, see Task 7 gap); not part of the public MVP API. |
+| `POST` | `/orders/:id/transition` | Drive an order status transition (graded test a) | Staff only: JWT with role `ADMIN` (customers get `403`). Only non-payment edges of PDF §9.1 are allowed; `→ PENDING`, `→ PAID`, `→ PAYMENT_FAILED` answer `409 INVALID_STATE_TRANSITION` (ADR 0004, "Manual transitions"). Not part of the public MVP API. |
 | `POST` | `/promotions/validate` | Validate a promo code    | Task 10d; `product-backlog.md` §13 10d.                                          |
 | `GET`  | `/loyalty/me`          | Current points balance   | Task 10d; the login/register responses carry `loyaltyPoints` in Phase 1.         |
 

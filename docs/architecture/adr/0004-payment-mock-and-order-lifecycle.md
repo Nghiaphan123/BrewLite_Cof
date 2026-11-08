@@ -90,15 +90,21 @@ Consequence: `Payment` needs a `requestHash` column (or stores the canonical bod
 
 ### D5 — A `PAYMENT_FAILED` order can be retried; the retry creates a new payment attempt against the same order
 
-When a payment fails, the order transitions to `PAYMENT_FAILED`. A retry is a **new** `POST /payments` with a **new** `Idempotency-Key` against the **same** order. On success, the order transitions `PAYMENT_FAILED → PAID`.
+When a payment fails, the order transitions to `PAYMENT_FAILED`. A retry is a **new** `POST /payments` with a **new** `Idempotency-Key` against the **same** order. The retry goes back through `PENDING`, exactly as the PDF §9.1 diagram draws it: `PAYMENT_FAILED → PENDING → PAID` on success, or `PAYMENT_FAILED → PENDING → PAYMENT_FAILED` if it fails again.
+
+> **Amended 2026-11-08.** The first version of this decision used a direct `PAYMENT_FAILED → PAID` edge and said the PDF diagram showed it. It does not: the diagram's "thử lại" arrow goes from `PAYMENT_FAILED` back to `PENDING`, and it also has a "hủy" arrow `PAID → CANCELLED`. The direct edge also made a second failure illegal (`PAYMENT_FAILED → PAYMENT_FAILED`, answered with 409). The state machine now matches the diagram; see "Manual transitions" below.
 
 Rationale:
 
 - The PDF's US-05 says "the cart is preserved" on failure; it implies the user can try again. Creating a new order per retry would litter the user's history with failed attempts.
-- The state machine (PDF §9.1) allows `PAYMENT_FAILED → PAID` (it must — otherwise a failed payment is terminal, which contradicts US-05).
+- The state machine (PDF §9.1) has the retry arrow `PAYMENT_FAILED → PENDING` (a failed payment is not terminal, as US-05 requires). From `PENDING` the next attempt can succeed or fail again.
 - A new payment attempt per retry keeps the idempotency boundary clean: each attempt is independent, each has its own key, and the `Payment` table records the full attempt history for a given order.
 
 Consequence: an order can have multiple `Payment` rows (one per attempt); at most one is successful. `GET /orders/me` shows one order, not one per attempt. The state machine's `PAYMENT_FAILED → PAID` edge is legal; `PAYMENT_FAILED → COMPLETED` is not.
+
+#### Manual transitions (added 2026-11-08)
+
+Every status change goes through `order-state-machine.ts`, including the admin page (`PATCH /admin/orders/:id/status`) and `POST /orders/:id/transition`, which are staff-only (admin role). A person may take only the non-payment arrows: `PAID → PREPARING → READY → COMPLETED` and cancelling from `PENDING`, `PAYMENT_FAILED` or `PAID`. Moving an order into `PENDING`, `PAID` or `PAYMENT_FAILED` is reserved for `POST /payments`, because only the payment transaction decrements stock and accrues loyalty points; setting `PAID` by hand would give away a drink without payment. Cancelling a `PAID` order restores the stock, takes back the loyalty points and marks the payment `REFUNDED`, in one transaction.
 
 ### D6 — Stale `PENDING` orders are not auto-cancelled in Phase 1
 
@@ -141,7 +147,7 @@ Consequence: `User` has a `loyaltyPoints` column (integer, default 0). The ERD (
 ### Negative / costs
 
 - **One ADR, four decisions.** This is longer than most ADRs and harder to supersede in part. If only the loyalty rule changes (D7), the ADR is superseded as a whole, and the new ADR must restate D1–D6 to preserve them. Mitigation: the superseding ADR can say "D1–D6 unchanged; D7 becomes X." The alternative (four ADRs) was rejected because the decisions are coupled and would drift.
-- **`PAYMENT_FAILED → PAID` is a legal edge that some readers find surprising.** The state machine diagram in the PDF (§9.1) shows it; the ADR makes it explicit. A reviewer who thinks "failed is terminal" will object; the answer is US-05 (retry preserves cart) and D5.
+- **`PAYMENT_FAILED → PENDING` (retry) is a legal edge that some readers find surprising.** The state machine diagram in the PDF (§9.1) draws it as "thử lại"; the ADR makes it explicit. A reviewer who thinks "failed is terminal" will object; the answer is US-05 (retry preserves cart) and D5.
 - **Idempotency requires a `requestHash` column.** That's schema surface (Task 1.0 ERD) and a canonicalization function (the body must hash deterministically). The canonicalization is one function; not a large cost, but it must be tested.
 - **D3 (route keyed by code) changes three docs.** `ui-decisions.md` §2, `wireframes.md` §8, and `product-backlog.md` §12 all reference `[id]`; they must be updated in the same PR that accepts this ADR. This is a coordination cost, not a technical one.
 - **No auto-cancel (D6) means the DB accumulates `PENDING` rows in dev.** `prisma migrate reset` clears them; in a long-running demo, the history page shows abandoned orders. Acceptable for MVP; a Phase 2 fix.
@@ -172,7 +178,7 @@ Consequence: `User` has a `loyaltyPoints` column (integer, default 0). The ERD (
 
 Reopen this ADR (new ADR superseding 0004) if any of the following becomes true:
 
-- The grader or a reviewer interprets the state machine diagram differently and `PAYMENT_FAILED → PAID` is disputed. (Unlikely; the PDF shows the edge.)
+- The grader or a reviewer reads the state machine diagram differently. (Mitigated 2026-11-08: the code now follows the diagram arrow for arrow, and `order-state-machine.spec.ts` checks every pair of states against it.)
 - A real gateway replaces the mock and its callback semantics differ from the in-process mock (e.g. async webhook vs. synchronous response). This changes D2 and D5.
 - Refunds are added, which requires a `LoyaltyLedger` and a `REFUNDED` state (D7 and the state machine).
 - Auto-cancel of `PENDING` orders is added (D6), which is a Phase 2 change.
@@ -185,7 +191,7 @@ D1 (stock timing) is the load-bearing decision. If it changes, D4 and D5 must be
 
 | Question                                                                                               | Owner | Closes when                                |
 | ------------------------------------------------------------------------------------------------------ | ----- | ------------------------------------------ |
-| Confirm `PAYMENT_FAILED → PAID` is legal per the team's reading of PDF §9.1                            | H.Tài | This ADR `Accepted`                        |
+| Confirm the retry edge per PDF §9.1: `PAYMENT_FAILED → PENDING` (amended 2026-11-08)                     | H.Tài | This ADR `Accepted`                        |
 | Decide the order code format (e.g. `BL-YYYY-NNNN`)                                                     | Nghĩa | `api-contract.md` final; D3 implementation |
 | Decide the canonical body hash for idempotency (which fields, sorted)                                  | H.Tài | Task 25.0/46.0 PR                          |
 | Confirm `requestHash` column is in the Task 1.0 ERD                                                    | H.Tài | **Closed:** yes, ADR 0003 D-ERD-scope      |

@@ -7,11 +7,10 @@
  *   exhaustively and fast, without a database.
  *
  * Coverage:
- * - Every legal edge in ADR 0004 D1/D5/D6 must not throw.
- * - A representative set of illegal edges must throw, including the graded
- *   case COMPLETED -> PAID.
- * - Also covers PAYMENT_FAILED retry edges (legal: -> PAID, -> CANCELLED;
- *   illegal: -> PREPARING, -> READY).
+ * - Every arrow of the PDF §9.1 diagram is legal; every other pair of states is
+ *   illegal (checked exhaustively, including the graded case COMPLETED -> PAID).
+ * - Manual (admin/barista) transitions cannot enter PENDING, PAID or
+ *   PAYMENT_FAILED; those belong to the payment flow.
  *
  * Convention:
  * - Co-located with the file it tests (working-agreement.md §6: *.spec.ts next
@@ -20,48 +19,97 @@
 
 import { describe, it, expect } from 'vitest';
 import {
+  assertManualTransition,
   assertTransition,
+  isManualTransitionLegal,
   isTransitionLegal,
   InvalidStateTransitionError,
+  nextManualStatuses,
 } from './order-state-machine.js';
+import type { OrderStatus } from '../../generated/prisma/enums.js';
+
+const ALL: OrderStatus[] = ['PENDING', 'PAID', 'PAYMENT_FAILED', 'PREPARING', 'READY', 'COMPLETED', 'CANCELLED'];
+
+/** The arrows of the PDF §9.1 diagram. */
+const DIAGRAM: Array<[OrderStatus, OrderStatus]> = [
+  ['PENDING', 'PAID'], // thanh toán OK
+  ['PENDING', 'PAYMENT_FAILED'], // thanh toán lỗi
+  ['PAYMENT_FAILED', 'PENDING'], // thử lại
+  ['PENDING', 'CANCELLED'], // hủy
+  ['PAYMENT_FAILED', 'CANCELLED'], // hủy
+  ['PAID', 'CANCELLED'], // hủy
+  ['PAID', 'PREPARING'], // barista nhận
+  ['PREPARING', 'READY'], // pha xong
+  ['READY', 'COMPLETED'], // giao khách
+];
+
+const isArrow = (from: OrderStatus, to: OrderStatus) =>
+  DIAGRAM.some(([f, t]) => f === from && t === to);
 
 describe('assertTransition', () => {
-  // Legal edges — must not throw
-  it.each([
-    ['PENDING', 'PAID'],
-    ['PENDING', 'PAYMENT_FAILED'],
-    ['PENDING', 'CANCELLED'],
-    ['PAYMENT_FAILED', 'PAID'],
-    ['PAYMENT_FAILED', 'CANCELLED'],
-    ['PAID', 'PREPARING'],
-    ['PREPARING', 'READY'],
-    ['READY', 'COMPLETED'],
-  ])('allows %s -> %s', (from, to) => {
-    expect(() => assertTransition(from as any, to as any)).not.toThrow();
+  it.each(DIAGRAM)('allows %s -> %s', (from, to) => {
+    expect(() => assertTransition(from, to)).not.toThrow();
   });
 
-  // Illegal edges — must throw
-  it.each([
-    ['COMPLETED', 'PAID'],
-    ['CANCELLED', 'PAID'],
-    ['PAID', 'PENDING'],
-    ['READY', 'PENDING'],
-    ['COMPLETED', 'CANCELLED'],
-    ['PAYMENT_FAILED', 'PREPARING'],
-    ['PAYMENT_FAILED', 'READY'],
-    ['PAYMENT_FAILED', 'PAYMENT_FAILED'],
-  ])('rejects %s -> %s', (from, to) => {
-    expect(() => assertTransition(from as any, to as any)).toThrow(InvalidStateTransitionError);
+  const illegal = ALL.flatMap((from) => ALL.map((to) => [from, to] as [OrderStatus, OrderStatus])).filter(
+    ([from, to]) => !isArrow(from, to),
+  );
+
+  it.each(illegal)('rejects %s -> %s', (from, to) => {
+    expect(() => assertTransition(from, to)).toThrow(InvalidStateTransitionError);
+  });
+
+  it('rejects the graded case COMPLETED -> PAID', () => {
+    expect(() => assertTransition('COMPLETED', 'PAID')).toThrow(InvalidStateTransitionError);
+  });
+
+  it('a failed payment is retried through PENDING, not straight to PAID', () => {
+    expect(isTransitionLegal('PAYMENT_FAILED', 'PENDING')).toBe(true);
+    expect(isTransitionLegal('PAYMENT_FAILED', 'PAID')).toBe(false);
+  });
+
+  it('COMPLETED and CANCELLED are terminal', () => {
+    for (const to of ALL) {
+      expect(isTransitionLegal('COMPLETED', to)).toBe(false);
+      expect(isTransitionLegal('CANCELLED', to)).toBe(false);
+    }
   });
 });
 
-describe('isTransitionLegal', () => {
-  it('returns true for legal edges', () => {
-    expect(isTransitionLegal('PENDING', 'PAID')).toBe(true);
-    expect(isTransitionLegal('PAYMENT_FAILED', 'CANCELLED')).toBe(true);
+describe('manual transitions (admin/barista)', () => {
+  it.each([
+    ['PAID', 'PREPARING'],
+    ['PREPARING', 'READY'],
+    ['READY', 'COMPLETED'],
+    ['PENDING', 'CANCELLED'],
+    ['PAYMENT_FAILED', 'CANCELLED'],
+    ['PAID', 'CANCELLED'],
+  ] as Array<[OrderStatus, OrderStatus]>)('allows %s -> %s', (from, to) => {
+    expect(() => assertManualTransition(from, to)).not.toThrow();
   });
-  it('returns false for illegal edges', () => {
-    expect(isTransitionLegal('COMPLETED', 'PAID')).toBe(false);
-    expect(isTransitionLegal('PAYMENT_FAILED', 'PREPARING')).toBe(false);
+
+  it.each([
+    ['PENDING', 'PAID'],
+    ['PENDING', 'PAYMENT_FAILED'],
+    ['PAYMENT_FAILED', 'PENDING'],
+  ] as Array<[OrderStatus, OrderStatus]>)('rejects payment-only edge %s -> %s', (from, to) => {
+    expect(isTransitionLegal(from, to)).toBe(true);
+    expect(isManualTransitionLegal(from, to)).toBe(false);
+    expect(() => assertManualTransition(from, to)).toThrow(InvalidStateTransitionError);
+  });
+
+  it('rejects edges that are not in the diagram at all', () => {
+    expect(() => assertManualTransition('COMPLETED', 'CANCELLED')).toThrow(InvalidStateTransitionError);
+    expect(() => assertManualTransition('READY', 'PREPARING')).toThrow(InvalidStateTransitionError);
+  });
+
+  it('lists the next statuses a person may choose', () => {
+    expect(nextManualStatuses('PENDING')).toEqual(['CANCELLED']);
+    expect(nextManualStatuses('PAYMENT_FAILED')).toEqual(['CANCELLED']);
+    expect(nextManualStatuses('PAID')).toEqual(['PREPARING', 'CANCELLED']);
+    expect(nextManualStatuses('PREPARING')).toEqual(['READY']);
+    expect(nextManualStatuses('READY')).toEqual(['COMPLETED']);
+    expect(nextManualStatuses('COMPLETED')).toEqual([]);
+    expect(nextManualStatuses('CANCELLED')).toEqual([]);
   });
 });
