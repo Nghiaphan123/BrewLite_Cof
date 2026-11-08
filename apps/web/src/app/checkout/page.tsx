@@ -170,7 +170,7 @@ export default function CheckoutPage() {
 
         if (paymentResult.status === 'PAYMENT_FAILED') {
           setError('Thanh toán thất bại. Giỏ hàng của bạn vẫn được giữ nguyên, bấm xác nhận để thử lại với cùng đơn hàng.');
-          // Giữ đơn để lần sau thanh toán lại chính đơn này (PAYMENT_FAILED → PAID, ADR 0004 D5),
+          // Giữ đơn để lần sau thanh toán lại chính đơn này (PAYMENT_FAILED → PENDING → PAID, PDF §9.1),
           // và tăng số lần thất bại để lần thử tới dùng Idempotency-Key mới.
           const retry = { ...order, failedAttempts: failedAttempts + 1 };
           sessionStorage.setItem(PENDING_QR_KEY, JSON.stringify(retry));

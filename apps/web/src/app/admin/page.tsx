@@ -7,6 +7,7 @@ import { useAuthStore } from '@/store/auth.store';
 import { useLogout } from '@/features/auth/useLogout';
 import { Order, OrderStatus, Promotion, Topping, User } from '@/types';
 import { Spinner } from '@/components/Skeleton';
+import { nextManualStatuses } from '@/features/orders/order-transitions';
 
 type AdminTab = 'toppings' | 'users' | 'promotions' | 'orders';
 
@@ -945,20 +946,24 @@ function AdminDashboard() {
                             <span className="text-xs font-medium text-stone-500">
                               Chuyển trạng thái:
                             </span>
+                            {/* Chỉ cho chọn bước kế tiếp hợp lệ theo sơ đồ PDF §9.1. */}
                             <select
                               value={o.status}
-                              disabled={isUpdating}
+                              disabled={isUpdating || nextManualStatuses(o.status).length === 0}
+                              data-testid={`order-status-select-${o.id}`}
                               onChange={(e) =>
                                 handleUpdateOrderStatus(o.id, e.target.value as OrderStatus)
                               }
                               className="rounded border border-stone-300 bg-stone-50 px-2 py-1 text-xs font-bold text-stone-800 focus:border-emerald-800 focus:outline-none disabled:opacity-50"
                             >
-                              <option value="PENDING">PENDING</option>
-                              <option value="PAID">PAID</option>
-                              <option value="PREPARING">PREPARING</option>
-                              <option value="READY">READY</option>
-                              <option value="COMPLETED">COMPLETED</option>
-                              <option value="CANCELLED">CANCELLED</option>
+                              <option value={o.status} disabled>
+                                {o.status}
+                              </option>
+                              {nextManualStatuses(o.status).map((next) => (
+                                <option key={next} value={next}>
+                                  → {next}
+                                </option>
+                              ))}
                             </select>
                           </div>
                         </div>
