@@ -11,7 +11,7 @@ const MESSAGES_BY_CODE: Record<string, string> = {
   IDEMPOTENCY_KEY_REQUIRED: 'Không thể xử lý thanh toán. Vui lòng thử lại.',
   IDEMPOTENCY_CONFLICT: 'Yêu cầu thanh toán bị trùng. Vui lòng thử lại.',
   ORDER_NOT_FOUND: 'Không tìm thấy đơn hàng.',
-  OUT_OF_STOCK: 'Sản phẩm đã hết hàng.',
+  OUT_OF_STOCK: 'Món hoặc topping trong đơn đã hết hàng.',
   INVALID_STATE_TRANSITION: 'Không thể thực hiện thao tác với trạng thái hiện tại của đơn hàng.',
   PRODUCT_NOT_FOUND: 'Không tìm thấy sản phẩm.',
   TOPPING_NOT_FOUND: 'Không tìm thấy topping.',

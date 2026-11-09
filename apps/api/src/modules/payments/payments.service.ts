@@ -18,7 +18,10 @@
  *    - a PAYMENT_FAILED order is retried through PENDING (PDF §9.1), then
  *      assertTransition(PENDING, PAID | PAYMENT_FAILED)
  *    - on success: decrement stock under optimistic lock (Product.version),
+ *      decrement topping stock (one portion per cup, see topping-usage.ts),
  *      accrue loyalty (floor(total/1000)), update order, create Payment row.
+ *      A drink or a topping without enough stock fails the whole payment with
+ *      409 OUT_OF_STOCK, and nothing is decremented.
  *    - on failure: update order to PAYMENT_FAILED, create Payment row (FAILED),
  *      no stock change, no points.
  *
@@ -44,6 +47,7 @@ import { assertTransition } from '../orders/order-state-machine.js';
 import { hashPaymentRequest } from './payment-hash.js';
 import { PaymentMethod, PaymentStatus } from '../../generated/prisma/enums.js';
 import { loyaltyPointsFor } from './loyalty.js';
+import { toppingUsage } from '../orders/topping-usage.js';
 
 /**
  * What a replayed request answers: the outcome of that attempt. A payment that
@@ -126,7 +130,7 @@ export class PaymentsService {
       return await this.prisma.$transaction(async (tx) => {
         const order = await tx.order.findUnique({
           where: { id: orderId },
-          include: { items: true },
+          include: { items: { include: { toppings: true } } },
         });
 
         if (!order) {
@@ -209,6 +213,32 @@ export class PaymentsService {
                 statusCode: 409,
                 error: 'Conflict',
                 message: `Concurrent update conflict on stock for product ${product.name}`,
+                code: 'OUT_OF_STOCK',
+              });
+            }
+          }
+
+          // Toppings: one portion per cup. The stock check and the decrement
+          // are one conditional UPDATE (stock >= needed), so two payments that
+          // race for the last portion cannot both succeed: Postgres locks the
+          // row, and the second UPDATE re-reads the stock and matches nothing.
+          const usage = toppingUsage(
+            order.items.map((item) => ({
+              qty: item.qty,
+              toppingIds: item.toppings.map((t) => t.toppingId),
+            })),
+          );
+          for (const [toppingId, needed] of usage) {
+            const taken = await tx.topping.updateMany({
+              where: { id: toppingId, stock: { gte: needed } },
+              data: { stock: { decrement: needed } },
+            });
+            if (taken.count === 0) {
+              const topping = await tx.topping.findUnique({ where: { id: toppingId } });
+              throw new ConflictException({
+                statusCode: 409,
+                error: 'Conflict',
+                message: `Topping ${topping?.name ?? toppingId} is out of stock`,
                 code: 'OUT_OF_STOCK',
               });
             }

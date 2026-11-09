@@ -9,7 +9,14 @@ import { useCartStore } from '@/store/cart.store';
 import { useAuthStore } from '@/store/auth.store';
 import { apiClient } from '@/lib/api';
 import { Spinner } from '@/components/Skeleton';
-import { exceedsStock, isOutOfStock, remainingForCart } from '@/features/product/stock';
+import {
+  exceedsStock,
+  isOutOfStock,
+  isToppingSoldOut,
+  remainingForCart,
+  remainingForToppings,
+  shortToppings,
+} from '@/features/product/stock';
 
 const REMOVE_ANIMATION_MS = 220;
 
@@ -156,6 +163,19 @@ export default function CartPage() {
                           : `Chỉ còn ${item.product.stock} ly, vui lòng giảm số lượng.`}
                       </p>
                     )}
+                    {/* Mục 2.2: tồn kho topping lấy từ GET /cart (giỏ đã lưu) hoặc trang chi tiết món. */}
+                    {shortToppings(item, items).map((topping) => (
+                      <p
+                        key={topping.id}
+                        role="alert"
+                        data-testid={`topping-warning-${item.cartItemId}-${topping.id}`}
+                        className="mt-1 text-xs font-medium text-red-600"
+                      >
+                        {isToppingSoldOut(topping)
+                          ? `Topping ${topping.name} đã hết, vui lòng xóa ly này rồi chọn lại.`
+                          : `Topping ${topping.name} chỉ còn ${topping.stock} phần, vui lòng giảm số lượng.`}
+                      </p>
+                    ))}
                   </div>
 
                   <div className="flex items-center justify-between gap-3 sm:justify-end">
@@ -177,7 +197,11 @@ export default function CartPage() {
                         type="button"
                         aria-label="Tăng số lượng"
                         // Mục 5: đã lấy hết số ly còn trong kho (tính chung mọi dòng cùng món) thì khoá nút +.
-                        disabled={remainingForCart(item.product, items) <= 0}
+                        // Mục 2.1: cũng khoá khi một topping của ly này đã hết phần.
+                        disabled={
+                          remainingForCart(item.product, items) <= 0 ||
+                          remainingForToppings(item.toppings, items) <= 0
+                        }
                         onClick={() => updateQty(item.cartItemId, item.qty + 1)}
                         className="h-8 w-8 rounded-full bg-white text-lg font-bold text-[#002C22] transition hover:bg-[#002C22] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#002C22] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-white disabled:hover:text-[#002C22]"
                       >

@@ -5,13 +5,14 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { apiClient } from '@/lib/api';
 import { useAuthStore } from '@/store/auth.store';
 import { useLogout } from '@/features/auth/useLogout';
-import { Order, OrderStatus, Promotion, Topping, User } from '@/types';
+import { Order, OrderStatus, Product, Promotion, Topping, User } from '@/types';
 import { Spinner } from '@/components/Skeleton';
 import { nextManualStatuses } from '@/features/orders/order-transitions';
+import { StockTable } from '@/features/admin/StockTable';
 
-type AdminTab = 'toppings' | 'users' | 'promotions' | 'orders';
+type AdminTab = 'products' | 'toppings' | 'users' | 'promotions' | 'orders';
 
-const ADMIN_TABS: readonly string[] = ['toppings', 'users', 'promotions', 'orders'];
+const ADMIN_TABS: readonly string[] = ['products', 'toppings', 'users', 'promotions', 'orders'];
 
 function isAdminTab(value: string | null | undefined): value is AdminTab {
   return !!value && ADMIN_TABS.includes(value);
@@ -47,7 +48,7 @@ function AdminDashboard() {
 
   // ?tab= trên URL là nguồn chính của tab đang mở; selectedTab chỉ dùng khi URL không có tab hợp lệ.
   // Tính trực tiếp khi render thay vì chép URL vào state bằng useEffect (lint react-hooks/set-state-in-effect).
-  const [selectedTab, setSelectedTab] = useState<AdminTab>('toppings');
+  const [selectedTab, setSelectedTab] = useState<AdminTab>('products');
   const activeTab: AdminTab = isAdminTab(tabFromQuery) ? tabFromQuery : selectedTab;
   // `loading` được tính ra, không lưu thành state riêng: đang tải khi tab đang mở chưa tải xong
   // lần nào, hoặc khi admin bấm "Làm mới dữ liệu". Nhờ vậy effect tải dữ liệu không phải gọi
@@ -59,14 +60,11 @@ function AdminDashboard() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // Tab Data States
+  const [products, setProducts] = useState<Product[]>([]);
   const [toppings, setToppings] = useState<Topping[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
-
-  // Topping editing
-  const [stockEdits, setStockEdits] = useState<Record<string, number>>({});
-  const [savingStockId, setSavingStockId] = useState<string | null>(null);
 
   // Promotion modal / form
   const [isPromoModalOpen, setIsPromoModalOpen] = useState(false);
@@ -93,15 +91,10 @@ function AdminDashboard() {
   // API đã trả kết quả. Đó là cách effect được phép cập nhật state theo react-hooks/set-state-in-effect.
   const fetchTabData = useCallback((tab: AdminTab): Promise<void> => {
     const request: Promise<void> =
-      tab === 'toppings'
-        ? apiClient.getAdminToppings().then((data) => {
-            setToppings(data);
-            const edits: Record<string, number> = {};
-            data.forEach((t) => {
-              edits[t.id] = t.stock ?? 0;
-            });
-            setStockEdits(edits);
-          })
+      tab === 'products'
+        ? apiClient.getAdminProducts().then(setProducts)
+        : tab === 'toppings'
+        ? apiClient.getAdminToppings().then(setToppings)
         : tab === 'users'
           ? apiClient.getAdminUsers().then(setUsers)
           : tab === 'promotions'
@@ -144,20 +137,31 @@ function AdminDashboard() {
     setTimeout(() => setSuccessMessage(null), 3000);
   };
 
-  // -------------------------------- Handlers: Topping Stock
-  const handleUpdateStock = async (id: string) => {
-    const newStock = stockEdits[id];
-    if (newStock === undefined || newStock < 0) return;
-
-    setSavingStockId(id);
+  // -------------------------------- Handlers: Product & Topping Stock
+  // StockTable gọi các hàm này khi admin bấm "Lưu"; trả về true khi đã lưu được.
+  const handleUpdateProductStock = async (id: string, stock: number): Promise<boolean> => {
     try {
-      const updated = await apiClient.updateAdminToppingStock(id, newStock);
-      setToppings((prev) => prev.map((t) => (t.id === id ? { ...t, stock: updated.stock } : t)));
-      showSuccess(`Đã cập nhật tồn kho cho "${updated.name}": ${updated.stock}`);
+      const updated = await apiClient.updateAdminProductStock(id, stock);
+      setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, stock: updated.stock } : p)));
+      setError(null);
+      showSuccess(`Đã cập nhật tồn kho món "${updated.name}": ${updated.stock} ly`);
+      return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Cập nhật tồn kho thất bại');
-    } finally {
-      setSavingStockId(null);
+      return false;
+    }
+  };
+
+  const handleUpdateToppingStock = async (id: string, stock: number): Promise<boolean> => {
+    try {
+      const updated = await apiClient.updateAdminToppingStock(id, stock);
+      setToppings((prev) => prev.map((t) => (t.id === id ? { ...t, stock: updated.stock } : t)));
+      setError(null);
+      showSuccess(`Đã cập nhật tồn kho topping "${updated.name}": ${updated.stock} phần`);
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Cập nhật tồn kho thất bại');
+      return false;
     }
   };
 
@@ -301,8 +305,19 @@ function AdminDashboard() {
             </div>
           </div>
 
-          {/* Tab Navigation: 4 Tabs */}
+          {/* Tab Navigation: 5 Tabs */}
           <nav className="mt-6 flex gap-2 border-b border-stone-200 pb-px overflow-x-auto text-sm font-semibold">
+            <button
+              onClick={() => switchTab('products')}
+              className={`flex items-center gap-2 border-b-2 px-4 py-2.5 transition whitespace-nowrap ${
+                activeTab === 'products'
+                  ? 'border-emerald-800 text-emerald-900'
+                  : 'border-transparent text-stone-600 hover:border-stone-300 hover:text-stone-900'
+              }`}
+            >
+              <span>☕</span> Món & Tồn kho
+            </button>
+
             <button
               onClick={() => switchTab('toppings')}
               className={`flex items-center gap-2 border-b-2 px-4 py-2.5 transition whitespace-nowrap ${
@@ -365,148 +380,53 @@ function AdminDashboard() {
         )}
 
         {/* =========================================================================
-            TAB 1: TOPPING & TỒN KHO
+            TAB 1: MÓN & TỒN KHO (admin sửa được số ly còn của từng món)
            ========================================================================= */}
-        {activeTab === 'toppings' && (
+        {activeTab === 'products' && (
           <div className="space-y-4">
-            <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-              <div>
-                <h2 className="text-lg font-bold text-stone-900">Danh sách Topping & Tồn kho</h2>
-                <p className="text-xs text-stone-500">
-                  Theo dõi số lượng topping còn lại trong kho và cập nhật số lượng trực tiếp.
-                </p>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  placeholder="Tìm topping..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs text-stone-800 placeholder:text-stone-400 focus:border-emerald-700 focus:outline-none"
-                />
-              </div>
+            <div>
+              <h2 className="text-lg font-bold text-stone-900">Danh sách Món & Tồn kho</h2>
+              <p className="text-xs text-stone-500">
+                Số ly còn bán được của từng món. Kho chỉ bị trừ khi khách thanh toán thành công.
+              </p>
             </div>
-
-            {loading ? (
-              <div className="flex h-48 items-center justify-center">
-                <Spinner />
-              </div>
-            ) : toppings.length === 0 ? (
-              <div className="rounded-xl border border-stone-200 bg-white p-8 text-center text-stone-500">
-                Chưa có topping nào trong hệ thống.
-              </div>
-            ) : (
-              <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-xs">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm text-stone-700">
-                    <thead className="border-b border-stone-200 bg-stone-50 text-xs font-bold uppercase tracking-wider text-stone-600">
-                      <tr>
-                        <th className="px-5 py-3.5">Topping</th>
-                        <th className="px-5 py-3.5">Đơn giá</th>
-                        <th className="px-5 py-3.5">Số lượng tồn kho</th>
-                        <th className="px-5 py-3.5">Trạng thái kho</th>
-                        <th className="px-5 py-3.5 text-right">Điều chỉnh tồn kho</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-stone-100">
-                      {toppings
-                        .filter((t) => t.name.toLowerCase().includes(searchTerm.toLowerCase()))
-                        .map((t) => {
-                          const stock = t.stock ?? 0;
-                          const currentEditStock = stockEdits[t.id] ?? stock;
-                          const isSaving = savingStockId === t.id;
-
-                          return (
-                            <tr key={t.id} className="hover:bg-stone-50/70 transition">
-                              <td className="px-5 py-4 font-semibold text-stone-900">
-                                {t.name}
-                              </td>
-                              <td className="px-5 py-4 font-medium text-stone-800">
-                                {formatVND(t.price)}
-                              </td>
-                              <td className="px-5 py-4">
-                                <span
-                                  className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${
-                                    stock > 20
-                                      ? 'bg-emerald-100 text-emerald-800'
-                                      : stock > 5
-                                      ? 'bg-amber-100 text-amber-800'
-                                      : 'bg-red-100 text-red-800'
-                                  }`}
-                                >
-                                  {stock} phần còn lại
-                                </span>
-                              </td>
-                              <td className="px-5 py-4">
-                                {stock === 0 ? (
-                                  <span className="text-xs font-semibold text-red-600">Hết hàng</span>
-                                ) : stock <= 10 ? (
-                                  <span className="text-xs font-semibold text-amber-600">Sắp hết</span>
-                                ) : (
-                                  <span className="text-xs font-semibold text-emerald-600">Còn hàng</span>
-                                )}
-                              </td>
-                              <td className="px-5 py-4 text-right">
-                                <div className="inline-flex items-center gap-1.5">
-                                  <button
-                                    onClick={() =>
-                                      setStockEdits((prev) => ({
-                                        ...prev,
-                                        [t.id]: Math.max(0, (prev[t.id] ?? stock) - 10),
-                                      }))
-                                    }
-                                    title="-10"
-                                    className="rounded border border-stone-200 bg-stone-100 px-2 py-1 text-xs font-bold text-stone-700 hover:bg-stone-200"
-                                  >
-                                    -10
-                                  </button>
-                                  <input
-                                    type="number"
-                                    min={0}
-                                    value={currentEditStock}
-                                    onChange={(e) =>
-                                      setStockEdits((prev) => ({
-                                        ...prev,
-                                        [t.id]: Math.max(0, parseInt(e.target.value, 10) || 0),
-                                      }))
-                                    }
-                                    className="w-20 rounded border border-stone-300 px-2 py-1 text-center text-xs font-bold text-stone-800 focus:border-emerald-800 focus:outline-none"
-                                  />
-                                  <button
-                                    onClick={() =>
-                                      setStockEdits((prev) => ({
-                                        ...prev,
-                                        [t.id]: (prev[t.id] ?? stock) + 10,
-                                      }))
-                                    }
-                                    title="+10"
-                                    className="rounded border border-stone-200 bg-stone-100 px-2 py-1 text-xs font-bold text-stone-700 hover:bg-stone-200"
-                                  >
-                                    +10
-                                  </button>
-                                  <button
-                                    onClick={() => handleUpdateStock(t.id)}
-                                    disabled={isSaving || currentEditStock === stock}
-                                    className="rounded bg-emerald-800 px-3 py-1 text-xs font-bold text-white transition hover:bg-emerald-900 disabled:opacity-40"
-                                  >
-                                    {isSaving ? '...' : 'Lưu'}
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
+            <StockTable
+              itemLabel="Món"
+              unit="ly"
+              searchPlaceholder="Tìm món..."
+              emptyText="Chưa có món nào trong hệ thống."
+              rows={products}
+              loading={loading}
+              onSave={handleUpdateProductStock}
+            />
           </div>
         )}
 
         {/* =========================================================================
-            TAB 2: NGƯỜI DÙNG / USERS
+            TAB 2: TOPPING & TỒN KHO
+           ========================================================================= */}
+        {activeTab === 'toppings' && (
+          <div className="space-y-4">
+            <div>
+              <h2 className="text-lg font-bold text-stone-900">Danh sách Topping & Tồn kho</h2>
+              <p className="text-xs text-stone-500">
+                Mỗi ly có chọn topping dùng 1 phần topping đó, trừ khi khách thanh toán thành công.
+              </p>
+            </div>
+            <StockTable
+              itemLabel="Topping"
+              unit="phần"
+              searchPlaceholder="Tìm topping..."
+              emptyText="Chưa có topping nào trong hệ thống."
+              rows={toppings}
+              loading={loading}
+              onSave={handleUpdateToppingStock}
+            />
+          </div>
+        )}
+
+        {/* =========================================================================
+            TAB 3: NGƯỜI DÙNG / USERS
            ========================================================================= */}
         {activeTab === 'users' && (
           <div className="space-y-4">
@@ -600,7 +520,7 @@ function AdminDashboard() {
         )}
 
         {/* =========================================================================
-            TAB 3: KHUYẾN MÃI / PROMOTION
+            TAB 4: KHUYẾN MÃI / PROMOTION
            ========================================================================= */}
         {activeTab === 'promotions' && (
           <div className="space-y-4">
@@ -858,7 +778,7 @@ function AdminDashboard() {
         )}
 
         {/* =========================================================================
-            TAB 4: ĐƠN HÀNG / ORDERS
+            TAB 5: ĐƠN HÀNG / ORDERS
            ========================================================================= */}
         {activeTab === 'orders' && (
           <div className="space-y-4">

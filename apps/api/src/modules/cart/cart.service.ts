@@ -8,6 +8,9 @@
  * Contract (api-contract.md §11.1):
  * - get: 200 { items, promoCode }; a user with no saved cart gets an empty one.
  * - replace: 200 with the same shape. Unknown product is 404 PRODUCT_NOT_FOUND.
+ * - Each line carries the current stock of its drink (product.stock) and of
+ *   each topping (toppings[].stock), so the web app can warn about a sold-out
+ *   item in a saved cart. The payment is still the step that enforces stock.
  *
  * Pricing:
  * - Nothing here is a price the customer pays. POST /orders computes the total
@@ -100,7 +103,7 @@ export class CartService {
     const toppingIds = [...new Set((cart?.items ?? []).flatMap((item) => item.toppingIds))];
     const toppings = await this.prisma.topping.findMany({
       where: { id: { in: toppingIds }, active: true },
-      select: { id: true, name: true, price: true },
+      select: { id: true, name: true, price: true, stock: true },
     });
     const toppingById = new Map(toppings.map((topping) => [topping.id, topping]));
 
@@ -119,6 +122,9 @@ export class CartService {
             name: item.product.name,
             price: item.product.price,
             imageUrl: toAbsoluteImageUrl(item.product.imageUrl),
+            // Stock is read live, so a cart saved days ago still shows that a
+            // drink or a topping has run out before the customer pays.
+            stock: item.product.stock,
           },
         };
       }),
