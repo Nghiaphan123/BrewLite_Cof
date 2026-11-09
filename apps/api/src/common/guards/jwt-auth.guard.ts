@@ -21,7 +21,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { AuthService } from '../../modules/auth/auth.service.js';
+import { AuthService, accountBlocked } from '../../modules/auth/auth.service.js';
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
@@ -76,6 +76,12 @@ export class JwtAuthGuard implements CanActivate {
         message: 'User not found',
         code: 'AUTH_INVALID',
       });
+    }
+
+    // A token issued before the admin blocked the account stops working at once,
+    // not only when it expires.
+    if (user.blocked) {
+      throw accountBlocked();
     }
 
     request.user = {

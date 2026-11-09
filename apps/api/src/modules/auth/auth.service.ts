@@ -15,6 +15,7 @@ import {
   Injectable,
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   NotFoundException,
   UnauthorizedException,
   OnModuleInit,
@@ -27,6 +28,19 @@ type JwtExpiry = Exclude<NonNullable<JwtSignOptions['expiresIn']>, number>;
 
 export function jwtExpiresIn(): JwtExpiry {
   return (process.env.JWT_EXPIRES_IN ?? '1d') as JwtExpiry;
+}
+
+/**
+ * 403 ACCOUNT_BLOCKED: the account exists and the password is right, but an
+ * admin blocked it. Used at login and by JwtAuthGuard for tokens issued earlier.
+ */
+export function accountBlocked(): ForbiddenException {
+  return new ForbiddenException({
+    statusCode: 403,
+    error: 'Forbidden',
+    message: 'This account has been blocked',
+    code: 'ACCOUNT_BLOCKED',
+  });
 }
 
 @Injectable()
@@ -166,6 +180,9 @@ export class AuthService implements OnModuleInit {
     const isValid = await bcrypt.compare(password, user.passwordHash);
     if (!isValid) return invalidCredentials();
 
+    // Checked after the password, so a wrong password never reveals that an account is blocked.
+    if (user.blocked) throw accountBlocked();
+
     const payload = { sub: user.id, email: user.email, role: user.role };
     const accessToken = await this.jwt.signAsync(payload, {
       secret: this.jwtSecret,
@@ -215,6 +232,7 @@ export class AuthService implements OnModuleInit {
       name: user.name,
       email: user.email,
       role: user.role,
+      blocked: user.blocked,
       loyaltyPoints: user.loyaltyPoints,
     };
   }

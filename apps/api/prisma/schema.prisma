@@ -69,6 +69,8 @@ model User {
   email         String   @unique
   passwordHash  String   @map("password_hash")
   role          String   @default("CUSTOMER") @map("role")
+  /// Set by an admin. A blocked user cannot log in, and their existing tokens stop working.
+  blocked       Boolean  @default(false)
   /// Running balance; changed only together with a LoyaltyTransaction row.
   loyaltyPoints Int      @default(0) @map("loyalty_points")
   createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
