@@ -1,5 +1,6 @@
 import { Order, OrderStatus, Product, Promotion, SizeOption, Topping, User } from '@/types';
 import { ApiError, apiFetch, getApiErrorMessage } from '@/lib/api-errors';
+import { useAuthStore } from '@/store/auth.store';
 
 const configuredApiUrl = (
   process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1'
@@ -22,6 +23,10 @@ function getAuthHeaders(): HeadersInit {
 async function handleResponse<T>(res: Response): Promise<T> {
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
+    // Admin vừa khoá tài khoản: token cũ không còn dùng được, nên xoá phiên đăng nhập trên máy.
+    if (data?.code === 'ACCOUNT_BLOCKED') {
+      useAuthStore.getState().logout();
+    }
     throw new ApiError(getApiErrorMessage(res.status, data), res.status);
   }
   // Hỗ trợ cả trường hợp backend trả trực tiếp data hoặc bọc trong { data: ... }
@@ -256,6 +261,33 @@ export const apiClient = {
       body: JSON.stringify({ stock }),
     });
     return handleResponse<Topping>(res);
+  },
+
+  async updateAdminToppingPrice(id: string, price: number): Promise<Topping> {
+    const res = await apiFetch(`${API_BASE_URL}/admin/toppings/${id}/price`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ price }),
+    });
+    return handleResponse<Topping>(res);
+  },
+
+  async setAdminUserBlocked(id: string, blocked: boolean): Promise<User> {
+    const res = await apiFetch(`${API_BASE_URL}/admin/users/${id}/block`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ blocked }),
+    });
+    return handleResponse<User>(res);
+  },
+
+  async setAdminPromotionActive(id: string, active: boolean): Promise<Promotion> {
+    const res = await apiFetch(`${API_BASE_URL}/admin/promotions/${id}/active`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ active }),
+    });
+    return handleResponse<Promotion>(res);
   },
 
   async getAdminUsers(): Promise<User[]> {

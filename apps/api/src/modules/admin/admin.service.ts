@@ -1,7 +1,9 @@
 /**
  * AdminService — Business logic for Admin operations:
  * - Products (view drink stock, update drink stock)
- * - Toppings (view stock, update stock)
+ * - Toppings (view stock, update stock, update price)
+ * - Users: block / open an account
+ * - Promotions: cancel / turn back on a code
  * - Users (view all users)
  * - Promotions (view promotions, add new promo code)
  * - Orders (view order history across all users)
@@ -104,6 +106,31 @@ export class AdminService {
     return { ...updated, imageUrl: toAbsoluteImageUrl(updated.imageUrl) };
   }
 
+  /**
+   * Sets the price of one topping portion. New orders use it at once (POST /orders
+   * reads topping prices from the database). Past orders keep the price they were
+   * sold at, because order_item_toppings stores a price snapshot.
+   */
+  async updateToppingPrice(id: string, price: number) {
+    const existing = UUID_PATTERN.test(id)
+      ? await this.prisma.topping.findUnique({ where: { id }, select: { id: true } })
+      : null;
+    if (!existing) {
+      throw new NotFoundException({
+        statusCode: 404,
+        error: 'Not Found',
+        message: 'Topping not found',
+        code: 'TOPPING_NOT_FOUND',
+      });
+    }
+
+    return this.prisma.topping.update({
+      where: { id },
+      data: { price },
+      select: { id: true, name: true, price: true, stock: true, active: true },
+    });
+  }
+
   // -------------------------------------------------- Users
   async listUsers() {
     return this.prisma.user.findMany({
@@ -113,12 +140,46 @@ export class AdminService {
         name: true,
         email: true,
         role: true,
+        blocked: true,
         loyaltyPoints: true,
         createdAt: true,
         _count: {
           select: { orders: true },
         },
       },
+    });
+  }
+
+  /**
+   * Blocks or opens an account. A blocked user cannot log in (403 ACCOUNT_BLOCKED),
+   * and JwtAuthGuard rejects the tokens they already hold. Admin accounts cannot be
+   * blocked here, so an admin can never lock themselves (or every admin) out.
+   */
+  async setUserBlocked(id: string, blocked: boolean) {
+    const user = UUID_PATTERN.test(id)
+      ? await this.prisma.user.findUnique({ where: { id }, select: { role: true } })
+      : null;
+    if (!user) {
+      throw new NotFoundException({
+        statusCode: 404,
+        error: 'Not Found',
+        message: 'User not found',
+        code: 'USER_NOT_FOUND',
+      });
+    }
+    if (user.role === 'ADMIN') {
+      throw new ConflictException({
+        statusCode: 409,
+        error: 'Conflict',
+        message: 'An admin account cannot be blocked',
+        code: 'CANNOT_BLOCK_ADMIN',
+      });
+    }
+
+    return this.prisma.user.update({
+      where: { id },
+      data: { blocked },
+      select: { id: true, name: true, email: true, role: true, blocked: true },
     });
   }
 
@@ -161,6 +222,27 @@ export class AdminService {
         usedCount: 0,
       },
     });
+  }
+
+  /**
+   * Cancels a promotion code (active = false) or turns it back on. A cancelled
+   * code is refused for new orders and no longer previews in the cart; orders that
+   * already used it keep their discount (it is stored on the order).
+   */
+  async setPromotionActive(id: string, active: boolean) {
+    const existing = UUID_PATTERN.test(id)
+      ? await this.prisma.promotion.findUnique({ where: { id }, select: { id: true } })
+      : null;
+    if (!existing) {
+      throw new NotFoundException({
+        statusCode: 404,
+        error: 'Not Found',
+        message: 'Promotion not found',
+        code: 'PROMOTION_NOT_FOUND',
+      });
+    }
+
+    return this.prisma.promotion.update({ where: { id }, data: { active } });
   }
 
   // -------------------------------------------------- Orders

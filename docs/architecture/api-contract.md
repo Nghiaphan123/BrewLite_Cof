@@ -36,6 +36,7 @@ Endpoints in the assignment (PDF §12.1): `GET /products`, `GET /products/:id`, 
 | `GET`  | `/cart`          | **JWT** | `200 Cart` / `401`                             | §11.1     |
 | `PUT`  | `/cart`          | **JWT** | `200 Cart` / `400` / `401` / `404`             | §11.1     |
 | `GET`/`PATCH` | `/admin/products`, `/admin/toppings` (stock) | **Admin** | `200` / `400` / `403` / `404` | §11.2     |
+| `PATCH` | `/admin/users/:id/block`, `/admin/promotions/:id/active`, `/admin/toppings/:id/price` | **Admin** | `200` / `400` / `403` / `404` / `409` | §11.3 |
 
 `/health`, `GET /products`, `GET /products/:id`, `POST /auth/register`, and `POST /auth/login` are public. User profile and password changes, orders, payments, and the saved cart require JWT.
 
@@ -198,6 +199,11 @@ No token is returned here. The client calls `POST /auth/login` after register (`
 **Response `401` (C3):**
 ```json
 { "statusCode": 401, "error": "Unauthorized", "message": "Invalid credentials", "code": "AUTH_INVALID" }
+```
+
+**Response `403`** when an admin has blocked the account (§11.3). It is returned only after the password is checked, so a wrong password still answers `401`:
+```json
+{ "statusCode": 403, "error": "Forbidden", "message": "This account has been blocked", "code": "ACCOUNT_BLOCKED" }
 ```
 
 ## 7.1. `GET /api/v1/auth/me`
@@ -496,6 +502,24 @@ The current password must be verified before storing a bcrypt hash of the new pa
 - Setting a drink's stock also increments `Product.version`, so a payment that read the old stock cannot overwrite the new value (ADR 0004 D1).
 
 **Errors:** `400` validation (negative, non-integer); `401`; `403` not an admin; `404` `PRODUCT_NOT_FOUND` / `TOPPING_NOT_FOUND` for an unknown or malformed id.
+
+## 11.3. Admin management endpoints
+
+**Auth:** JWT with role `ADMIN` (C4); other users get `403`.
+
+| Method  | Path                          | Body                  | Success                                         |
+| ------- | ----------------------------- | --------------------- | ----------------------------------------------- |
+| `GET`   | `/admin/users`                | —                     | `200 [{ id, name, email, role, blocked, loyaltyPoints, createdAt, _count }]` |
+| `PATCH` | `/admin/users/:id/block`      | `{ "blocked": true }` | `200 { id, name, email, role, blocked }`        |
+| `PATCH` | `/admin/promotions/:id/active` | `{ "active": false }` | `200 Promotion`                                |
+| `PATCH` | `/admin/toppings/:id/price`   | `{ "price": 7000 }`   | `200 { id, name, price, stock, active }`        |
+
+**Rules:**
+- **Block:** a blocked user gets `403 ACCOUNT_BLOCKED` at login (§7), and `JwtAuthGuard` rejects tokens they already hold with the same error, so the block takes effect at once. `blocked: false` opens the account again. An `ADMIN` account cannot be blocked (`409 CANNOT_BLOCK_ADMIN`), so an admin cannot lock themselves out.
+- **Cancel a promotion:** `active: false` cancels the code; new orders using it get `400 PROMO_INACTIVE` and the cart preview returns `promotion: null`. Orders that already used it keep their discount. `active: true` turns it back on.
+- **Topping price:** whole VND, `0..100000`. New orders use it at once; past orders keep the price stored in `order_item_toppings.unit_price`.
+
+**Errors:** `400` validation; `401`; `403` not an admin; `404` `USER_NOT_FOUND` / `PROMOTION_NOT_FOUND` / `TOPPING_NOT_FOUND`; `409` `CANNOT_BLOCK_ADMIN`.
 
 ## 12. Reserved endpoints (Task 10, not Phase 1)
 
