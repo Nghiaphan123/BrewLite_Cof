@@ -81,6 +81,10 @@ function AdminDashboard() {
   // Order status changing
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
 
+  // Khoá / mở tài khoản và huỷ / kích hoạt lại mã khuyến mãi: id của dòng đang gửi yêu cầu.
+  const [togglingUserId, setTogglingUserId] = useState<string | null>(null);
+  const [togglingPromoId, setTogglingPromoId] = useState<string | null>(null);
+
   // Search filter
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -162,6 +166,62 @@ function AdminDashboard() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Cập nhật tồn kho thất bại');
       return false;
+    }
+  };
+
+  // -------------------------------- Handlers: Topping Price
+  // Đơn mới dùng giá mới ngay; đơn cũ giữ giá lúc bán (API lưu giá trong từng đơn).
+  const handleUpdateToppingPrice = async (id: string, price: number): Promise<boolean> => {
+    try {
+      const updated = await apiClient.updateAdminToppingPrice(id, price);
+      setToppings((prev) => prev.map((t) => (t.id === id ? { ...t, price: updated.price } : t)));
+      setError(null);
+      showSuccess(`Đã đổi giá topping "${updated.name}": ${formatVND(updated.price)}`);
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Đổi giá topping thất bại');
+      return false;
+    }
+  };
+
+  // -------------------------------- Handlers: Block / Open User
+  const handleToggleUserBlocked = async (target: User) => {
+    const blocked = !target.blocked;
+    const label = target.name || target.email;
+    const question = blocked
+      ? `Khoá tài khoản "${label}"? Người này sẽ bị đăng xuất và không đăng nhập được nữa.`
+      : `Mở khoá tài khoản "${label}"?`;
+    if (!window.confirm(question)) return;
+
+    setTogglingUserId(target.id);
+    try {
+      const updated = await apiClient.setAdminUserBlocked(target.id, blocked);
+      setUsers((prev) => prev.map((u) => (u.id === target.id ? { ...u, blocked: updated.blocked } : u)));
+      setError(null);
+      showSuccess(blocked ? `Đã khoá tài khoản ${label}` : `Đã mở khoá tài khoản ${label}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Không thể đổi trạng thái tài khoản');
+    } finally {
+      setTogglingUserId(null);
+    }
+  };
+
+  // -------------------------------- Handlers: Cancel / Reactivate Promotion
+  const handleTogglePromotionActive = async (promo: Promotion) => {
+    if (!promo.id) return;
+    const active = promo.active === false;
+    if (!active && !window.confirm(`Huỷ mã ${promo.code}? Khách sẽ không dùng được mã này cho đơn mới.`)) return;
+
+    setTogglingPromoId(promo.id);
+    try {
+      const updated = await apiClient.setAdminPromotionActive(promo.id, active);
+      setPromotions((prev) => prev.map((p) => (p.id === promo.id ? { ...p, active: updated.active } : p)));
+      setError(null);
+      showSuccess(active ? `Đã kích hoạt lại mã ${promo.code}` : `Đã huỷ mã ${promo.code}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Không thể đổi trạng thái mã khuyến mãi');
+    } finally {
+      setTogglingPromoId(null);
     }
   };
 
@@ -411,6 +471,7 @@ function AdminDashboard() {
               <h2 className="text-lg font-bold text-stone-900">Danh sách Topping & Tồn kho</h2>
               <p className="text-xs text-stone-500">
                 Mỗi ly có chọn topping dùng 1 phần topping đó, trừ khi khách thanh toán thành công.
+                Đổi giá chỉ áp dụng cho đơn mới; đơn đã đặt giữ giá cũ.
               </p>
             </div>
             <StockTable
@@ -421,6 +482,7 @@ function AdminDashboard() {
               rows={toppings}
               loading={loading}
               onSave={handleUpdateToppingStock}
+              onSavePrice={handleUpdateToppingPrice}
             />
           </div>
         )}
@@ -469,6 +531,8 @@ function AdminDashboard() {
                         <th className="px-5 py-3.5">Điểm tích lũy</th>
                         <th className="px-5 py-3.5">Số đơn đã đặt</th>
                         <th className="px-5 py-3.5">Ngày tham gia</th>
+                        <th className="px-5 py-3.5">Trạng thái</th>
+                        <th className="px-5 py-3.5 text-right">Thao tác</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-stone-100">
@@ -485,13 +549,13 @@ function AdminDashboard() {
                                 <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-100 text-xs font-bold text-emerald-800">
                                   {(u.name || u.email).charAt(0).toUpperCase()}
                                 </span>
-                                <span>{u.name || 'Khách hàng'}</span>
+                                <span className="whitespace-nowrap">{u.name || 'Khách hàng'}</span>
                               </div>
                             </td>
                             <td className="px-5 py-4 text-stone-600">{u.email}</td>
                             <td className="px-5 py-4">
                               <span
-                                className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${
+                                className={`inline-flex items-center whitespace-nowrap px-2 py-0.5 rounded text-xs font-bold ${
                                   u.role === 'ADMIN'
                                     ? 'bg-amber-100 text-amber-900 border border-amber-300'
                                     : 'bg-stone-100 text-stone-700'
@@ -508,6 +572,34 @@ function AdminDashboard() {
                             </td>
                             <td className="px-5 py-4 text-xs text-stone-500">
                               {formatDate(u.createdAt)}
+                            </td>
+                            <td className="px-5 py-4">
+                              <span
+                                data-testid={`user-status-${u.id}`}
+                                className={`inline-flex items-center whitespace-nowrap rounded px-2 py-0.5 text-xs font-bold ${
+                                  u.blocked ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800'
+                                }`}
+                              >
+                                {u.blocked ? 'Đã khoá' : 'Hoạt động'}
+                              </span>
+                            </td>
+                            <td className="px-5 py-4 text-right">
+                              {/* API không cho khoá tài khoản quản trị viên (kể cả chính mình). */}
+                              {u.role !== 'ADMIN' && (
+                                <button
+                                  type="button"
+                                  data-testid={`user-toggle-${u.id}`}
+                                  onClick={() => void handleToggleUserBlocked(u)}
+                                  disabled={togglingUserId === u.id}
+                                  className={`whitespace-nowrap rounded px-3 py-1 text-xs font-bold transition disabled:opacity-40 ${
+                                    u.blocked
+                                      ? 'border border-emerald-800 text-emerald-800 hover:bg-emerald-50'
+                                      : 'bg-red-700 text-white hover:bg-red-800'
+                                  }`}
+                                >
+                                  {togglingUserId === u.id ? '...' : u.blocked ? 'Mở khoá' : 'Khoá'}
+                                </button>
+                              )}
                             </td>
                           </tr>
                         ))}
@@ -577,6 +669,7 @@ function AdminDashboard() {
                         <th className="px-5 py-3.5">Đã dùng / Giới hạn</th>
                         <th className="px-5 py-3.5">Hiệu lực</th>
                         <th className="px-5 py-3.5">Trạng thái</th>
+                        <th className="px-5 py-3.5 text-right">Thao tác</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-stone-100">
@@ -607,14 +700,31 @@ function AdminDashboard() {
                             </td>
                             <td className="px-5 py-4">
                               <span
-                                className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${
+                                className={`inline-flex items-center whitespace-nowrap px-2 py-0.5 rounded text-xs font-bold ${
                                   p.active !== false
                                     ? 'bg-emerald-100 text-emerald-800'
                                     : 'bg-stone-100 text-stone-500'
                                 }`}
                               >
-                                {p.active !== false ? 'Hoạt động' : 'Đã tắt'}
+                                {p.active !== false ? 'Hoạt động' : 'Đã huỷ'}
                               </span>
+                            </td>
+                            <td className="px-5 py-4 text-right">
+                              {p.id && (
+                                <button
+                                  type="button"
+                                  data-testid={`promo-toggle-${p.code}`}
+                                  onClick={() => void handleTogglePromotionActive(p)}
+                                  disabled={togglingPromoId === p.id}
+                                  className={`whitespace-nowrap rounded px-3 py-1 text-xs font-bold transition disabled:opacity-40 ${
+                                    p.active !== false
+                                      ? 'bg-red-700 text-white hover:bg-red-800'
+                                      : 'border border-emerald-800 text-emerald-800 hover:bg-emerald-50'
+                                  }`}
+                                >
+                                  {togglingPromoId === p.id ? '...' : p.active !== false ? 'Huỷ mã' : 'Kích hoạt lại'}
+                                </button>
+                              )}
                             </td>
                           </tr>
                         ))}

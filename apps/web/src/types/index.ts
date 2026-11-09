@@ -48,6 +48,8 @@ export interface User {
   name?: string;
   email: string;
   role?: 'ADMIN' | 'CUSTOMER' | string;
+  /** Chỉ có trong danh sách người dùng của admin: true khi tài khoản đang bị khoá. */
+  blocked?: boolean;
   loyaltyPoints?: number;
   createdAt?: string;
   _count?: {

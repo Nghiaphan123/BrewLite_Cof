@@ -1,6 +1,9 @@
 /** Số tồn kho lớn nhất admin được nhập, giống giới hạn của API (`@Max(100000)` trong DTO món). */
 export const MAX_ADMIN_STOCK = 100000;
 
+/** Giá topping lớn nhất admin được nhập (VND), giống `@Max(100000)` trong DTO giá topping. */
+export const MAX_ADMIN_PRICE = 100000;
+
 /** Mức tồn kho hiển thị trên trang admin. */
 export type StockLevel = 'out' | 'low' | 'ok';
 

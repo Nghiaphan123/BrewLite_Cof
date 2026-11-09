@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import { useState } from 'react';
 import { Spinner } from '@/components/Skeleton';
-import { stockLevel, MAX_ADMIN_STOCK } from './stock-level';
+import { stockLevel, MAX_ADMIN_PRICE, MAX_ADMIN_STOCK } from './stock-level';
 
 export interface StockRow {
   id: string;
@@ -24,6 +24,8 @@ interface StockTableProps {
   loading: boolean;
   /** Lưu số tồn kho mới. Trả về true khi lưu được, để bảng xoá số đang sửa của dòng đó. */
   onSave: (id: string, stock: number) => Promise<boolean>;
+  /** Có thì cột "Đơn giá" sửa được (dùng cho topping). Trả về true khi lưu được. */
+  onSavePrice?: (id: string, price: number) => Promise<boolean>;
 }
 
 const formatVND = (value: number) =>
@@ -31,6 +33,9 @@ const formatVND = (value: number) =>
 
 /** Giữ số trong khoảng 0..MAX_ADMIN_STOCK; ô trống hoặc chữ thành 0. */
 const clampStock = (value: number) => Math.min(MAX_ADMIN_STOCK, Math.max(0, Math.trunc(value) || 0));
+
+/** Giữ giá trong khoảng 0..MAX_ADMIN_PRICE (giống `@Max(100000)` của API). */
+const clampPrice = (value: number) => Math.min(MAX_ADMIN_PRICE, Math.max(0, Math.trunc(value) || 0));
 
 const LEVEL_BADGE = {
   ok: 'bg-emerald-100 text-emerald-800',
@@ -48,10 +53,37 @@ const LEVEL_TEXT = {
  * Bảng tồn kho dùng chung cho tab "Món" và tab "Topping" của trang admin.
  * Admin gõ số mới (hoặc bấm -10 / +10) rồi bấm "Lưu"; số chỉ đổi trên server khi bấm Lưu.
  */
-export function StockTable({ itemLabel, unit, searchPlaceholder, emptyText, rows, loading, onSave }: StockTableProps) {
+export function StockTable({
+  itemLabel,
+  unit,
+  searchPlaceholder,
+  emptyText,
+  rows,
+  loading,
+  onSave,
+  onSavePrice,
+}: StockTableProps) {
   const [edits, setEdits] = useState<Record<string, number>>({});
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [priceEdits, setPriceEdits] = useState<Record<string, number>>({});
+  const [savingPriceId, setSavingPriceId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+
+  const savePrice = async (id: string, value: number) => {
+    if (!onSavePrice) return;
+    setSavingPriceId(id);
+    try {
+      if (await onSavePrice(id, value)) {
+        setPriceEdits((prev) => {
+          const next = { ...prev };
+          delete next[id];
+          return next;
+        });
+      }
+    } finally {
+      setSavingPriceId(null);
+    }
+  };
 
   const setEdit = (id: string, value: number) => setEdits((prev) => ({ ...prev, [id]: clampStock(value) }));
 
@@ -122,7 +154,35 @@ export function StockTable({ itemLabel, unit, searchPlaceholder, emptyText, rows
                           {row.name}
                         </div>
                       </td>
-                      <td className="px-5 py-4 font-medium text-stone-800">{formatVND(row.price)}</td>
+                      <td className="px-5 py-4 font-medium text-stone-800">
+                        {onSavePrice ? (
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              type="number"
+                              min={0}
+                              max={MAX_ADMIN_PRICE}
+                              step={1000}
+                              aria-label={`Giá mới của ${row.name}`}
+                              value={priceEdits[row.id] ?? row.price}
+                              onChange={(e) =>
+                                setPriceEdits((prev) => ({ ...prev, [row.id]: clampPrice(parseInt(e.target.value, 10)) }))
+                              }
+                              className="w-24 rounded border border-stone-300 px-2 py-1 text-right text-xs font-bold text-stone-800 focus:border-emerald-800 focus:outline-none"
+                            />
+                            <span className="text-xs text-stone-500">₫</span>
+                            <button
+                              type="button"
+                              onClick={() => void savePrice(row.id, priceEdits[row.id] ?? row.price)}
+                              disabled={savingPriceId === row.id || (priceEdits[row.id] ?? row.price) === row.price}
+                              className="rounded border border-emerald-800 px-2 py-1 text-xs font-bold text-emerald-800 transition hover:bg-emerald-50 disabled:opacity-40"
+                            >
+                              {savingPriceId === row.id ? '...' : 'Lưu giá'}
+                            </button>
+                          </div>
+                        ) : (
+                          formatVND(row.price)
+                        )}
+                      </td>
                       <td className="px-5 py-4">
                         <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold ${LEVEL_BADGE[level]}`}>
                           {stock} {unit} còn lại
