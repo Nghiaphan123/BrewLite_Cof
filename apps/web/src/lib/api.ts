@@ -224,6 +224,23 @@ export const apiClient = {
   },
 
   // ---------------------------------------------------- Admin APIs
+  async getAdminProducts(): Promise<Product[]> {
+    const res = await apiFetch(`${API_BASE_URL}/admin/products`, {
+      headers: getAuthHeaders(),
+      cache: 'no-store',
+    });
+    return handleResponse<Product[]>(res);
+  },
+
+  async updateAdminProductStock(id: string, stock: number): Promise<Product> {
+    const res = await apiFetch(`${API_BASE_URL}/admin/products/${id}/stock`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ stock }),
+    });
+    return handleResponse<Product>(res);
+  },
+
   async getAdminToppings(): Promise<Topping[]> {
     const res = await apiFetch(`${API_BASE_URL}/admin/toppings`, {
       headers: getAuthHeaders(),
