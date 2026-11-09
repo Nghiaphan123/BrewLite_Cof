@@ -10,7 +10,7 @@ import {
   SIZE_SURCHARGE,
   calculateLineTotal,
 } from '@/features/product/pricing';
-import { isOutOfStock, remainingForCart } from '@/features/product/stock';
+import { isOutOfStock, isToppingSoldOut, remainingForCart, remainingForToppings } from '@/features/product/stock';
 import { useCartStore } from '@/store/cart.store';
 import { useUiStore } from '@/store/ui.store';
 import { ProductDetailSkeleton } from '@/components/Skeleton';
@@ -76,7 +76,11 @@ function ProductDetailContent() {
 
   // Mục 5: không cho thêm quá số ly còn trong kho (đã trừ số ly cùng món đang có trong giỏ).
   const outOfStock = isOutOfStock(product);
-  const remaining = remainingForCart(product, cartItems);
+  // Mục 2.1: mỗi ly còn dùng 1 phần của mỗi topping đã chọn, nên số ly thêm được cũng bị giới hạn
+  // bởi topping còn ít nhất (đã trừ phần topping đó các dòng khác trong giỏ đang cần).
+  const remainingDrink = remainingForCart(product, cartItems);
+  const remaining = Math.min(remainingDrink, remainingForToppings(selectedToppings, cartItems));
+  const limitedByTopping = remainingDrink > 0 && remaining === 0;
   const canAdd = remaining > 0;
   // Giỏ có thể đổi sau khi chọn số lượng, nên luôn kẹp lại trong khoảng 1..remaining.
   const effectiveQty = Math.max(1, Math.min(qty, remaining || 1));
@@ -133,6 +137,10 @@ function ProductDetailContent() {
             <p role="status" data-testid="stock-notice" className="mt-3 rounded-lg bg-stone-100 px-3 py-2 text-sm font-medium text-stone-700">
               Món này tạm hết hàng. Bạn vui lòng chọn món khác nhé.
             </p>
+          ) : limitedByTopping ? (
+            <p role="status" data-testid="stock-notice" className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm font-medium text-amber-900">
+              Topping bạn chọn không còn đủ cho thêm ly nào. Bạn bỏ bớt topping đó nhé.
+            </p>
           ) : !canAdd ? (
             <p role="status" data-testid="stock-notice" className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm font-medium text-amber-900">
               Giỏ hàng của bạn đã có hết số ly còn lại của món này.
@@ -171,20 +179,30 @@ function ProductDetailContent() {
             <div className="mt-2 space-y-2">
               {(product.toppings ?? []).map((topping) => {
                 const checked = selectedToppings.some((t) => t.id === topping.id);
+                // Mục 2.1: topping hết hàng không chọn được (vẫn bỏ chọn được nếu đã chọn trước đó).
+                const soldOut = isToppingSoldOut(topping);
                 return (
                   <label
                     key={topping.id}
-                    className="flex cursor-pointer items-center justify-between rounded-lg border border-stone-200 p-3 hover:bg-stone-50"
+                    className={`flex items-center justify-between rounded-lg border border-stone-200 p-3 ${
+                      soldOut && !checked ? 'cursor-not-allowed bg-stone-50 opacity-60' : 'cursor-pointer hover:bg-stone-50'
+                    }`}
                   >
                     <div className="flex items-center gap-2">
                       <input
                         type="checkbox"
                         data-testid={`topping-${topping.id}`}
                         checked={checked}
+                        disabled={soldOut && !checked}
                         onChange={() => toggleTopping(topping)}
                         className="h-4 w-4 accent-emerald-700"
                       />
                       <span className="text-sm font-medium text-stone-800">{topping.name}</span>
+                      {soldOut && (
+                        <span data-testid={`topping-soldout-${topping.id}`} className="rounded-full bg-stone-200 px-2 py-0.5 text-[11px] font-semibold text-stone-600">
+                          Hết
+                        </span>
+                      )}
                     </div>
                     <span className="text-xs font-semibold text-stone-600">
                       +{topping.price.toLocaleString('vi-VN')}₫
@@ -243,7 +261,9 @@ function ProductDetailContent() {
                 ? 'Hết hàng'
                 : canAdd
                   ? `Thêm vào giỏ · ${totalPrice.toLocaleString('vi-VN')}₫`
-                  : 'Đã đủ số lượng còn lại'}
+                  : limitedByTopping
+                    ? 'Topping không đủ'
+                    : 'Đã đủ số lượng còn lại'}
             </button>
           </div>
         </div>
