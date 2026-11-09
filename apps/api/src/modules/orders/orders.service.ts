@@ -14,8 +14,8 @@
  * - findById(orderId): read an order with its items, 404 if missing.
  * - transition(orderId, nextStatus): inside a transaction, read the order,
  *   assert a manual (non-payment) transition, write the new status. Used by
- *   the admin/barista endpoints. Cancelling a PAID order restores stock and
- *   takes back the loyalty points in the same transaction.
+ *   the admin/barista endpoints. Cancelling a PAID order restores drink and
+ *   topping stock and takes back the loyalty points in the same transaction.
  *
  * Lookup strategy:
  * - Currently looks up by `id` only. The API contract (§11) specifies orders
@@ -41,6 +41,7 @@ import { assertManualTransition } from './order-state-machine.js';
 import { calculateUnitPrice } from './pricing.js';
 import { PromotionsService } from '../promotions/promotions.service.js';
 import { loyaltyPointsFor } from '../payments/loyalty.js';
+import { toppingUsage } from './topping-usage.js';
 
 interface CreateOrderItemInput {
   productId: string;
@@ -319,16 +320,23 @@ export class OrdersService {
 
   /**
    * Cancelling a PAID order gives back what the payment took, in the same
-   * transaction: the stock it decremented and the loyalty points it accrued.
-   * The successful payment is marked REFUNDED (the gateway is a mock).
+   * transaction: the drink stock and topping stock it decremented and the
+   * loyalty points it accrued. The successful payment is marked REFUNDED
+   * (the gateway is a mock).
    */
   private async undoPayment(tx: Prisma.TransactionClient, orderId: string, userId: string) {
-    const items = await tx.orderItem.findMany({ where: { orderId } });
+    const items = await tx.orderItem.findMany({ where: { orderId }, include: { toppings: true } });
     for (const item of items) {
       await tx.product.update({
         where: { id: item.productId },
         data: { stock: { increment: item.qty }, version: { increment: 1 } },
       });
+    }
+    const usage = toppingUsage(
+      items.map((item) => ({ qty: item.qty, toppingIds: item.toppings.map((t) => t.toppingId) })),
+    );
+    for (const [toppingId, portions] of usage) {
+      await tx.topping.update({ where: { id: toppingId }, data: { stock: { increment: portions } } });
     }
 
     const paid = await tx.payment.findFirst({

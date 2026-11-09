@@ -85,7 +85,7 @@ describe('ProductsService', () => {
     await expect(service.list()).resolves.toEqual({ items: [], total: 0 });
   });
 
-  it('returns one product with sizes and active toppings', async () => {
+  it('returns one product with sizes and active toppings with their stock', async () => {
     prisma.product.findUnique.mockResolvedValue({
       id: PRODUCT_ID,
       name: 'Cà phê sữa',
@@ -94,8 +94,8 @@ describe('ProductsService', () => {
       stock: 50,
     });
     prisma.topping.findMany.mockResolvedValue([
-      { id: 't1', name: 'Kem cheese', price: 5000 },
-      { id: 't2', name: 'Trân châu đen', price: 5000 },
+      { id: 't1', name: 'Kem cheese', price: 5000, stock: 12 },
+      { id: 't2', name: 'Trân châu đen', price: 5000, stock: 0 },
     ]);
 
     const result = await service.findOne(PRODUCT_ID);
@@ -108,14 +108,14 @@ describe('ProductsService', () => {
       stock: 50,
       sizes: ['S', 'M', 'L'],
       toppings: [
-        { id: 't1', name: 'Kem cheese', price: 5000 },
-        { id: 't2', name: 'Trân châu đen', price: 5000 },
+        { id: 't1', name: 'Kem cheese', price: 5000, stock: 12 },
+        { id: 't2', name: 'Trân châu đen', price: 5000, stock: 0 },
       ],
     });
     expect(prisma.topping.findMany).toHaveBeenCalledWith({
       where: { active: true },
       orderBy: { name: 'asc' },
-      select: { id: true, name: true, price: true },
+      select: { id: true, name: true, price: true, stock: true },
     });
   });
 
