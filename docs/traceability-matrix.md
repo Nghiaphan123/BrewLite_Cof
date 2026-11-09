@@ -16,7 +16,7 @@ Status words:
 | Refused | The requirement is Won't. No code is expected. |
 | Not run | The check needs a pipeline, a deploy, or a measurement that has not happened. |
 
-No row claims a production URL or a recorded CI run. The Playwright browser-test source exists at `tests/e2e/menu-to-confirmation.spec.ts`, but no run is recorded.
+No row claims a production URL or a recorded CI run. The Playwright browser-test source and CI job exist at `tests/e2e/menu-to-confirmation.spec.ts` and `.github/workflows/ci.yml`; no browser-test run is recorded yet.
 
 ## 1. Functional requirements
 
@@ -38,8 +38,8 @@ No row claims a production URL or a recorded CI run. The Playwright browser-test
 | FR-14 Retry a failed payment on the same order | UC-01 A3 | state machine `PAYMENT_FAILED → PAID` | `order-state-machine.ts` | `order-state-machine.spec.ts` allows the edge. | Partial. The legal edge is unit-tested. An API test that pays again and keeps one order is not cited here. |
 | FR-C1 Demo QR | not a payment step | checkout page note | `apps/web/src/app/checkout/page.tsx` | `frontend-api-flow.spec.tsx` | Could. Not required to pass FR-06. |
 | FR-W1 Real bank or VietQR | none | context-and-scope §4 | none | none | Refused |
-| FR-W2 Staff or manager screens | none | context-and-scope §4 | none | none | Refused |
-| FR-W3 Delivery, multi-store, notifications, admin catalog, point redemption | none | context-and-scope §4 | none | none | Refused |
+| FR-W2 Counter-staff screen | none | context-and-scope §4 | none | none | Refused. A limited manager/admin extension exists; it is not a staff screen or a required MVP feature. |
+| FR-W3 Delivery, multi-store, notifications, full product-catalog administration, reports, point redemption | none | context-and-scope §4 | none | none | Refused. Limited topping, promotion, read-only user, and order-status administration is documented in context-and-scope §3.1. |
 | FR-W4 Guest checkout of a paid order | none | UC-01 E2 | orders require JWT | `auth.e2e-spec.ts` unauthenticated payment is 401 | Refused |
 
 ## 2. Non-functional requirements
@@ -48,9 +48,9 @@ No row claims a production URL or a recorded CI run. The Playwright browser-test
 | --- | --- | --- | --- | --- | --- |
 | NFR-01 Response under 500 ms on seed data | UC-MENU, UC-01 | [overview.md](architecture/overview.md) | `GET /api/v1/products`, `POST /api/v1/orders` | none | Not run. No measurement is stored. |
 | NFR-02 Secrets, hash, JWT, owner scope | UC-AUTH, UC-01 | ADR 0005, ADR 0007 | bcrypt hash, JWT guard, owner-scoped order reads. `.env` is gitignored. | `auth.e2e-spec.ts`, `orders-read.e2e-spec.ts` | Partial. The workflow must not print secrets. No CI log has been checked yet. |
-| NFR-03 Phone layout, loading, empty, error, status text | UC-MENU, UC-TRACK | ui-decisions.md | menu, cart, checkout, orders pages | no viewport test | Partial. Layout is mobile-first in the pages. A 390 px check is not automated. |
+| NFR-03 Phone layout, loading, empty, error, status text | UC-MENU, UC-TRACK | ui-decisions.md | menu, cart, checkout, orders pages | `tests/e2e/menu-to-confirmation.spec.ts` checks the main flow for horizontal overflow at 390 px. | Partial. The browser check is configured but has not yet been run; loading, empty, and error states are not all covered by that journey. |
 | NFR-04 PWA manifest and service worker | none yet | overview.md §2 | `apps/web/src/app/manifest.ts`, `apps/web/public/sw.js`, `apps/web/public/icons/` | `apps/web/src/__tests__/unit/manifest.spec.ts` | Partial. The files exist and the manifest test checks install fields. A browser install prompt is not automated. Ordering is still network-only. |
-| NFR-05 Compose, health, CI, HTTPS, private database, rollback | deploy | [deployment-production.puml](diagrams/deployment-production.puml), [ADR 0007](architecture/adr/0007-hosting-platform.md), [deployment.md](deployment.md) | `GET /api/v1/health`. Compose probes that path. `.github/workflows/ci.yml` runs install, lint, test, and build. | `apps/api/test/app.e2e-spec.ts`. CI evidence is not recorded. | Partial. The workflow file exists. A recorded run and the production URL do not. |
+| NFR-05 Compose, health, CI, HTTPS, private database, rollback | deploy | [deployment-production.puml](diagrams/deployment-production.puml), [ADR 0007](architecture/adr/0007-hosting-platform.md), [deployment.md](deployment.md) | `GET /api/v1/health`. Compose probes that path. `.github/workflows/ci.yml` runs install, lint, test, build, API integration, and Playwright browser E2E. | `apps/api/test/app.e2e-spec.ts`; `tests/e2e/menu-to-confirmation.spec.ts`. CI evidence is not recorded. | Partial. Workflow files and test sources exist. A recorded run and production URL do not. |
 | NFR-06 Integer VND, server price wins | UC-01 | ADR 0005, ui-decisions.md | Prisma `Int` money fields. Server recomputes the order total. | `pricing-and-cart.spec.ts` | Partial. The shared pricing fixture named in older docs is not the proof used here. The cart unit test is the current web proof. |
 | NFR-07 Logs without secrets | operations | overview.md §5 | `apps/api/src/common/logging.interceptor.ts`, `redact.ts`. `500` responses include `requestId`. | `redact.spec.ts`, `logging.interceptor.spec.ts` | Covered for the redaction and request-id rules. Render log review is still open. |
 | NFR-08 Diagrams match this SRS | UC-01 | activity, sequence, and class diagrams | docs only | review, not an automated test | Documented. The class diagram now includes the loyalty table that the init migration already created. |
@@ -63,7 +63,7 @@ No row claims a production URL or a recorded CI run. The Playwright browser-test
 | 2 Modeling | `activity-order-flow`, `sequence-checkout`, `class-domain` | none required | this matrix | Documented |
 | 3 Architecture | `docs/architecture/overview.md`, ADR 0007, `deployment-production` | none required | this matrix | Documented. Host is chosen. Services are not created. |
 | 4 Sprint 1 and CI | menu and products API already exist | `GET /api/v1/products`, `GET /api/v1/products/:id`. `.github/workflows/ci.yml` | [ci-evidence.md](delivery/ci-evidence.md) | Partial. The workflow file exists. A green run and a failed run are not recorded. |
-| 5 Sprint 2 and delivery | ADR 0007, deployment.md §9–§12 | order, payment, auth, Dockerfiles | `tests/e2e/menu-to-confirmation.spec.ts`; no production URL or recorded Playwright run. | Partial. See [release-notes.md](delivery/release-notes.md). |
+| 5 Sprint 2 and delivery | ADR 0007, deployment.md §9–§12 | order, payment, auth, Dockerfiles | `tests/e2e/menu-to-confirmation.spec.ts`; CI job configured, but no recorded E2E run or production URL. | Partial. See [release-notes.md](delivery/release-notes.md). |
 
 ## 4. How to update a row
 

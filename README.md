@@ -24,7 +24,7 @@ BrewLite/
 |-- apps/
 |   |-- api/                 # NestJS API, Prisma schema/migrations, port 3001
 |   `-- web/                 # Next.js App Router, port 3000
-|-- tests/                   # E2E and NFR tests as implementation tasks are added
+|-- tests/e2e/                # Playwright menu-to-confirmation browser test
 |-- docs/                    # requirements, diagrams, architecture, plans, testing
 |-- .github/                 # PR template and CI/CD workflows
 |-- docker-compose.yml
@@ -115,11 +115,18 @@ npm run lint
 npm run build
 ```
 
-The browser journey from menu to confirmation is `tests/e2e`. It is a separate package because this repo has no root `package.json`. Start the database, API, and web first, with the web app pointing at `http://localhost:3001/api/v1`.
+The browser journey from menu to confirmation is `tests/e2e`. It is a separate package because this repo has no root `package.json`. Start and seed PostgreSQL first; Playwright starts the API and web servers from its configuration.
 
 ```powershell
+docker compose up -d db
+
+Push-Location apps/api
+npm run db:deploy
+npm run db:seed
+Pop-Location
+
 cd tests/e2e
-npm install
+npm ci
 npm run test:install
 npm test
 ```
@@ -150,6 +157,7 @@ docker compose build
 - Profile page: hiển thị thông tin tài khoản, điểm tích lũy, đơn hàng đã mua và đổi mật khẩu.
 - Order details: hiển thị đầy đủ sản phẩm, số lượng, size, giá tiền và trạng thái đơn hàng.
 - Menu header: thêm nút người dùng với menu (Thông tin chi tiết, Đăng xuất).
+- Assignment 2 adds the health endpoint, loyalty accrual, installable PWA shell, request-id logging, CI/CD workflows, and a Playwright menu-to-confirmation test. A limited role-protected admin area is also present.
 
 The test levels and evidence requirements are in the [test strategy](docs/testing/test-strategy.md). CI runs on pull requests; API integration and Playwright browser tests are also available. Actual CI run evidence is tracked in [ci-evidence.md](docs/delivery/ci-evidence.md).
 
@@ -165,7 +173,7 @@ These URLs are not assigned. Do not replace them with a guessed host.
 | API | Not assigned |
 | Health `GET /api/v1/health` | Not assigned |
 
-`GET /api/v1/health` is implemented. Pull requests run [`.github/workflows/ci.yml`](.github/workflows/ci.yml): install, lint, unit test, and build for both apps, plus API integration tests against Postgres. That workflow fails the check when a step fails. GitHub branch protection must require the check before a merge is blocked. No pipeline run is recorded yet. The public health URL is still not assigned. Evidence slots are in [docs/delivery/ci-evidence.md](docs/delivery/ci-evidence.md). There is no production release: [docs/delivery/release-notes.md](docs/delivery/release-notes.md).
+`GET /api/v1/health` is implemented. Pull requests run [`.github/workflows/ci.yml`](.github/workflows/ci.yml): install, lint, unit test, and build for both apps, API integration tests against Postgres, and a Playwright menu-to-confirmation browser test against a separate seeded Postgres service. That workflow fails the check when a step fails. GitHub branch protection must require the checks before a merge is blocked. No pipeline run is recorded yet. The public health URL is still not assigned. Evidence slots are in [docs/delivery/ci-evidence.md](docs/delivery/ci-evidence.md). There is no production release: [docs/delivery/release-notes.md](docs/delivery/release-notes.md).
 
 Rollback, once a SHA has been deployed, is "deploy the previous image SHA" for both web and API, then call the health URL again. It is not `docker compose down -v`. That command deletes only a local database volume.
 

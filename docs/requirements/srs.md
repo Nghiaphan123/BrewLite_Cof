@@ -41,11 +41,13 @@ These are not missing features. They are refused.
 | ID | Won't | Priority |
 | --- | --- | --- |
 | FR-W1 | Real bank, card network, or VietQR payment. | Won't |
-| FR-W2 | Counter-staff or manager screens. | Won't |
+| FR-W2 | Counter-staff screens and full manager/back-office functionality. A limited admin extension may exist but is not part of the required customer MVP. | Won't |
 | FR-W3 | Delivery, multi-store, notifications, admin catalog, loyalty redemption. | Won't |
 | FR-W4 | Guest checkout of a paid order. | Won't |
 
 A demo QR image that encodes the order id and amount is **Could** (FR-C1). Scanning it must not be required to complete FR-06. Confirming payment remains an explicit action against the mock provider.
+
+The repository includes a limited role-protected admin extension for topping stock, promotions, read-only user listing, and order status. This is additional implementation, not a change to the graded customer-MVP scope or evidence of a complete back office.
 
 ## 2. Non-functional requirements
 
@@ -55,7 +57,7 @@ A demo QR image that encodes the order id and amount is **Could** (FR-C1). Scann
 | NFR-02 | Credentials, orders, and secrets are protected. | Must | Passwords are hashed. Protected routes require a valid JWT. Order reads are owner-scoped. `.env` is not committed. CI logs do not print `JWT_SECRET` or database passwords. Auth failures do not reveal whether the email exists. |
 | NFR-03 | The customer UI is usable on a phone. | Must | The menu, detail, cart, checkout, and confirmation layouts are usable at a 390 px width without horizontal scrolling of the main task. Each of those screens has a loading, empty, and error state where data can be missing. Status is text plus color, not color alone. |
 | NFR-04 | The app is a mobile-first PWA. | Must | The web app serves a web app manifest and icons, and registers a service worker so a browser can offer installation. Ordering still requires the network. |
-| NFR-05 | The stack can be run, checked, and deployed. | Must | `docker compose up` starts web, API, and PostgreSQL. `GET /health` returns success when the API process is up. Migrations and seed are repeatable. A pull request runs install, lint, unit test, and build, and cannot merge if one fails. Production is HTTPS. The database is not publicly reachable. Rollback is written in the README. |
+| NFR-05 | The stack can be run, checked, and deployed. | Must | `docker compose up` starts web, API, and PostgreSQL. `GET /api/v1/health` returns success when the API process is up. Migrations and seed are repeatable. A pull request runs install, lint, unit test, and build, and cannot merge if one fails. Production is HTTPS. The database is not publicly reachable. Rollback is written in the README. |
 | NFR-06 | Money and prices stay consistent. | Must | Every money field is an integer number of VND. The server total is the one stored and charged. The web display total and the API total agree on the shared pricing fixture. |
 | NFR-07 | Failures are logged without leaking secrets. | Should | API errors are logged with a request id and status. Logs do not include passwords, tokens, or raw card data. There is no card data to log, because payment is mocked. |
 | NFR-08 | The documented diagrams match this SRS. | Must | The activity, sequence, and class diagrams do not invent a flow or a class that this SRS marks Won't, and they include every Must class and the UC-01 success and failure branches. |
