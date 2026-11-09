@@ -35,6 +35,7 @@ Endpoints in the assignment (PDF §12.1): `GET /products`, `GET /products/:id`, 
 | `GET`  | `/orders/:code`  | **JWT** | `200 Order` / `404`                            | §11       |
 | `GET`  | `/cart`          | **JWT** | `200 Cart` / `401`                             | §11.1     |
 | `PUT`  | `/cart`          | **JWT** | `200 Cart` / `400` / `401` / `404`             | §11.1     |
+| `GET`/`PATCH` | `/admin/products`, `/admin/toppings` (stock) | **Admin** | `200` / `400` / `403` / `404` | §11.2     |
 
 `/health`, `GET /products`, `GET /products/:id`, `POST /auth/register`, and `POST /auth/login` are public. User profile and password changes, orders, payments, and the saved cart require JWT.
 
@@ -105,8 +106,8 @@ No other responses. Not cached; no rate limit in Phase 1.
   "stock": 20,
   "sizes": ["S", "M", "L"],
   "toppings": [
-    { "id": "t1", "name": "Trân châu", "price": 5000 },
-    { "id": "t2", "name": "Kem", "price": 7000 }
+    { "id": "t1", "name": "Trân châu", "price": 5000, "stock": 40 },
+    { "id": "t2", "name": "Kem", "price": 7000, "stock": 0 }
   ]
 }
 ```
@@ -115,6 +116,7 @@ No other responses. Not cached; no rate limit in Phase 1.
 - `sizes` and `toppings` are returned here, not on the list endpoint, to keep the menu response small. The detail page uses them to render the selector (`wireframes.md` §5).
 - The base `price` is the **S** size price. Size-specific prices are computed by the pricing rule (`ui-decisions.md` §4.2), not returned as a table. If the team later wants a size-price table, add `sizePrices: { S: 35000, M: 40000, L: 45000 }` — non-breaking additive.
 - `toppings` is the full catalogue; a product may restrict toppings later (Phase 2+). In Phase 1 all products accept all toppings.
+- `toppings[].stock` is the number of portions left. Each cup with a topping uses one portion, taken at payment (§9). The web disables a topping whose stock is `0`.
 
 **Response `404` (C3):**
 ```json
@@ -302,9 +304,9 @@ The current password must be verified before storing a bcrypt hash of the new pa
 - Inside a `prisma.$transaction`:
   1. Look up the order; if not found or not owned by caller → `404`.
   2. Assert the current state is `PENDING` or `PAYMENT_FAILED`; otherwise `409` with `code: "INVALID_STATE_TRANSITION"` (Task 10a).
-  3. Check stock for all items under optimistic lock (`version`); if insufficient → `409` with `code: "OUT_OF_STOCK"` (Task 10c).
+  3. Check stock for all items under optimistic lock (`version`); if insufficient → `409` with `code: "OUT_OF_STOCK"` (Task 10c). Topping stock is checked for the whole order (one portion per cup, added up across lines) with a conditional update (`stock >= needed`); if a topping is short → `409` `OUT_OF_STOCK` and nothing is decremented.
   4. Call the mock gateway (`PAYMENT_MOCK_MODE`; `config.md` §2.1).
-  5. On success: decrement stock, transition to `PAID`, accrue loyalty points (ADR 0004 D1, D7).
+  5. On success: decrement drink and topping stock, transition to `PAID`, accrue loyalty points (ADR 0004 D1, D7). Cancelling a `PAID` order gives both back.
   6. On failure: transition to `PAYMENT_FAILED`, no stock change, no points.
   7. Store the `Payment` row with `idempotencyKey`, `requestHash`, `method`, `amount`, `status`.
 - If the `idempotencyKey` already exists:
@@ -460,7 +462,8 @@ The current password must be verified before storing a bcrypt hash of the new pa
       "size": "M",
       "qty": 2,
       "toppingIds": ["pearl"],
-      "product": { "id": "0f8fad5b-...", "name": "Latte", "price": 45000, "imageUrl": "/images/products/10.jpg" }
+      "toppings": [{ "id": "pearl", "name": "Trân châu đen", "price": 5000, "stock": 12 }],
+      "product": { "id": "0f8fad5b-...", "name": "Latte", "price": 45000, "imageUrl": "/images/products/10.jpg", "stock": 3 }
     }
   ],
   "promoCode": "BREW10",
@@ -470,11 +473,29 @@ The current password must be verified before storing a bcrypt hash of the new pa
 
 **Rules:**
 - The cart does not reserve stock and does not validate `promoCode`. Both are checked by the order and payment flows (§8, §9).
+- `product.stock` and `toppings[].stock` are read live on every `GET`, so the web can warn about a drink or topping that ran out after the cart was saved. They are information only; the payment enforces stock.
 - `promotion` is the rule the web uses to preview the discount. It is `null` when the code is unknown, inactive, expired, or used up.
 - The cart stores no prices. `POST /orders` computes the amount from server prices.
 - `toppingIds` has no foreign key: a topping that is removed or inactive drops out of the response.
 
 **Errors:** `400` validation; `401` missing/expired JWT; `404` with `code: "PRODUCT_NOT_FOUND"` for an unknown product (the saved cart is unchanged); `500` unexpected.
+
+## 11.2. Admin stock endpoints
+
+**Auth:** JWT with role `ADMIN` (C4); other users get `403`.
+
+| Method  | Path                          | Body             | Success                                            |
+| ------- | ----------------------------- | ---------------- | -------------------------------------------------- |
+| `GET`   | `/admin/products`             | —                | `200 [{ id, name, price, imageUrl, stock }]`       |
+| `PATCH` | `/admin/products/:id/stock`   | `{ "stock": 25 }` | `200 { id, name, price, imageUrl, stock }`         |
+| `GET`   | `/admin/toppings`             | —                | `200 [{ id, name, price, stock, active }]`         |
+| `PATCH` | `/admin/toppings/:id/stock`   | `{ "stock": 50 }` | `200 { id, name, price, stock, active }`           |
+
+**Rules:**
+- `stock` is the new absolute count (cups for a drink, portions for a topping), an integer from `0`; drinks accept at most `100000`.
+- Setting a drink's stock also increments `Product.version`, so a payment that read the old stock cannot overwrite the new value (ADR 0004 D1).
+
+**Errors:** `400` validation (negative, non-integer); `401`; `403` not an admin; `404` `PRODUCT_NOT_FOUND` / `TOPPING_NOT_FOUND` for an unknown or malformed id.
 
 ## 12. Reserved endpoints (Task 10, not Phase 1)
 

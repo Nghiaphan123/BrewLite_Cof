@@ -1,5 +1,6 @@
 /**
  * AdminService — Business logic for Admin operations:
+ * - Products (view drink stock, update drink stock)
  * - Toppings (view stock, update stock)
  * - Users (view all users)
  * - Promotions (view promotions, add new promo code)
@@ -14,6 +15,10 @@ import { PrismaService } from '../../common/prisma.service.js';
 import { CreatePromotionDto } from './dto/create-promotion.dto.js';
 import { OrderStatus } from '../../generated/prisma/enums.js';
 import { OrdersService } from '../orders/orders.service.js';
+import { toAbsoluteImageUrl } from '../products/products.service.js';
+
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 @Injectable()
 export class AdminService {
@@ -37,7 +42,10 @@ export class AdminService {
   }
 
   async updateToppingStock(id: string, stock: number) {
-    const existing = await this.prisma.topping.findUnique({ where: { id } });
+    // A malformed id is a 404 like an unknown one, not a 500 from Postgres (uuid column).
+    const existing = UUID_PATTERN.test(id)
+      ? await this.prisma.topping.findUnique({ where: { id } })
+      : null;
     if (!existing) {
       throw new NotFoundException({
         statusCode: 404,
@@ -58,6 +66,42 @@ export class AdminService {
         active: true,
       },
     });
+  }
+
+  // -------------------------------------------------- Products (drink stock)
+  async listProducts() {
+    const products = await this.prisma.product.findMany({
+      orderBy: { name: 'asc' },
+      select: { id: true, name: true, price: true, imageUrl: true, stock: true },
+    });
+    return products.map((p) => ({ ...p, imageUrl: toAbsoluteImageUrl(p.imageUrl) }));
+  }
+
+  /**
+   * Sets the number of cups in stock. The version is bumped as well, because
+   * the payment decrements stock under an optimistic lock on Product.version
+   * (ADR 0004 D1): a payment that read the old stock must not overwrite the
+   * admin's new value.
+   */
+  async updateProductStock(id: string, stock: number) {
+    const existing = UUID_PATTERN.test(id)
+      ? await this.prisma.product.findUnique({ where: { id }, select: { id: true } })
+      : null;
+    if (!existing) {
+      throw new NotFoundException({
+        statusCode: 404,
+        error: 'Not Found',
+        message: 'Product not found',
+        code: 'PRODUCT_NOT_FOUND',
+      });
+    }
+
+    const updated = await this.prisma.product.update({
+      where: { id },
+      data: { stock, version: { increment: 1 } },
+      select: { id: true, name: true, price: true, imageUrl: true, stock: true },
+    });
+    return { ...updated, imageUrl: toAbsoluteImageUrl(updated.imageUrl) };
   }
 
   // -------------------------------------------------- Users
