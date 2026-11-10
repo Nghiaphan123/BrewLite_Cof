@@ -6,6 +6,8 @@
 
 Assignment 2 accepts a later task only after the earlier task's required files are in the repository with a visible history. These batches follow that order. Handover documents that need a live URL are last.
 
+**History note:** The current branch's commit order does not fully follow the PDF's task order: Task 5 implementation commits precede the Task 4.4 CI commit. Do not rewrite shared remote history to make it appear sequential. Keep subsequent fixes in focused task/PR commits, and treat this chronology as a process gap when reporting completion.
+
 ## Batch 1 — Task 1 requirements (written)
 
 | File | Required by |
@@ -48,6 +50,6 @@ These files exist. They do not claim a live site, a CI run, or a held review.
 | `docs/delivery/release-notes.md` | Task 5.4 | No tag and no release. |
 | `docs/delivery/sprint-review.md` | Task 5.4 | Not held. |
 | `docs/delivery/sprint-retrospective.md` | Task 5.4 | Not held. |
-| `docs/delivery/ci-evidence.md` | Task 4.4 | No workflow and no green or red run. |
+| `docs/delivery/ci-evidence.md` | Task 4.4 | CI workflow exists; no successful or failed run is recorded. |
 
-The demo video is still not a repository file. Record it only against a URL that answers.
+The demo video is still not a repository file. Record it only against a URL that answers. The Playwright browser-test source and CI job are part of the code delivery; a successful CI run is still required as evidence.

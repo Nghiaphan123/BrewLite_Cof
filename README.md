@@ -2,9 +2,7 @@
 
 BrewLite is a mobile-first web app for ordering coffee at a counter. A customer browses the menu, chooses size and toppings, builds a cart, signs in, pays through a simulated Wallet or Card gateway, and sees the confirmation and order history. It is the course project for Assignment 1 and Assignment 2 (Software Engineering).
 
-> **Status:** Phase 2 (modeling and architecture). The apps are scaffolds; the database schema, seed, and Docker Compose stack exist. Features arrive from Phase 3 on. See the [plan overview](docs/plans/00-overview.md).
->
-> This README is the `D-16` skeleton. Test, build, deploy, and rollback sections are completed in later phases.
+> **Status:** Assignment 2 requirements, modeling, architecture, application code, and CI/CD workflows are in the repository. Production deployment, recorded CI evidence, and sprint handover activities are still open; see [CI evidence](docs/delivery/ci-evidence.md) and [deployment](docs/deployment.md).
 
 ## Tech stack
 
@@ -17,7 +15,7 @@ BrewLite is a mobile-first web app for ordering coffee at a counter. A customer 
 | Local run | Docker Compose                                                              |
 | Hosting   | Render (accepted, [ADR 0007](docs/architecture/adr/0007-hosting-platform.md)) |
 
-Decisions and their reasons are in the [decision log](docs/plans/decision-log.md) and the [ADRs](docs/architecture/adr/README.md).
+Architecture decisions and their rationale are documented in the [architecture overview](docs/architecture/overview.md) and [ADRs](docs/architecture/).
 
 ## Repository structure
 
@@ -26,7 +24,7 @@ BrewLite/
 |-- apps/
 |   |-- api/                 # NestJS API, Prisma schema/migrations, port 3001
 |   `-- web/                 # Next.js App Router, port 3000
-|-- tests/                   # E2E and NFR tests as implementation tasks are added
+|-- tests/e2e/                # Playwright menu-to-confirmation browser test
 |-- docs/                    # requirements, diagrams, architecture, plans, testing
 |-- .github/                 # PR template and CI/CD workflows
 |-- docker-compose.yml
@@ -34,7 +32,7 @@ BrewLite/
 `-- README.md
 ```
 
-This is the monorepo layout. The detailed target tree and conventions for NestJS modules, DTOs, Next.js features, and test placement are in [Project Structure](docs/architecture/project-structure.md). Some target folders are not present until their implementation tasks begin.
+This is the monorepo layout. The architecture and current repository structure are described in [architecture.md](docs/architecture/architecture.md); the Assignment 2 requirements and planned work are in the [product backlog](docs/requirements/product-backlog.md).
 
 ## Prerequisites
 
@@ -69,7 +67,7 @@ docker compose ps
 - API: http://localhost:3001
 - Opening the web URL starts at sign-in/registration; after successful authentication, BrewLite opens the menu at `/menu`.
 - The menu header shows the signed-in customer's name beside the cart; the account dropdown opens profile details, password change, and sign-out.
-- The API applies database migrations when it starts. Its health check needs `GET /health`, which arrives with `C-04`; until then `docker compose ps` shows the API as unhealthy even though it answers.
+- The API applies database migrations when it starts. Its health endpoint is `GET /api/v1/health`.
 
 Stop with `docker compose down`; add `-v` to delete the local database. More detail and troubleshooting: [docs/deployment.md](docs/deployment.md).
 
@@ -117,11 +115,18 @@ npm run lint
 npm run build
 ```
 
-The browser journey from menu to confirmation is `tests/e2e`. It is a separate package because this repo has no root `package.json`. Start the database, API, and web first, with the web app pointing at `http://localhost:3001/api/v1`.
+The browser journey from menu to confirmation is `tests/e2e`. It is a separate package because this repo has no root `package.json`. Start and seed PostgreSQL first; Playwright starts the API and web servers from its configuration.
 
 ```powershell
+docker compose up -d db
+
+Push-Location apps/api
+npm run db:deploy
+npm run db:seed
+Pop-Location
+
 cd tests/e2e
-npm install
+npm ci
 npm run test:install
 npm test
 ```
@@ -152,8 +157,9 @@ docker compose build
 - Profile page: hiển thị thông tin tài khoản, điểm tích lũy, đơn hàng đã mua và đổi mật khẩu.
 - Order details: hiển thị đầy đủ sản phẩm, số lượng, size, giá tiền và trạng thái đơn hàng.
 - Menu header: thêm nút người dùng với menu (Thông tin chi tiết, Đăng xuất).
+- Assignment 2 adds the health endpoint, loyalty accrual, installable PWA shell, request-id logging, CI/CD workflows, and a Playwright menu-to-confirmation test. A limited role-protected admin area is also present.
 
-The test levels, IDs, and required evidence are in the [test strategy](docs/testing/test-strategy.md). The CI pipeline (`S-05`), test database (`T-02`), and Playwright end-to-end tests (`T-09`) are added in later phases.
+The test levels and evidence requirements are in the [test strategy](docs/testing/test-strategy.md). CI runs on pull requests; API integration and Playwright browser tests are also available. Actual CI run evidence is tracked in [ci-evidence.md](docs/delivery/ci-evidence.md).
 
 ## Deploy and rollback
 
@@ -167,7 +173,7 @@ These URLs are not assigned. Do not replace them with a guessed host.
 | API | Not assigned |
 | Health `GET /api/v1/health` | Not assigned |
 
-`GET /api/v1/health` is implemented. Pull requests run [`.github/workflows/ci.yml`](.github/workflows/ci.yml): install, lint, unit test, and build for both apps, plus API integration tests against Postgres. That workflow fails the check when a step fails. GitHub branch protection must require the check before a merge is blocked. No pipeline run is recorded yet. The public health URL is still not assigned. Evidence slots are in [docs/delivery/ci-evidence.md](docs/delivery/ci-evidence.md). There is no production release: [docs/delivery/release-notes.md](docs/delivery/release-notes.md).
+`GET /api/v1/health` is implemented. Pull requests run [`.github/workflows/ci.yml`](.github/workflows/ci.yml): install, lint, unit test, and build for both apps, API integration tests against Postgres, and a Playwright menu-to-confirmation browser test against a separate seeded Postgres service. That workflow fails the check when a step fails. GitHub branch protection must require the checks before a merge is blocked. No pipeline run is recorded yet. The public health URL is still not assigned. Evidence slots are in [docs/delivery/ci-evidence.md](docs/delivery/ci-evidence.md). There is no production release: [docs/delivery/release-notes.md](docs/delivery/release-notes.md).
 
 Rollback, once a SHA has been deployed, is "deploy the previous image SHA" for both web and API, then call the health URL again. It is not `docker compose down -v`. That command deletes only a local database volume.
 
@@ -175,11 +181,11 @@ Rollback, once a SHA has been deployed, is "deploy the previous image SHA" for b
 
 | Topic                        | Document                                                                                                                                                      |
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Plans, phases, task IDs      | [docs/plans/00-overview.md](docs/plans/00-overview.md)                                                                                                        |
-| Decisions                    | [docs/plans/decision-log.md](docs/plans/decision-log.md), [docs/architecture/adr/](docs/architecture/adr/README.md)                                           |
+| Requirements and backlog     | [docs/requirements/product-backlog.md](docs/requirements/product-backlog.md), [context and scope](docs/requirements/context-and-scope.md)                      |
+| Decisions                    | [architecture overview](docs/architecture/overview.md), [ADRs](docs/architecture/)                                                                           |
 | Context, scope, requirements | [context-and-scope.md](docs/requirements/context-and-scope.md), [srs.md](docs/requirements/srs.md), [UC-01](docs/requirements/use-case-uc01-place-and-pay.md) |
 | Diagrams                     | [docs/diagrams/](docs/diagrams/)                                                                                                                              |
-| Architecture                 | [overview](docs/architecture/overview.md), [folder tree](docs/architecture/architecture.md)                                                                    |
+| Architecture                 | [overview](docs/architecture/overview.md), [repository structure](docs/architecture/architecture.md)                                                          |
 | Testing                      | [docs/testing/test-strategy.md](docs/testing/test-strategy.md), [CI evidence](docs/delivery/ci-evidence.md)                                                   |
 | Traceability                 | [docs/traceability-matrix.md](docs/traceability-matrix.md)                                                                                                    |
 | Deployment                   | [docs/deployment.md](docs/deployment.md), [ADR 0007](docs/architecture/adr/0007-hosting-platform.md)                                                          |
@@ -188,6 +194,5 @@ Rollback, once a SHA has been deployed, is "deploy the previous image SHA" for b
 
 ## Working rules
 
-- Branch, commit, and PR naming rules and review checklists are in [CONTRIBUTING.md](CONTRIBUTING.md). The PR description template is in [.github/pull_request_template.md](.github/pull_request_template.md).
+- Branch, commit, PR naming rules, review checklists, and Definition of Done are in [CONTRIBUTING.md](CONTRIBUTING.md). The PR description template is in [.github/pull_request_template.md](.github/pull_request_template.md).
 - All changes go through pull requests with a teammate review; lint, test, or build failures block the merge.
-- The Definition of Done is in the [plan overview](docs/plans/00-overview.md#41-definition-of-done-assignment-1-section-10).

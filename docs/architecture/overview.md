@@ -27,8 +27,8 @@ The browser does not talk to the database. The web app does not call the databas
 
 | Container | Technology | Responsibility | Talks to |
 | --- | --- | --- | --- |
-| Web | Next.js 16 App Router, React, Tailwind, Zustand | Menu, product options, cart, login, checkout, confirmation, history. Mobile-first. Manifest, icons, and a network-only service worker are present (NFR-04). | API only, from the browser, using `NEXT_PUBLIC_API_URL` |
-| API | NestJS, Prisma | Auth, catalog, orders, mock payment, promotions, loyalty rules. Validates every mutation again. | PostgreSQL. Payment mock in the same process. |
+| Web | Next.js 16 App Router, React, Tailwind, Zustand | Menu, product options, cart, login, checkout, confirmation, history, and the supplemental admin UI. Mobile-first. Manifest, icons, and a network-only service worker are present (NFR-04). | API only, from the browser, using `NEXT_PUBLIC_API_URL` |
+| API | NestJS, Prisma | Auth, catalog, cart, orders, mock payment, promotions, loyalty rules, health, and supplemental admin endpoints. Validates every mutation again. | PostgreSQL. Payment mock in the same process. |
 | Database | PostgreSQL 17 | Users, products, toppings, orders, payments, promotions, loyalty transactions. | API only |
 | Payment mock | In-process module | Approves or declines Wallet and Card. No network call. No card numbers. | Called by the payments module |
 
@@ -42,10 +42,12 @@ The API is one Nest application with a global prefix `/api/v1` (ADR 0005).
 | --- | --- |
 | `auth` | Register, login, JWT, current user, password change. Passwords are hashed. |
 | `products` | Public menu and product detail. |
+| `cart` | Save and read an authenticated customer's cart. |
 | `orders` | Create an order, read the caller's orders, enforce the state machine. |
 | `payments` | Mock charge, idempotency key, stock decrement at `PAID`, loyalty points. |
 | `promotions` | Validate a promo code. |
 | `health` | `GET /api/v1/health`. Public. Does not touch the database. |
+| `admin` | Supplemental, role-guarded management of toppings/stock, promotions, users (read-only), and order status. Not required by the customer MVP. |
 
 Cross-cutting rules:
 
@@ -63,7 +65,7 @@ Cross-cutting rules:
 | PostgreSQL and Prisma (ADR 0003) | Migrations are files in git. The schema is the data model. | Prisma must be generated in the image. A failed migration must fail the deploy. |
 | Mock payment inside the API (ADR 0004) | No gateway account, no webhook, no card data. Success and failure are testable. | It is not evidence of a real payment integration. The assignment does not ask for one. |
 | Browser calls the API directly | The existing client already does this. Checkout does not need a Next.js proxy. | CORS must list the web origin. The API URL is fixed when the web image is built. |
-| Render, two web services, private Postgres, GHCR (ADR 0007) | HTTPS without operating a server. Rollback is a previous image SHA. The database is not public. | Free instances sleep. Two origins must stay in sync. The pipeline is not written yet. |
+| Render, two web services, private Postgres, GHCR (ADR 0007) | HTTPS without operating a server. Rollback is a previous image SHA. The database is not public. | Free instances sleep. Two origins must stay in sync. CI/CD workflow files exist; production services and successful run evidence are still open. |
 
 ## 5. Configuration, logs, and health
 
@@ -86,7 +88,7 @@ The health contract is `GET /api/v1/health` → `200 { "status": "ok", "version"
 | Boundary | What runs | Database | Secrets |
 | --- | --- | --- | --- |
 | Local | Docker Compose, or host processes against the Compose database | Postgres in Compose. Port may be published on localhost. | `.env`, not committed |
-| CI | GitHub Actions, `.github/workflows/ci.yml`. Install, lint, unit test, and build on a pull request. API integration tests use an ephemeral Postgres service. | Ephemeral test database, not Render | CI-only values in the workflow. Logs must not print them. No run is recorded yet. |
+| CI | GitHub Actions, `.github/workflows/ci.yml`. Install, lint, unit test, and build on a pull request; API integration tests and a Playwright browser journey use ephemeral Postgres services. | Ephemeral test databases, not Render | CI-only values in the workflow. Logs must not print them. No run is recorded yet. |
 | Production | Render web services pulling GHCR images tagged by commit SHA | Render Postgres, private disk, no public port | Render environment. Not in the repo, not in logs. |
 
 A pull request must not deploy. A tag or a protected branch deploy builds the images, pushes them, tells Render to roll forward, runs migrations as the API container starts, then calls the health URL. If health fails, the pipeline stops and the previous SHA remains the rollback target.

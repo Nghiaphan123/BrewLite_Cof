@@ -40,6 +40,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body className="min-h-full flex flex-col bg-white text-neutral-900">
         <CartStoreHydration />
         <CartSync />
+        <ServiceWorkerRegister />
         {children}
         {/* usePathname cần Suspense để các route động vẫn prerender được (cacheComponents). */}
         <Suspense fallback={null}>

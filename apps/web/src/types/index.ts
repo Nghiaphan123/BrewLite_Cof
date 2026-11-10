@@ -98,7 +98,6 @@ export interface Order {
     qty: number;
     unitPrice?: number;
     lineTotal: number;
-    unitPrice?: number;
     toppings?: Array<{
       id?: string;
       name?: string;

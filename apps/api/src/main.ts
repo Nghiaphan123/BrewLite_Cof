@@ -29,6 +29,7 @@ async function bootstrap() {
   app.enableCors({
     origin: allowedOrigins.length > 0 ? [...new Set(allowedOrigins)] : ['http://localhost:3000'],
     credentials: true,
+    credentials: true,
   });
 
   // API_PORT comes from .env (docs/deployment.md); PORT is set by some hosts such as Render.

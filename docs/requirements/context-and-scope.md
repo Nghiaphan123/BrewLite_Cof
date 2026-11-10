@@ -24,7 +24,7 @@ Xem menu → Chọn tùy chọn → Giỏ hàng → Đặt đơn → Thanh toán
 | --- | --- | --- | --- |
 | Khách hàng (customer) | Order a drink without waiting at the till to recite options and pay cash. | See the menu, choose size and toppings, keep a cart, register or sign in, pay with mock Wallet or Card, and see confirmation, status, and history. | Yes. Primary actor. |
 | Nhân viên quầy (counter staff) | Receive a clear paid order instead of a verbal one. | A paid order has a code, items, size, toppings, and total. They do not get a staff screen in this MVP. | Stakeholder only. No counter UI. |
-| Quản lý cửa hàng (store manager) | Know what the shop sells and that stock and money rules are enforced. | Prices are whole VND and recomputed by the server. Stock cannot go negative. Promotions and loyalty accrual follow the written rules. No admin catalog UI. | Stakeholder only. No back office. |
+| Quản lý cửa hàng (store manager) | Know what the shop sells and that stock and money rules are enforced. | Prices are whole VND and recomputed by the server. Stock cannot go negative. Promotions and loyalty accrual follow the written rules. The repository also has a limited management UI for topping stock, promotions, users (read-only), and order status; this is an extension, not a required customer-MVP feature. | Stakeholder; limited admin extension exists. No product-catalog CRUD or reports. |
 | Giảng viên / khách hàng nghiệm thu (lecturer) | Grade process and product against Assignment 2. | Requirements, diagrams, architecture, a running MVP, tests, CI/CD, and a reachable production URL, in that order, with git history. | Stakeholder. Not a system actor. |
 | Nhóm phát triển (development team) | Build, test, and hand over one system without replacing the required stack. | A monorepo with `apps/web`, `apps/api`, and `docs`, plus Docker Compose for local run. | Builds the system. Not a runtime actor. |
 | Đơn vị thanh toán (payment provider) | Be the boundary that approves or declines a charge. | Simulated only. Wallet and Card. Success and failure are observable. The same payment request is not charged twice. | Secondary actor, in-process mock. |
@@ -47,10 +47,14 @@ The MVP must let an authenticated customer complete the flow in §1 on a phone-s
 | Money and stock | Integer VND. Stock decrements when payment succeeds, under a lock, and never goes negative. |
 | Promo and loyalty | A valid promo reduces the total. Points accrue when an order becomes `PAID`. Spending points is out of scope. |
 | Local run | `docker-compose.yml` runs web, API, and PostgreSQL. Migrations and seed can rebuild the database. |
-| Quality and delivery | Unit tests, API integration tests for order and payment, one end-to-end test from menu to confirmation, CI on pull requests, a health check, and a production deploy with rollback notes. These are specified here and built in later tasks. |
+| Quality and delivery | Unit tests, API integration tests for order and payment, one end-to-end test from menu to confirmation, CI on pull requests, a health check, and a production deploy with rollback notes. CI/CD workflow files and E2E test source exist. Recorded CI and E2E runs, a production URL/deployment, release evidence, demo, Sprint Review, and Retrospective remain open. |
 | Client | Next.js, mobile-first, installable as a PWA (manifest, icons, service worker). |
 
 Assignment 1's backlog listed PWA as out of scope. Assignment 2 puts mobile-first/PWA in the required stack, so PWA is in scope for this assignment.
+
+### 3.1 Implemented extensions outside the required customer MVP
+
+The current repository additionally provides `/admin` for authorized administrators to list users, list and update topping stock, list and create promotions, and list orders and update their status. These capabilities are implemented by `apps/web/src/app/admin/page.tsx` and the protected `apps/api/src/modules/admin/` endpoints. They are supplemental features, not required by the Assignment 2 customer-flow checklist; their presence does not mean production deployment or delivery evidence is complete.
 
 ## 4. Out of scope
 
@@ -58,7 +62,7 @@ Assignment 1's backlog listed PWA as out of scope. Assignment 2 puts mobile-firs
 | --- | --- |
 | Real payment gateway (VNPay, MoMo, Stripe, or a bank QR) | The assignment requires a simulated provider. No real money, no card numbers, no bank credentials. |
 | Counter, barista, or kitchen screen | Staff are stakeholders. They are not given a UI in this MVP. |
-| Store-manager catalog, reports, or user admin | No admin CRUD. |
+| Full product-catalog management, reports, and administrative user changes | These are not required for the customer MVP. The limited implemented admin extension is described in §3.1. |
 | Delivery, pickup scheduling, multi-store | One counter, one menu. |
 | Loyalty redemption | Points may accrue. They cannot be spent. |
 | Email, SMS, or push notifications | Status is visible in the app only. |
@@ -97,8 +101,8 @@ A demo QR on the checkout screen, if present, is not a payment method. It must n
 | Risk | Impact | Mitigation |
 | --- | --- | --- |
 | Some application code already exists before this Task 1 file. | A strict reading of the sequential rule may question Task 4 evidence. | Commit Task 1–3 documents on their own branch before claiming later tasks. Do not delete the existing app. |
-| Hosting platform is not chosen yet. | Task 3.2 cannot be an honest deployment diagram. | Choose the host before Batch 3. Do not draw a generic cloud. |
-| CD and a recorded CI run are not present yet. The CI workflow file is. | The SRS and the running system can drift. | Track the open delivery items. Do not invent a pipeline log. |
+| Render is chosen as the deployment target, but production services and URLs are not recorded. | Task 3.2 may describe an intended topology, not a deployed system; Task 5.4 remains incomplete. | Keep the deployment diagram explicit that it is a target. Add URLs only after deployment and a successful health check. |
+| CI/CD workflow files exist, but no CI/CD run evidence is recorded. | Workflow configuration alone does not prove the quality gate or a successful deployment. | Record real passing and failing CI runs, verify required branch protection, and do not invent pipeline evidence. |
 | Frontend total and server total can diverge. | The customer sees one price and is charged another. | Server price is authoritative. A shared pricing fixture must agree. |
 | Production URL missing at grading time. | Task 5 deployment is incomplete even if the code is done. | Deploy only after the documents and the pipeline exist. Record the URL in the README. |
 

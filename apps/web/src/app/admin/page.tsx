@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { apiClient } from '@/lib/api';
 import { useAuthStore } from '@/store/auth.store';
@@ -98,12 +99,12 @@ function AdminDashboard() {
       tab === 'products'
         ? apiClient.getAdminProducts().then(setProducts)
         : tab === 'toppings'
-        ? apiClient.getAdminToppings().then(setToppings)
-        : tab === 'users'
-          ? apiClient.getAdminUsers().then(setUsers)
-          : tab === 'promotions'
-            ? apiClient.getAdminPromotions().then(setPromotions)
-            : apiClient.getAdminOrders().then(setOrders);
+          ? apiClient.getAdminToppings().then(setToppings)
+          : tab === 'users'
+            ? apiClient.getAdminUsers().then(setUsers)
+            : tab === 'promotions'
+              ? apiClient.getAdminPromotions().then(setPromotions)
+              : apiClient.getAdminOrders().then(setOrders);
 
     return request
       .then(() => setError(null))
@@ -133,6 +134,7 @@ function AdminDashboard() {
     setSelectedTab(tab);
     setError(null);
     setSearchTerm('');
+    setError(null);
     router.replace(`/admin?tab=${tab}`);
   };
 
@@ -369,55 +371,50 @@ function AdminDashboard() {
           <nav className="mt-6 flex gap-2 border-b border-stone-200 pb-px overflow-x-auto text-sm font-semibold">
             <button
               onClick={() => switchTab('products')}
-              className={`flex items-center gap-2 border-b-2 px-4 py-2.5 transition whitespace-nowrap ${
-                activeTab === 'products'
+              className={`flex items-center gap-2 border-b-2 px-4 py-2.5 transition whitespace-nowrap ${activeTab === 'products'
                   ? 'border-emerald-800 text-emerald-900'
                   : 'border-transparent text-stone-600 hover:border-stone-300 hover:text-stone-900'
-              }`}
+                }`}
             >
               <span>☕</span> Món & Tồn kho
             </button>
 
             <button
               onClick={() => switchTab('toppings')}
-              className={`flex items-center gap-2 border-b-2 px-4 py-2.5 transition whitespace-nowrap ${
-                activeTab === 'toppings'
+              className={`flex items-center gap-2 border-b-2 px-4 py-2.5 transition whitespace-nowrap ${activeTab === 'toppings'
                   ? 'border-emerald-800 text-emerald-900'
                   : 'border-transparent text-stone-600 hover:border-stone-300 hover:text-stone-900'
-              }`}
+                }`}
             >
               <span>🧋</span> Topping & Tồn kho
             </button>
 
             <button
               onClick={() => switchTab('users')}
-              className={`flex items-center gap-2 border-b-2 px-4 py-2.5 transition whitespace-nowrap ${
-                activeTab === 'users'
+              className={`flex items-center gap-2 border-b-2 px-4 py-2.5 transition whitespace-nowrap ${activeTab === 'users'
                   ? 'border-emerald-800 text-emerald-900'
                   : 'border-transparent text-stone-600 hover:border-stone-300 hover:text-stone-900'
-              }`}
+                }`}
             >
               <span>👥</span> Người dùng ({users.length || '...'})
             </button>
 
             <button
               onClick={() => switchTab('promotions')}
-              className={`flex items-center gap-2 border-b-2 px-4 py-2.5 transition whitespace-nowrap ${
-                activeTab === 'promotions'
+              className={`flex items-center gap-2 border-b-2 px-4 py-2.5 transition whitespace-nowrap ${activeTab === 'promotions'
                   ? 'border-emerald-800 text-emerald-900'
                   : 'border-transparent text-stone-600 hover:border-stone-300 hover:text-stone-900'
-              }`}
+                }`}
             >
               <span>🏷️</span> Mã khuyến mãi ({promotions.length || '...'})
             </button>
 
             <button
               onClick={() => switchTab('orders')}
-              className={`flex items-center gap-2 border-b-2 px-4 py-2.5 transition whitespace-nowrap ${
-                activeTab === 'orders'
+              className={`flex items-center gap-2 border-b-2 px-4 py-2.5 transition whitespace-nowrap ${activeTab === 'orders'
                   ? 'border-emerald-800 text-emerald-900'
                   : 'border-transparent text-stone-600 hover:border-stone-300 hover:text-stone-900'
-              }`}
+                }`}
             >
               <span>📋</span> Lịch sử Đơn hàng ({orders.length || '...'})
             </button>
@@ -555,11 +552,10 @@ function AdminDashboard() {
                             <td className="px-5 py-4 text-stone-600">{u.email}</td>
                             <td className="px-5 py-4">
                               <span
-                                className={`inline-flex items-center whitespace-nowrap px-2 py-0.5 rounded text-xs font-bold ${
-                                  u.role === 'ADMIN'
+                                className={`inline-flex items-center whitespace-nowrap px-2 py-0.5 rounded text-xs font-bold ${u.role === 'ADMIN'
                                     ? 'bg-amber-100 text-amber-900 border border-amber-300'
                                     : 'bg-stone-100 text-stone-700'
-                                }`}
+                                  }`}
                               >
                                 {u.role === 'ADMIN' ? '🛡️ Quản trị viên' : 'Khách hàng'}
                               </span>
@@ -576,9 +572,8 @@ function AdminDashboard() {
                             <td className="px-5 py-4">
                               <span
                                 data-testid={`user-status-${u.id}`}
-                                className={`inline-flex items-center whitespace-nowrap rounded px-2 py-0.5 text-xs font-bold ${
-                                  u.blocked ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800'
-                                }`}
+                                className={`inline-flex items-center whitespace-nowrap rounded px-2 py-0.5 text-xs font-bold ${u.blocked ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800'
+                                  }`}
                               >
                                 {u.blocked ? 'Đã khoá' : 'Hoạt động'}
                               </span>
@@ -591,11 +586,10 @@ function AdminDashboard() {
                                   data-testid={`user-toggle-${u.id}`}
                                   onClick={() => void handleToggleUserBlocked(u)}
                                   disabled={togglingUserId === u.id}
-                                  className={`whitespace-nowrap rounded px-3 py-1 text-xs font-bold transition disabled:opacity-40 ${
-                                    u.blocked
+                                  className={`whitespace-nowrap rounded px-3 py-1 text-xs font-bold transition disabled:opacity-40 ${u.blocked
                                       ? 'border border-emerald-800 text-emerald-800 hover:bg-emerald-50'
                                       : 'bg-red-700 text-white hover:bg-red-800'
-                                  }`}
+                                    }`}
                                 >
                                   {togglingUserId === u.id ? '...' : u.blocked ? 'Mở khoá' : 'Khoá'}
                                 </button>
@@ -700,11 +694,10 @@ function AdminDashboard() {
                             </td>
                             <td className="px-5 py-4">
                               <span
-                                className={`inline-flex items-center whitespace-nowrap px-2 py-0.5 rounded text-xs font-bold ${
-                                  p.active !== false
+                                className={`inline-flex items-center whitespace-nowrap px-2 py-0.5 rounded text-xs font-bold ${p.active !== false
                                     ? 'bg-emerald-100 text-emerald-800'
                                     : 'bg-stone-100 text-stone-500'
-                                }`}
+                                  }`}
                               >
                                 {p.active !== false ? 'Hoạt động' : 'Đã huỷ'}
                               </span>
@@ -716,11 +709,10 @@ function AdminDashboard() {
                                   data-testid={`promo-toggle-${p.code}`}
                                   onClick={() => void handleTogglePromotionActive(p)}
                                   disabled={togglingPromoId === p.id}
-                                  className={`whitespace-nowrap rounded px-3 py-1 text-xs font-bold transition disabled:opacity-40 ${
-                                    p.active !== false
+                                  className={`whitespace-nowrap rounded px-3 py-1 text-xs font-bold transition disabled:opacity-40 ${p.active !== false
                                       ? 'bg-red-700 text-white hover:bg-red-800'
                                       : 'border border-emerald-800 text-emerald-800 hover:bg-emerald-50'
-                                  }`}
+                                    }`}
                                 >
                                   {togglingPromoId === p.id ? '...' : p.active !== false ? 'Huỷ mã' : 'Kích hoạt lại'}
                                 </button>

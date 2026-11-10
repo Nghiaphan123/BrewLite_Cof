@@ -15,6 +15,7 @@ import { HealthModule } from './health/health.module.js';
     AdminModule,
     AuthModule,
     CartModule,
+    HealthModule,
     OrdersModule,
     PaymentsModule,
     ProductsModule,

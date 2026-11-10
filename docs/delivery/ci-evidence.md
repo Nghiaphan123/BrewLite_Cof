@@ -12,8 +12,9 @@ Do not add a screenshot of another project, a cropped log, or a made-up Actions 
 | Evidence | Link or path | Status |
 | --- | --- | --- |
 | Workflow file | `.github/workflows/ci.yml` | Present |
+| Playwright E2E job | `.github/workflows/ci.yml` (`browser-e2e`) | Configured; no run recorded |
 | Pull request whose checks ran | | Not run |
-| Successful run: install, lint, unit test, build | | Not run |
+| Successful run: install, lint, unit test, build, API integration, browser E2E | | Not run |
 | Failed run that blocked merge | | Not run |
 | CD workflow | `.github/workflows/cd.yml` | Present. Not run. |
 
@@ -21,7 +22,7 @@ The failed run must be a real failure of lint, test, or build. A cancelled run d
 
 ## Local commands the pipeline is expected to run
 
-These commands exist today. They are not a substitute for the Actions evidence.
+These commands exist today. They are not a substitute for the Actions evidence. The `browser-e2e` workflow job additionally installs Chromium, seeds its temporary database, and runs the Playwright journey.
 
 ```powershell
 cd apps/api
@@ -36,4 +37,4 @@ npm run lint
 npm run build
 ```
 
-`apps/web` has `npm test` (Vitest). The menu-to-confirmation browser test is `tests/e2e`. This CI workflow does not start it. It runs after the database, API, and web are up.
+`apps/web` has `npm test` (Vitest). The `browser-e2e` job installs Chromium, migrates and seeds its temporary Postgres service, then Playwright starts the API and web servers and runs `tests/e2e/menu-to-confirmation.spec.ts`. This job is not evidence of a passing run until it has completed successfully in GitHub Actions.

@@ -36,6 +36,7 @@ export default defineConfig({
       name: 'mobile-chrome',
       use: {
         ...devices['Pixel 5'],
+        viewport: { width: 390, height: 844 },
       },
     },
   ],

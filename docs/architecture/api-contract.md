@@ -1,6 +1,6 @@
 # BrewLite - API Contract
 
-**Status:** Phase 1 deliverable  
+**Status:** Core customer-MVP API contract; health and deployment references updated for Assignment 2
 **Owner:** H.Tài (Task 7.0)  
 **Related:** [ADR 0005 (conventions)](adr/0005-api-contract-conventions.md), [ADR 0004 (payment/lifecycle)](adr/0004-payment-mock-and-order-lifecycle.md), [ADR 0003 (database)](adr/0003-database-postgres-prisma.md), [Scenarios](../requirements/scenarios.md), [Product Backlog](../requirements/product-backlog.md), [Configuration](../config.md), [UI Decisions](../design/ui-decisions.md), [Wireframes](../design/wireframes.md)
 
@@ -16,7 +16,7 @@ This document specifies every HTTP endpoint in the BrewLite MVP. It is the contr
 - **Character encoding:** UTF-8. Vietnamese text in responses is UTF-8, not HTML-escaped.
 - **Auth:** `Authorization: Bearer <jwt>` on protected routes (C4). Public routes are noted per endpoint.
 
-Endpoints in the assignment (PDF §12.1): `GET /products`, `GET /products/:id`, `POST /auth/register`, `POST /auth/login`, `POST /orders`, `POST /payments`, `GET /orders/me`. Plus `GET /orders/:code` (needed by the confirmation screen, `wireframes.md` §8) and `GET /health` (used by `setup.md` §8). Task 10 adds promo/loyalty endpoints (not in Phase 1 endpoints below; listed in §9 as reserved).
+Endpoints in the assignment (PDF §12.1) are relative to the `/api/v1` base path: `GET /products`, `GET /products/:id`, `POST /auth/register`, `POST /auth/login`, `POST /orders`, `POST /payments`, and `GET /orders/me`. The public health endpoint is `GET /api/v1/health`; the confirmation route also reads `GET /orders/:code` under that base path. Assignment 2 adds promotion, cart, loyalty, and limited admin endpoints; this page remains the contract for the core customer-facing routes, not an exhaustive inventory of optional extensions.
 
 ## 2. Endpoint summary
 
