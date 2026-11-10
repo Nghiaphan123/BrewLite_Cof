@@ -5,7 +5,7 @@
  * - GET /products returns { items, total }. Each item is id, name, price,
  *   imageUrl, stock. No sizes or toppings (keeps the menu payload small).
  * - GET /products/:id returns the same fields plus sizes and the topping
- *   catalogue. Unknown or malformed id is 404 PRODUCT_NOT_FOUND, not 400.
+ *   catalogue, each topping with its stock. Unknown or malformed id is 404 PRODUCT_NOT_FOUND, not 400.
  * - price and topping prices are integers in VND.
  * - Relative seed image paths are expanded to an absolute URL on WEB_ORIGIN,
  *   because the files live in apps/web/public.
@@ -31,6 +31,8 @@ export type ToppingItem = {
   id: string;
   name: string;
   price: number;
+  /** Portions left; the payment takes one per cup. 0 = sold out. */
+  stock: number;
 };
 
 export type ProductDetail = ProductListItem & {
@@ -93,7 +95,7 @@ export class ProductsService {
     const toppings = await this.prisma.topping.findMany({
       where: { active: true },
       orderBy: { name: 'asc' },
-      select: { id: true, name: true, price: true },
+      select: { id: true, name: true, price: true, stock: true },
     });
 
     return {

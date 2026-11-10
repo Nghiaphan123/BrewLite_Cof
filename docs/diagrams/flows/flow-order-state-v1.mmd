@@ -1,24 +1,27 @@
 %% --- flow-order-state-v1 ---
-%% Source: ADR 0004 D1, D5, D6; PDF §9.1
+%% Source: PDF §9.1 (Order State Machine); ADR 0004 D1, D5, D6, "Manual transitions"
 %% Owner: H.Tài (Task 4.0 / Task 44.0)
-%% Status: Accepted 2026-10-22
+%% Status: Accepted 2026-10-22; amended 2026-11-08 to match the PDF diagram
 %% Related: scenarios.md S-ORD-5, S-CANCEL-1; api-contract.md §9
 %% .
 %% Covers: legal transitions; invalid transitions rejected by
 %% assertTransition (throws; API returns 409 INVALID_STATE_TRANSITION).
 %% COMPLETED and CANCELLED are terminal.
-%% PAYMENT_FAILED -> PAID is the retry edge (ADR 0004 D5).
-%% PREPARING/READY/COMPLETED edges are reserved for a future barista
-%% UI; not exercised in Phase 1.
+%% PAYMENT_FAILED -> PENDING is the retry edge ("thử lại"); the next attempt
+%% then goes PENDING -> PAID or PENDING -> PAYMENT_FAILED again.
+%% Edges into PENDING, PAID and PAYMENT_FAILED are taken only by POST /payments;
+%% staff (admin page) take PREPARING/READY/COMPLETED and the cancel edges.
 
 stateDiagram-v2
     [*] --> PENDING : POST /api/v1/orders
-    PENDING --> PAID : payment success
-    PENDING --> PAYMENT_FAILED : payment failed
-    PAYMENT_FAILED --> PAID : retry success
-    PAID --> PREPARING : (future, barista)
-    PREPARING --> READY : (future, barista)
-    READY --> COMPLETED : (future, barista)
-    PENDING --> CANCELLED : explicit cancel (Phase 2+)
+    PENDING --> PAID : thanh toán OK
+    PENDING --> PAYMENT_FAILED : thanh toán lỗi
+    PAYMENT_FAILED --> PENDING : thử lại (POST /payments, key mới)
+    PAID --> PREPARING : barista nhận
+    PREPARING --> READY : pha xong
+    READY --> COMPLETED : giao khách
+    PENDING --> CANCELLED : hủy
+    PAYMENT_FAILED --> CANCELLED : hủy
+    PAID --> CANCELLED : hủy (trả kho, thu hồi điểm)
     COMPLETED --> [*]
     CANCELLED --> [*]

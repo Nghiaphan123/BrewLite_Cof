@@ -7,6 +7,18 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useCartStore } from '@/store/cart.store';
 import { useAuthStore } from '@/store/auth.store';
+import { apiClient } from '@/lib/api';
+import { Spinner } from '@/components/Skeleton';
+import {
+  exceedsStock,
+  isOutOfStock,
+  isToppingSoldOut,
+  remainingForCart,
+  remainingForToppings,
+  shortToppings,
+} from '@/features/product/stock';
+
+const REMOVE_ANIMATION_MS = 220;
 
 export default function CartPage() {
   const router = useRouter();
@@ -15,17 +27,41 @@ export default function CartPage() {
     promoCode,
     updateQty,
     removeItem,
-    setPromoCode,
+    setPromotion,
     getSubtotal,
     getDiscount,
     getTotalPrice,
   } = useCartStore();
   const token = useAuthStore((state) => state.token);
   const [promoInput, setPromoInput] = useState(promoCode);
+  const [promoError, setPromoError] = useState<string | null>(null);
+  const [promoLoading, setPromoLoading] = useState(false);
+  const [removingIds, setRemovingIds] = useState<string[]>([]);
 
-  const handleApplyPromo = (e: React.FormEvent) => {
+  const handleRemove = (cartItemId: string) => {
+    setRemovingIds((ids) => [...ids, cartItemId]);
+    setTimeout(() => removeItem(cartItemId), REMOVE_ANIMATION_MS);
+  };
+
+  const handleApplyPromo = async (e: React.FormEvent) => {
     e.preventDefault();
-    setPromoCode(promoInput);
+    const code = promoInput.trim().toUpperCase();
+    setPromoError(null);
+    if (!code) {
+      setPromotion(null);
+      return;
+    }
+
+    setPromoLoading(true);
+    try {
+      setPromotion(await apiClient.validatePromotion(code, getSubtotal()));
+      setPromoInput(code);
+    } catch (error) {
+      setPromotion(null);
+      setPromoError(error instanceof Error ? error.message : 'Không thể áp dụng mã giảm giá.');
+    } finally {
+      setPromoLoading(false);
+    }
   };
 
   const handleProceedCheckout = () => {
@@ -88,7 +124,9 @@ export default function CartPage() {
               <article
                 key={item.cartItemId}
                 data-testid={`cart-item-${item.cartItemId}`}
-                className="flex gap-4 rounded-2xl border border-stone-200 bg-white p-3 shadow-sm sm:p-4"
+                className={`flex gap-4 rounded-2xl border border-stone-200 bg-white p-3 shadow-sm sm:p-4 ${
+                  removingIds.includes(item.cartItemId) ? 'pointer-events-none animate-item-out' : 'animate-rise-in'
+                }`}
               >
                 <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-stone-100 sm:h-28 sm:w-32">
                   {item.product.imageUrl ? (
@@ -118,6 +156,26 @@ export default function CartPage() {
                     <p className="mt-2 text-sm font-bold text-emerald-800">
                       {item.lineTotal.toLocaleString('vi-VN')}₫
                     </p>
+                    {exceedsStock(item.product, items) && (
+                      <p role="alert" data-testid={`stock-warning-${item.cartItemId}`} className="mt-1 text-xs font-medium text-red-600">
+                        {isOutOfStock(item.product)
+                          ? 'Món này đã hết hàng, vui lòng xóa khỏi giỏ.'
+                          : `Chỉ còn ${item.product.stock} ly, vui lòng giảm số lượng.`}
+                      </p>
+                    )}
+                    {/* Mục 2.2: tồn kho topping lấy từ GET /cart (giỏ đã lưu) hoặc trang chi tiết món. */}
+                    {shortToppings(item, items).map((topping) => (
+                      <p
+                        key={topping.id}
+                        role="alert"
+                        data-testid={`topping-warning-${item.cartItemId}-${topping.id}`}
+                        className="mt-1 text-xs font-medium text-red-600"
+                      >
+                        {isToppingSoldOut(topping)
+                          ? `Topping ${topping.name} đã hết, vui lòng xóa ly này rồi chọn lại.`
+                          : `Topping ${topping.name} chỉ còn ${topping.stock} phần, vui lòng giảm số lượng.`}
+                      </p>
+                    ))}
                   </div>
 
                   <div className="flex items-center justify-between gap-3 sm:justify-end">
@@ -125,17 +183,27 @@ export default function CartPage() {
                       <button
                         type="button"
                         aria-label="Giảm số lượng"
-                        onClick={() => updateQty(item.cartItemId, item.qty - 1)}
-                        className="h-8 w-8 rounded-full bg-white text-lg font-bold text-black transition hover:bg-black hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
+                        onClick={() =>
+                          item.qty === 1
+                            ? handleRemove(item.cartItemId)
+                            : updateQty(item.cartItemId, item.qty - 1)
+                        }
+                        className="h-8 w-8 rounded-full bg-white text-lg font-bold text-[#002C22] transition hover:bg-[#002C22] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#002C22]"
                       >
                         −
                       </button>
-                      <span className="w-5 text-center text-sm font-bold text-black">{item.qty}</span>
+                      <span key={item.qty} className="w-5 animate-pop text-center text-sm font-bold text-black">{item.qty}</span>
                       <button
                         type="button"
                         aria-label="Tăng số lượng"
+                        // Mục 5: đã lấy hết số ly còn trong kho (tính chung mọi dòng cùng món) thì khoá nút +.
+                        // Mục 2.1: cũng khoá khi một topping của ly này đã hết phần.
+                        disabled={
+                          remainingForCart(item.product, items) <= 0 ||
+                          remainingForToppings(item.toppings, items) <= 0
+                        }
                         onClick={() => updateQty(item.cartItemId, item.qty + 1)}
-                        className="h-8 w-8 rounded-full bg-white text-lg font-bold text-black transition hover:bg-black hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
+                        className="h-8 w-8 rounded-full bg-white text-lg font-bold text-[#002C22] transition hover:bg-[#002C22] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#002C22] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-white disabled:hover:text-[#002C22]"
                       >
                         +
                       </button>
@@ -143,7 +211,7 @@ export default function CartPage() {
                     <button
                       type="button"
                       aria-label={`Xóa ${item.product.name} khỏi giỏ`}
-                      onClick={() => removeItem(item.cartItemId)}
+                      onClick={() => handleRemove(item.cartItemId)}
                       className="rounded-lg px-2 py-2 text-xs font-medium text-red-600 hover:bg-red-50"
                     >
                       Xóa
@@ -173,11 +241,18 @@ export default function CartPage() {
                 <button
                   type="submit"
                   data-testid="apply-promo-btn"
-                  className="rounded-xl bg-black px-4 py-2.5 text-sm font-bold text-white transition hover:bg-stone-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
+                  disabled={promoLoading}
+                  className="rounded-xl bg-[#002C22] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#014034] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#002C22] disabled:opacity-60"
                 >
+                  {promoLoading && <Spinner />}
                   Áp dụng
                 </button>
               </div>
+              {promoError && (
+                <p role="alert" data-testid="promo-error" className="mt-2 text-sm text-red-600">
+                  {promoError}
+                </p>
+              )}
             </form>
 
             <div className="mt-5 space-y-3 border-t border-stone-200 pt-4 text-sm">
@@ -205,7 +280,8 @@ export default function CartPage() {
               onClick={handleProceedCheckout}
               className="mt-5 min-h-12 w-full rounded-xl bg-emerald-900 px-4 py-3 font-semibold text-white transition hover:bg-emerald-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-900"
             >
-              Tiến hành thanh toán
+              {/* US-05: nút Thanh toán hiển thị tổng tiền (đã trừ giảm giá). */}
+              Thanh toán · {getTotalPrice().toLocaleString('vi-VN')}₫
             </button>
             <p className="mt-3 text-center text-xs text-stone-500">Thanh toán an toàn · Hỗ trợ ví và thẻ</p>
           </aside>

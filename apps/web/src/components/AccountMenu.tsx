@@ -5,20 +5,17 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { apiClient } from '@/lib/api';
 import { useAuthStore } from '@/store/auth.store';
-import type { User } from '@/types';
-
-type AccountDialog = 'profile' | 'password' | null;
+import { useLogout } from '@/features/auth/useLogout';
+import { Spinner } from '@/components/Skeleton';
 
 export function AccountMenu() {
   const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const { token, user, logout, setAuth } = useAuthStore();
+  const { token, user, setAuth } = useAuthStore();
+  const logoutWithLoading = useLogout();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [dialog, setDialog] = useState<AccountDialog>(null);
-  const [profile, setProfile] = useState<User | null>(null);
-  const [profileLoading, setProfileLoading] = useState(false);
-  const [profileError, setProfileError] = useState<string | null>(null);
+  const [passwordOpen, setPasswordOpen] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -31,10 +28,8 @@ export function AccountMenu() {
 
     apiClient.getProfile()
       .then((authenticatedUser) => setAuth(token, authenticatedUser))
-      .catch((error: unknown) => {
-        setProfileError(
-          error instanceof Error ? error.message : 'Không thể tải thông tin tài khoản.',
-        );
+      .catch(() => {
+        // Menu vẫn dùng được với email; lỗi phiên sẽ được báo ở thao tác tiếp theo.
       });
   }, [setAuth, token, user]);
 
@@ -79,7 +74,7 @@ export function AccountMenu() {
 
   const openPasswordForm = () => {
     setMenuOpen(false);
-    setDialog('password');
+    setPasswordOpen(true);
     setCurrentPassword('');
     setNewPassword('');
     setConfirmPassword('');
@@ -89,7 +84,7 @@ export function AccountMenu() {
 
   const closeDialog = () => {
     if (passwordLoading) return;
-    setDialog(null);
+    setPasswordOpen(false);
   };
 
   const handleChangePassword = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -118,13 +113,11 @@ export function AccountMenu() {
   };
 
   const handleLogout = () => {
-    logout();
     setMenuOpen(false);
-    router.push('/login');
+    void logoutWithLoading();
   };
 
   const displayName = user?.name || user?.email || 'Tài khoản';
-  const displayedProfile = profile ?? user;
 
   return (
     <>
@@ -153,6 +146,19 @@ export function AccountMenu() {
             aria-label="Tùy chọn tài khoản"
             className="absolute right-0 z-50 mt-2 w-52 overflow-hidden rounded-xl border border-stone-200 bg-white py-1 shadow-lg"
           >
+            {user?.role === 'ADMIN' && (
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setMenuOpen(false);
+                  router.push('/admin');
+                }}
+                className="flex w-full items-center gap-2 border-b border-stone-100 bg-amber-50 px-4 py-2.5 text-left text-sm font-bold text-amber-900 hover:bg-amber-100"
+              >
+                <span>🛡️</span> Trang quản trị (Admin)
+              </button>
+            )}
             <button
               type="button"
               role="menuitem"
@@ -181,7 +187,7 @@ export function AccountMenu() {
         )}
       </div>
 
-      {dialog && (
+      {passwordOpen && (
         <div
           className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4"
           onMouseDown={(event) => {
@@ -196,7 +202,7 @@ export function AccountMenu() {
           >
             <div className="flex items-start justify-between gap-4">
               <h2 id="account-dialog-title" className="text-xl font-bold text-stone-900">
-                {dialog === 'profile' ? 'Thông tin tài khoản' : 'Đổi mật khẩu'}
+                Đổi mật khẩu
               </h2>
               <button
                 type="button"
@@ -208,105 +214,67 @@ export function AccountMenu() {
               </button>
             </div>
 
-            {dialog === 'profile' ? (
-              <div className="mt-5">
-                {profileLoading && <p role="status">Đang tải thông tin...</p>}
-                {profileError && (
-                  <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
-                    {profileError}
-                  </p>
-                )}
-                {!profileLoading && !profileError && displayedProfile && (
-                  <dl className="space-y-4">
-                    <div>
-                      <dt className="text-xs font-semibold uppercase text-stone-500">Họ và tên</dt>
-                      <dd data-testid="profile-name" className="mt-1 font-medium text-stone-900">
-                        {displayedProfile.name || 'Chưa cập nhật'}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-xs font-semibold uppercase text-stone-500">Email</dt>
-                      <dd className="mt-1 font-medium text-stone-900">{displayedProfile.email}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-xs font-semibold uppercase text-stone-500">Điểm thành viên</dt>
-                      <dd className="mt-1 font-medium text-stone-900">
-                        {displayedProfile.loyaltyPoints ?? 0} điểm
-                      </dd>
-                    </div>
-                    {displayedProfile.createdAt && (
-                      <div>
-                        <dt className="text-xs font-semibold uppercase text-stone-500">Ngày tham gia</dt>
-                        <dd className="mt-1 font-medium text-stone-900">
-                          {new Date(displayedProfile.createdAt).toLocaleDateString('vi-VN')}
-                        </dd>
-                      </div>
-                    )}
-                  </dl>
-                )}
-              </div>
-            ) : (
-              <form className="mt-5 space-y-4" onSubmit={handleChangePassword}>
-                <label className="block text-sm font-medium text-stone-700">
-                  Mật khẩu hiện tại
-                  <input
-                    type="password"
-                    required
-                    minLength={8}
-                    autoComplete="current-password"
-                    data-testid="current-password"
-                    value={currentPassword}
-                    onChange={(event) => setCurrentPassword(event.target.value)}
-                    className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-stone-900"
-                  />
-                </label>
-                <label className="block text-sm font-medium text-stone-700">
-                  Mật khẩu mới
-                  <input
-                    type="password"
-                    required
-                    minLength={8}
-                    pattern="^(?=.*[A-Za-z])(?=.*\d).{8,}$"
-                    title="Mật khẩu cần ít nhất 8 ký tự, gồm chữ cái và chữ số."
-                    autoComplete="new-password"
-                    data-testid="new-password"
-                    value={newPassword}
-                    onChange={(event) => setNewPassword(event.target.value)}
-                    className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-stone-900"
-                  />
-                </label>
-                <label className="block text-sm font-medium text-stone-700">
-                  Nhập lại mật khẩu mới
-                  <input
-                    type="password"
-                    required
-                    minLength={8}
-                    autoComplete="new-password"
-                    data-testid="confirm-password"
-                    value={confirmPassword}
-                    onChange={(event) => setConfirmPassword(event.target.value)}
-                    className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-stone-900"
-                  />
-                </label>
-                {passwordError && (
-                  <p role="alert" data-testid="password-error" className="text-sm text-red-700">
-                    {passwordError}
-                  </p>
-                )}
-                {passwordSuccess && (
-                  <p role="status" data-testid="password-success" className="text-sm text-emerald-800">
-                    {passwordSuccess}
-                  </p>
-                )}
-                <button
-                  type="submit"
-                  disabled={passwordLoading}
-                  className="w-full rounded-xl bg-emerald-900 px-4 py-3 font-semibold text-white hover:bg-emerald-800 disabled:opacity-60"
-                >
-                  {passwordLoading ? 'Đang lưu...' : 'Cập nhật mật khẩu'}
-                </button>
-              </form>
-            )}
+            <form className="mt-5 space-y-4" onSubmit={handleChangePassword}>
+              <label className="block text-sm font-medium text-stone-700">
+                Mật khẩu hiện tại
+                <input
+                  type="password"
+                  required
+                  minLength={8}
+                  autoComplete="current-password"
+                  data-testid="current-password"
+                  value={currentPassword}
+                  onChange={(event) => setCurrentPassword(event.target.value)}
+                  className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-stone-900"
+                />
+              </label>
+              <label className="block text-sm font-medium text-stone-700">
+                Mật khẩu mới
+                <input
+                  type="password"
+                  required
+                  minLength={8}
+                  pattern="^(?=.*[A-Za-z])(?=.*\d).{8,}$"
+                  title="Mật khẩu cần ít nhất 8 ký tự, gồm chữ cái và chữ số."
+                  autoComplete="new-password"
+                  data-testid="new-password"
+                  value={newPassword}
+                  onChange={(event) => setNewPassword(event.target.value)}
+                  className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-stone-900"
+                />
+              </label>
+              <label className="block text-sm font-medium text-stone-700">
+                Nhập lại mật khẩu mới
+                <input
+                  type="password"
+                  required
+                  minLength={8}
+                  autoComplete="new-password"
+                  data-testid="confirm-password"
+                  value={confirmPassword}
+                  onChange={(event) => setConfirmPassword(event.target.value)}
+                  className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-stone-900"
+                />
+              </label>
+              {passwordError && (
+                <p role="alert" data-testid="password-error" className="text-sm text-red-700">
+                  {passwordError}
+                </p>
+              )}
+              {passwordSuccess && (
+                <p role="status" data-testid="password-success" className="text-sm text-emerald-800">
+                  {passwordSuccess}
+                </p>
+              )}
+              <button
+                type="submit"
+                disabled={passwordLoading}
+                className="w-full rounded-xl bg-emerald-900 px-4 py-3 font-semibold text-white hover:bg-emerald-800 disabled:opacity-60"
+              >
+                {passwordLoading && <Spinner />}
+                {passwordLoading ? 'Đang lưu...' : 'Cập nhật mật khẩu'}
+              </button>
+            </form>
           </section>
         </div>
       )}

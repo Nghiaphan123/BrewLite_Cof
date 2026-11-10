@@ -33,8 +33,12 @@ Endpoints in the assignment (PDF §12.1): `GET /products`, `GET /products/:id`, 
 | `POST` | `/payments`      | **JWT** | `200 PaymentResult` / `400` / `401` / `409`    | §9        |
 | `GET`  | `/orders/me`     | **JWT** | `200 { items, total }` / `401`                 | §10       |
 | `GET`  | `/orders/:code`  | **JWT** | `200 Order` / `404`                            | §11       |
+| `GET`  | `/cart`          | **JWT** | `200 Cart` / `401`                             | §11.1     |
+| `PUT`  | `/cart`          | **JWT** | `200 Cart` / `400` / `401` / `404`             | §11.1     |
+| `GET`/`PATCH` | `/admin/products`, `/admin/toppings` (stock) | **Admin** | `200` / `400` / `403` / `404` | §11.2     |
+| `PATCH` | `/admin/users/:id/block`, `/admin/promotions/:id/active`, `/admin/toppings/:id/price` | **Admin** | `200` / `400` / `403` / `404` / `409` | §11.3 |
 
-`/health`, `GET /products`, `GET /products/:id`, `POST /auth/register`, and `POST /auth/login` are public. User profile and password changes, orders, and payments require JWT.
+`/health`, `GET /products`, `GET /products/:id`, `POST /auth/register`, and `POST /auth/login` are public. User profile and password changes, orders, payments, and the saved cart require JWT.
 
 ## 3. `GET /api/v1/health`
 
@@ -103,8 +107,8 @@ No other responses. Not cached; no rate limit in Phase 1.
   "stock": 20,
   "sizes": ["S", "M", "L"],
   "toppings": [
-    { "id": "t1", "name": "Trân châu", "price": 5000 },
-    { "id": "t2", "name": "Kem", "price": 7000 }
+    { "id": "t1", "name": "Trân châu", "price": 5000, "stock": 40 },
+    { "id": "t2", "name": "Kem", "price": 7000, "stock": 0 }
   ]
 }
 ```
@@ -113,6 +117,7 @@ No other responses. Not cached; no rate limit in Phase 1.
 - `sizes` and `toppings` are returned here, not on the list endpoint, to keep the menu response small. The detail page uses them to render the selector (`wireframes.md` §5).
 - The base `price` is the **S** size price. Size-specific prices are computed by the pricing rule (`ui-decisions.md` §4.2), not returned as a table. If the team later wants a size-price table, add `sizePrices: { S: 35000, M: 40000, L: 45000 }` — non-breaking additive.
 - `toppings` is the full catalogue; a product may restrict toppings later (Phase 2+). In Phase 1 all products accept all toppings.
+- `toppings[].stock` is the number of portions left. Each cup with a topping uses one portion, taken at payment (§9). The web disables a topping whose stock is `0`.
 
 **Response `404` (C3):**
 ```json
@@ -196,6 +201,11 @@ No token is returned here. The client calls `POST /auth/login` after register (`
 { "statusCode": 401, "error": "Unauthorized", "message": "Invalid credentials", "code": "AUTH_INVALID" }
 ```
 
+**Response `403`** when an admin has blocked the account (§11.3). It is returned only after the password is checked, so a wrong password still answers `401`:
+```json
+{ "statusCode": 403, "error": "Forbidden", "message": "This account has been blocked", "code": "ACCOUNT_BLOCKED" }
+```
+
 ## 7.1. `GET /api/v1/auth/me`
 
 **Auth:** JWT. Returns only the authenticated user's profile; the password hash is never selected.
@@ -248,7 +258,7 @@ The current password must be verified before storing a bcrypt hash of the new pa
 - `size` not in the product's `sizes` → `400` with `code: "INVALID_SIZE"`.
 
 **Server behavior:**
-- **Recomputes `total` and each `lineTotal` from the DB.** Client-supplied prices are ignored (`scenarios.md` S-ORD-1). The pricing rule is the shared fixture (`ui-decisions.md` §4.2).
+- **Recomputes `total` and each `lineTotal` from the DB.** Client-supplied prices are ignored (`scenarios.md` S-ORD-1). The pricing rule is the shared fixture (`ui-decisions.md` §4.2): unit price = S price + size surcharge (S 0, M 5,000, L 10,000) + topping prices.
 - Creates `Order` with `status = "PENDING"`, `userId` from the JWT, `createdAt`, and `code` (D3). **Does not decrement stock** (ADR 0004 D1).
 - Creates `OrderItem` rows with `productId`, `size`, `qty`, `lineTotal`, and the topping ids.
 - Returns `201` with the order summary; the client then calls `POST /payments` (`scenarios.md` S-MAIN-1 step 8).
@@ -300,9 +310,9 @@ The current password must be verified before storing a bcrypt hash of the new pa
 - Inside a `prisma.$transaction`:
   1. Look up the order; if not found or not owned by caller → `404`.
   2. Assert the current state is `PENDING` or `PAYMENT_FAILED`; otherwise `409` with `code: "INVALID_STATE_TRANSITION"` (Task 10a).
-  3. Check stock for all items under optimistic lock (`version`); if insufficient → `409` with `code: "OUT_OF_STOCK"` (Task 10c).
+  3. Check stock for all items under optimistic lock (`version`); if insufficient → `409` with `code: "OUT_OF_STOCK"` (Task 10c). Topping stock is checked for the whole order (one portion per cup, added up across lines) with a conditional update (`stock >= needed`); if a topping is short → `409` `OUT_OF_STOCK` and nothing is decremented.
   4. Call the mock gateway (`PAYMENT_MOCK_MODE`; `config.md` §2.1).
-  5. On success: decrement stock, transition to `PAID`, accrue loyalty points (ADR 0004 D1, D7).
+  5. On success: decrement drink and topping stock, transition to `PAID`, accrue loyalty points (ADR 0004 D1, D7). Cancelling a `PAID` order gives both back.
   6. On failure: transition to `PAYMENT_FAILED`, no stock change, no points.
   7. Store the `Payment` row with `idempotencyKey`, `requestHash`, `method`, `amount`, `status`.
 - If the `idempotencyKey` already exists:
@@ -338,7 +348,7 @@ The current password must be verified before storing a bcrypt hash of the new pa
 
 **Rules:**
 - Failure is `200` with `status: "PAYMENT_FAILED"`, not `402` (ADR 0004 D2). The frontend checks the body `status`, not `res.ok`.
-- The order remains retrievable; the cart is preserved (`scenarios.md` S-PAY-2). The user retries with a **new** `Idempotency-Key` (ADR 0004 D5); the order goes `PAYMENT_FAILED → PAID` on success.
+- The order remains retrievable; the cart is preserved (`scenarios.md` S-PAY-2). The user retries with a **new** `Idempotency-Key` (ADR 0004 D5); the order goes `PAYMENT_FAILED → PENDING → PAID` on success, or back to `PAYMENT_FAILED` if the retry fails too (PDF §9.1). A replay of an earlier attempt's key answers that attempt's own result.
 - `loyaltyPointsEarned` = `floor(amount / 1000)` (ADR 0004 D7). `userLoyaltyPoints` is the post-accrual total.
 - A replay with the same key and same body returns the **same** response body (including `paymentId`), even if the original was a failure. Idempotency covers both outcomes, not just success.
 
@@ -365,6 +375,16 @@ The current password must be verified before storing a bcrypt hash of the new pa
       "code": "BL-2026-0001",
       "status": "PAID",
       "total": 95000,
+      "items": [
+        {
+          "productId": "0f8fad5b-...",
+          "name": "Cà phê sữa",
+          "size": "M",
+          "qty": 2,
+          "lineTotal": 90000,
+          "toppings": [{ "id": "20000000-...", "name": "Trân châu đen", "price": 5000 }]
+        }
+      ],
       "createdAt": "2026-10-22T14:30:00.000Z"
     },
     {
@@ -372,6 +392,7 @@ The current password must be verified before storing a bcrypt hash of the new pa
       "code": "BL-2026-0000",
       "status": "PAYMENT_FAILED",
       "total": 45000,
+      "items": [],
       "createdAt": "2026-10-21T09:00:00.000Z"
     }
   ],
@@ -382,7 +403,7 @@ The current password must be verified before storing a bcrypt hash of the new pa
 **Rules:**
 - Sorted by `createdAt` **descending** (newest first; `wireframes.md` §11). Server-side sort, not client-side.
 - Only the caller's orders. Cross-user orders are absent, not `403`.
-- `items` here are order summaries (no line items). The confirmation/detail screen (`GET /orders/:code`) returns the full order.
+- Each order includes its line items with product name and toppings, because the history screen shows what was bought. `toppings[].price` is the price snapshot from order time.
 - Empty history returns `{ "items": [], "total": 0 }` with `200`; the UI shows the empty state.
 
 **Errors:** `401` missing/expired JWT; `500` unexpected.
@@ -421,6 +442,85 @@ The current password must be verified before storing a bcrypt hash of the new pa
 
 **Errors:** `401` missing/expired JWT; `404` not found or not owned; `500` unexpected.
 
+## 11.1. `GET` and `PUT /api/v1/cart`
+
+**Auth:** **JWT required** (C4). The user comes from the token; there is one cart per user.  
+**Purpose:** keep a logged-in customer's cart across devices. A guest's cart stays in the browser only. The web app merges it into the saved cart at login and clears the browser copy at sign-out.
+
+**`PUT` request body** (replaces the whole cart; `items: []` clears it):
+```json
+{
+  "items": [
+    { "productId": "0f8fad5b-...", "size": "M", "toppingIds": ["20000000-..."], "qty": 2 }
+  ],
+  "promoCode": "BREW10"
+}
+```
+
+**Validation:** `items` is an array of at most 100 lines; each has `productId` (UUID), `size` (`S`|`M`|`L`), `toppingIds` (optional, at most 20 strings), and `qty` (integer 1..99). `promoCode` is an optional string of at most 40 characters. Lines with the same product, size, and toppings are merged, with `qty` capped at 99.
+
+**Response `200`** (both methods; a user with no saved cart gets `items: []`, `promoCode: ""`, and `promotion: null`):
+```json
+{
+  "items": [
+    {
+      "productId": "0f8fad5b-...",
+      "size": "M",
+      "qty": 2,
+      "toppingIds": ["pearl"],
+      "toppings": [{ "id": "pearl", "name": "Trân châu đen", "price": 5000, "stock": 12 }],
+      "product": { "id": "0f8fad5b-...", "name": "Latte", "price": 45000, "imageUrl": "/images/products/10.jpg", "stock": 3 }
+    }
+  ],
+  "promoCode": "BREW10",
+  "promotion": { "code": "BREW10", "type": "PERCENT", "value": 10, "minOrderTotal": 0 }
+}
+```
+
+**Rules:**
+- The cart does not reserve stock and does not validate `promoCode`. Both are checked by the order and payment flows (§8, §9).
+- `product.stock` and `toppings[].stock` are read live on every `GET`, so the web can warn about a drink or topping that ran out after the cart was saved. They are information only; the payment enforces stock.
+- `promotion` is the rule the web uses to preview the discount. It is `null` when the code is unknown, inactive, expired, or used up.
+- The cart stores no prices. `POST /orders` computes the amount from server prices.
+- `toppingIds` has no foreign key: a topping that is removed or inactive drops out of the response.
+
+**Errors:** `400` validation; `401` missing/expired JWT; `404` with `code: "PRODUCT_NOT_FOUND"` for an unknown product (the saved cart is unchanged); `500` unexpected.
+
+## 11.2. Admin stock endpoints
+
+**Auth:** JWT with role `ADMIN` (C4); other users get `403`.
+
+| Method  | Path                          | Body             | Success                                            |
+| ------- | ----------------------------- | ---------------- | -------------------------------------------------- |
+| `GET`   | `/admin/products`             | —                | `200 [{ id, name, price, imageUrl, stock }]`       |
+| `PATCH` | `/admin/products/:id/stock`   | `{ "stock": 25 }` | `200 { id, name, price, imageUrl, stock }`         |
+| `GET`   | `/admin/toppings`             | —                | `200 [{ id, name, price, stock, active }]`         |
+| `PATCH` | `/admin/toppings/:id/stock`   | `{ "stock": 50 }` | `200 { id, name, price, stock, active }`           |
+
+**Rules:**
+- `stock` is the new absolute count (cups for a drink, portions for a topping), an integer from `0`; drinks accept at most `100000`.
+- Setting a drink's stock also increments `Product.version`, so a payment that read the old stock cannot overwrite the new value (ADR 0004 D1).
+
+**Errors:** `400` validation (negative, non-integer); `401`; `403` not an admin; `404` `PRODUCT_NOT_FOUND` / `TOPPING_NOT_FOUND` for an unknown or malformed id.
+
+## 11.3. Admin management endpoints
+
+**Auth:** JWT with role `ADMIN` (C4); other users get `403`.
+
+| Method  | Path                          | Body                  | Success                                         |
+| ------- | ----------------------------- | --------------------- | ----------------------------------------------- |
+| `GET`   | `/admin/users`                | —                     | `200 [{ id, name, email, role, blocked, loyaltyPoints, createdAt, _count }]` |
+| `PATCH` | `/admin/users/:id/block`      | `{ "blocked": true }` | `200 { id, name, email, role, blocked }`        |
+| `PATCH` | `/admin/promotions/:id/active` | `{ "active": false }` | `200 Promotion`                                |
+| `PATCH` | `/admin/toppings/:id/price`   | `{ "price": 7000 }`   | `200 { id, name, price, stock, active }`        |
+
+**Rules:**
+- **Block:** a blocked user gets `403 ACCOUNT_BLOCKED` at login (§7), and `JwtAuthGuard` rejects tokens they already hold with the same error, so the block takes effect at once. `blocked: false` opens the account again. An `ADMIN` account cannot be blocked (`409 CANNOT_BLOCK_ADMIN`), so an admin cannot lock themselves out.
+- **Cancel a promotion:** `active: false` cancels the code; new orders using it get `400 PROMO_INACTIVE` and the cart preview returns `promotion: null`. Orders that already used it keep their discount. `active: true` turns it back on.
+- **Topping price:** whole VND, `0..100000`. New orders use it at once; past orders keep the price stored in `order_item_toppings.unit_price`.
+
+**Errors:** `400` validation; `401`; `403` not an admin; `404` `USER_NOT_FOUND` / `PROMOTION_NOT_FOUND` / `TOPPING_NOT_FOUND`; `409` `CANNOT_BLOCK_ADMIN`.
+
 ## 12. Reserved endpoints (Task 10, not Phase 1)
 
 These are listed so the frontend and API agree on the shape before Task 10 adds them. They are **not** implemented in Phase 1 and are not part of Task 7.0's acceptance criteria.
@@ -428,7 +528,7 @@ These are listed so the frontend and API agree on the shape before Task 10 adds 
 | Method | Path                   | Purpose                  | Notes                                                                            |
 | ------ | ---------------------- | ------------------------ | -------------------------------------------------------------------------------- |
 | `POST` | `/orders/:code/cancel` | Cancel a `PENDING` order | ADR 0004 D6 says no auto-cancel; explicit cancel is a possible Phase 2 addition. |
-| `POST` | `/orders/:id/transition` | Drive an order status transition (test enabler for graded test a) | Internal/test endpoint; auth JWT (currently a test fixture, see Task 7 gap); not part of the public MVP API. |
+| `POST` | `/orders/:id/transition` | Drive an order status transition (graded test a) | Staff only: JWT with role `ADMIN` (customers get `403`). Only non-payment edges of PDF §9.1 are allowed; `→ PENDING`, `→ PAID`, `→ PAYMENT_FAILED` answer `409 INVALID_STATE_TRANSITION` (ADR 0004, "Manual transitions"). Not part of the public MVP API. |
 | `POST` | `/promotions/validate` | Validate a promo code    | Task 10d; `product-backlog.md` §13 10d.                                          |
 | `GET`  | `/loyalty/me`          | Current points balance   | Task 10d; the login/register responses carry `loyaltyPoints` in Phase 1.         |
 

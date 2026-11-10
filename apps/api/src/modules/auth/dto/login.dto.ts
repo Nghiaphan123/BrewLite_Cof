@@ -1,16 +1,18 @@
 /**
  * LoginDto — request body for POST /api/v1/auth/login.
  *
- * Validation rules per api-contract.md §7:
- * - email: valid email format
- * - password: string (no min length enforced here; bcrypt will fail if wrong)
+ * Validation rules:
+ * - email: valid email or username string (e.g. "admin")
+ * - password: string
  */
-import { IsEmail, IsString } from 'class-validator';
+import { IsNotEmpty, IsString } from 'class-validator';
 
 export class LoginDto {
-  @IsEmail()
+  @IsString()
+  @IsNotEmpty()
   email: string;
 
   @IsString()
+  @IsNotEmpty()
   password: string;
 }

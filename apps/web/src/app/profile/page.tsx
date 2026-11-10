@@ -6,12 +6,15 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { apiClient } from '@/lib/api';
 import { useAuthStore } from '@/store/auth.store';
 import { Order } from '@/types';
+import { useLogout } from '@/features/auth/useLogout';
+import { DetailLinesSkeleton, OrderListSkeleton, Spinner } from '@/components/Skeleton';
 
 function ProfileContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const tab = searchParams?.get('tab');
-  const { token, user, logout } = useAuthStore();
+  const { token, user } = useAuthStore();
+  const logoutWithLoading = useLogout();
 
   const [orders, setOrders] = useState<Order[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
@@ -25,7 +28,7 @@ function ProfileContent() {
   const [passwordLoading, setPasswordLoading] = useState(false);
 
   useEffect(() => {
-    if (!token) {
+    if (!useAuthStore.getState().token) {
       router.push('/login?redirect=/profile');
       return;
     }
@@ -49,14 +52,13 @@ function ProfileContent() {
 
     setPasswordLoading(true);
     try {
-      // API đổi mật khẩu có thể không có trong apiClient hiện tại
-      // Giữ UI theo yêu cầu, hiển thị thông báo tạm thời
-      setPasswordMsg('Tính năng đổi mật khẩu đang được cập nhật.');
+      await apiClient.changePassword({ currentPassword, newPassword });
+      setPasswordMsg('Đổi mật khẩu thành công.');
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
     } catch (err: unknown) {
-      setPasswordError(err instanceof Error ? err.message : 'Đổi mật khẩu thất bại');
+      setPasswordError(err instanceof Error ? err.message : 'Không thể đổi mật khẩu.');
     } finally {
       setPasswordLoading(false);
     }
@@ -124,15 +126,15 @@ function ProfileContent() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold tracking-tight">Thông tin tài khoản</h1>
-          <p className="mt-1 text-stone-600">Quản lý thông tin, đơn hàng và bảo mật</p>
+      <main className="mx-auto w-full max-w-5xl px-3 py-5 sm:px-6 sm:py-8">
+        <div className="mb-5 sm:mb-6">
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Thông tin tài khoản</h1>
+          <p className="mt-1 text-sm text-stone-600 sm:text-base">Quản lý thông tin, đơn hàng và bảo mật</p>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="space-y-6 lg:col-span-1">
-            <section className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
+            <section className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm sm:p-6">
               <div className="flex items-center gap-4">
                 <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-2xl">
                   👤
@@ -155,7 +157,7 @@ function ProfileContent() {
                 </div>
                 <div className="rounded-xl bg-stone-50 px-4 py-3">
                   <p className="text-sm font-semibold text-stone-900">ID tài khoản</p>
-                  <p className="mt-1 font-mono text-xs text-stone-600">{user?.id || 'user-1'}</p>
+                  <p className="mt-1 break-all font-mono text-xs text-stone-600">{user?.id || 'user-1'}</p>
                 </div>
               </div>
 
@@ -163,14 +165,14 @@ function ProfileContent() {
                 <button
                   type="button"
                   onClick={() => router.push('/profile?tab=password')}
-                  className="rounded-xl border border-stone-200 px-4 py-2.5 text-center text-sm font-semibold text-stone-700 hover:bg-stone-50"
+                  className="min-h-11 rounded-xl border border-stone-200 px-4 py-2.5 text-center text-sm font-semibold text-stone-700 hover:bg-stone-50"
                 >
                   Đổi mật khẩu
                 </button>
                 <button
                   type="button"
-                  onClick={logout}
-                  className="rounded-xl border border-red-200 px-4 py-2.5 text-center text-sm font-semibold text-red-600 hover:bg-red-50"
+                  onClick={() => void logoutWithLoading()}
+                  className="min-h-11 rounded-xl border border-red-200 px-4 py-2.5 text-center text-sm font-semibold text-red-600 hover:bg-red-50"
                 >
                   Đăng xuất
                 </button>
@@ -178,7 +180,7 @@ function ProfileContent() {
             </section>
 
             {(tab === 'password') && (
-              <section className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
+              <section className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm sm:p-6">
                 <h2 className="text-lg font-bold text-stone-900">Đổi mật khẩu</h2>
                 <form onSubmit={handleChangePassword} className="mt-4 space-y-4">
                   <div>
@@ -198,6 +200,8 @@ function ProfileContent() {
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       required
+                      minLength={8}
+                      autoComplete="new-password"
                       className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2.5 text-sm focus:border-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-100"
                     />
                   </div>
@@ -211,6 +215,7 @@ function ProfileContent() {
                       className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2.5 text-sm focus:border-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-100"
                     />
                   </div>
+                  <p className="text-xs text-stone-600">Mật khẩu mới có ít nhất 8 ký tự, gồm cả chữ và số.</p>
                   {passwordError && <p className="text-sm text-red-600">{passwordError}</p>}
                   {passwordMsg && <p className="text-sm text-emerald-700">{passwordMsg}</p>}
                   <button
@@ -218,6 +223,7 @@ function ProfileContent() {
                     disabled={passwordLoading}
                     className="w-full rounded-xl bg-emerald-900 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-60"
                   >
+                    {passwordLoading && <Spinner />}
                     {passwordLoading ? 'Đang xử lý...' : 'Cập nhật mật khẩu'}
                   </button>
                 </form>
@@ -227,18 +233,18 @@ function ProfileContent() {
 
           <div className="lg:col-span-2">
             <section className="rounded-2xl border border-stone-200 bg-white shadow-sm">
-              <div className="flex items-center justify-between border-b border-stone-100 px-6 py-4">
+              <div className="flex flex-col gap-2 border-b border-stone-100 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
                 <div>
                   <h2 className="text-lg font-bold text-stone-900">Đơn hàng đã mua</h2>
                   <p className="text-sm text-stone-500">Lịch sử các đơn hàng của bạn</p>
                 </div>
-                <Link href="/orders" className="text-sm font-semibold text-emerald-900 hover:underline">
+                <Link href="/orders" className="inline-flex min-h-10 items-center text-sm font-semibold text-emerald-900 hover:underline">
                   Xem tất cả
                 </Link>
               </div>
 
-              <div className="p-6">
-                {ordersLoading && <p className="text-stone-500">Đang tải đơn hàng...</p>}
+              <div className="p-3 sm:p-6">
+                {ordersLoading && <OrderListSkeleton count={2} />}
                 {ordersError && <p className="text-red-600">{ordersError}</p>}
                 {!ordersLoading && !ordersError && orders.length === 0 && (
                   <p className="text-stone-500">Bạn chưa có đơn hàng nào.</p>
@@ -249,16 +255,16 @@ function ProfileContent() {
                     <Link
                       key={order.id}
                       href={`/orders/${order.id}`}
-                      className="flex flex-col gap-3 rounded-xl border border-stone-200 p-4 transition hover:border-emerald-700 hover:bg-emerald-50/30"
+                      className="flex flex-col gap-3 rounded-xl border border-stone-200 p-3 transition hover:border-emerald-700 hover:bg-emerald-50/30 sm:p-4"
                     >
                       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                        <div>
-                          <p className="font-bold text-stone-900">Mã đơn: #{order.id}</p>
+                        <div className="min-w-0">
+                          <p className="break-all font-bold text-stone-900">Mã đơn: #{order.id}</p>
                           <p className="text-xs text-stone-500">
                             {order.createdAt ? new Date(order.createdAt).toLocaleString('vi-VN') : ''}
                           </p>
                         </div>
-                        <div className="flex items-center gap-3 sm:text-right">
+                        <div className="flex items-center justify-between gap-3 sm:justify-end sm:text-right">
                           <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-bold ${getStatusColor(order.status)}`}>
                             {getStatusLabel(order.status)}
                           </span>
@@ -273,10 +279,15 @@ function ProfileContent() {
                       {order.items.slice(0, 3).map((item, idx) => (
                         <div key={idx} className="flex items-start justify-between gap-2 text-sm">
                           <div className="min-w-0 flex-1">
-                            <p className="truncate text-stone-900">{item.productName || item.name || 'Sản phẩm'}</p>
+                            <p className="break-words font-medium text-stone-900">{item.name || item.productName || 'Sản phẩm'}</p>
                             <p className="text-xs text-stone-500">Size: {item.size || 'M'} • SL: {item.qty}</p>
+                            {item.toppings && item.toppings.length > 0 && (
+                              <p data-testid="order-item-toppings" className="text-xs text-stone-500">
+                                Topping: {item.toppings.map((topping) => topping.name).join(', ')}
+                              </p>
+                            )}
                           </div>
-                          <p className="shrink-0 font-semibold text-stone-900">{Number(item.lineTotal || item.unitPrice || 0).toLocaleString('vi-VN')}₫</p>
+                          <p className="shrink-0 font-semibold text-stone-900">{Number(item.lineTotal || 0).toLocaleString('vi-VN')}₫</p>
                         </div>
                       ))}
                           {order.items.length > 3 && (
@@ -298,7 +309,13 @@ function ProfileContent() {
 
 export default function ProfilePage() {
   return (
-    <React.Suspense fallback={<div className="mx-auto max-w-5xl px-4 py-10 text-center text-stone-500">Đang tải...</div>}>
+    <React.Suspense
+      fallback={
+        <div className="mx-auto max-w-5xl px-4 py-10">
+          <DetailLinesSkeleton label="Đang tải thông tin tài khoản" />
+        </div>
+      }
+    >
       <ProfileContent />
     </React.Suspense>
   );

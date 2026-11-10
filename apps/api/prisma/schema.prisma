@@ -73,13 +73,16 @@ model User {
   /// Stored in lower case by the application.
   email         String   @unique
   passwordHash  String   @map("password_hash")
+  role          String   @default("CUSTOMER") @map("role")
+  /// Set by an admin. A blocked user cannot log in, and their existing tokens stop working.
+  blocked       Boolean  @default(false)
   /// Running balance; changed only together with a LoyaltyTransaction row.
   loyaltyPoints Int      @default(0) @map("loyalty_points")
   createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
-  orders               Order[]
-  payments             Payment[]
-  loyaltyTransactions  LoyaltyTransaction[]
+  orders    Order[]
+  payments  Payment[]
+  cart      Cart?
 
   @@map("users")
 }
@@ -97,6 +100,7 @@ model Product {
   version  Int    @default(0)
 
   orderItems OrderItem[]
+  cartItems  CartItem[]
 
   @@map("products")
 }
@@ -107,11 +111,42 @@ model Topping {
   name   String  @unique
   /// Whole VND.
   price  Int
+  stock  Int     @default(50) @map("stock")
   active Boolean @default(true)
 
   orderItems OrderItemTopping[]
 
   @@map("toppings")
+}
+
+/// A customer's saved cart, one per user. It holds no prices: the order computes them from the server at creation.
+model Cart {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @unique @map("user_id") @db.Uuid
+  promoCode String?  @map("promo_code")
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items CartItem[]
+
+  @@map("carts")
+}
+
+/// One line of a cart. Check qty > 0 is in the migration SQL.
+model CartItem {
+  id         String   @id @default(uuid()) @db.Uuid
+  cartId     String   @map("cart_id") @db.Uuid
+  productId  String   @map("product_id") @db.Uuid
+  size       Size
+  qty        Int
+  /// Ids of `toppings` rows. No foreign key: a removed topping simply drops out when the cart is read.
+  toppingIds String[] @default([]) @map("topping_ids")
+
+  cart    Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([cartId])
+  @@map("cart_items")
 }
 
 /// A customer's order. total = subtotal - discountAmount.

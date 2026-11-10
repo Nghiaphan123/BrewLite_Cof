@@ -7,16 +7,18 @@
  * - Returns consistent shapes; the controller just passes them through.
  *
  * Contract (api-contract.md §6–§7, ADR 0005 C4):
- * - register: 201 { user: { id, email, loyaltyPoints: 0 } }
- * - login: 200 { accessToken, expiresIn, user: { id, email, loyaltyPoints } }
+ * - register: 201 { user: { id, email, role, loyaltyPoints: 0 } }
+ * - login: 200 { accessToken, expiresIn, user: { id, email, role, loyaltyPoints } }
  * - Errors: 409 EMAIL_TAKEN, 401 AUTH_INVALID (same body for unknown email/wrong password)
  */
 import {
   Injectable,
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   NotFoundException,
   UnauthorizedException,
+  OnModuleInit,
 } from '@nestjs/common';
 import { JwtService, type JwtSignOptions } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
@@ -28,12 +30,68 @@ export function jwtExpiresIn(): JwtExpiry {
   return (process.env.JWT_EXPIRES_IN ?? '1d') as JwtExpiry;
 }
 
+/**
+ * 403 ACCOUNT_BLOCKED: the account exists and the password is right, but an
+ * admin blocked it. Used at login and by JwtAuthGuard for tokens issued earlier.
+ */
+export function accountBlocked(): ForbiddenException {
+  return new ForbiddenException({
+    statusCode: 403,
+    error: 'Forbidden',
+    message: 'This account has been blocked',
+    code: 'ACCOUNT_BLOCKED',
+  });
+}
+
 @Injectable()
-export class AuthService {
+export class AuthService implements OnModuleInit {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
   ) { }
+
+  async onModuleInit() {
+    await this.ensureAdminAccount();
+  }
+
+  /**
+   * Ensures the requested admin account exists:
+   * name: "admin", password: "123456", role: "ADMIN"
+   */
+  async ensureAdminAccount() {
+    try {
+      const adminUser = await this.prisma.user.findFirst({
+        where: {
+          OR: [
+            { email: 'admin@brewlite.vn' },
+            { email: 'admin@brewlite.test' },
+            { name: 'admin' },
+          ],
+        },
+      });
+
+      const passwordHash = await bcrypt.hash('123456', this.bcryptRounds);
+
+      if (!adminUser) {
+        await this.prisma.user.create({
+          data: {
+            name: 'admin',
+            email: 'admin@brewlite.vn',
+            passwordHash,
+            role: 'ADMIN',
+            loyaltyPoints: 0,
+          },
+        });
+      } else if (adminUser.role !== 'ADMIN') {
+        await this.prisma.user.update({
+          where: { id: adminUser.id },
+          data: { role: 'ADMIN' },
+        });
+      }
+    } catch {
+      // If table isn't migrated yet during certain test fixtures, ignore silently.
+    }
+  }
 
   private get bcryptRounds(): number {
     return parseInt(process.env.BCRYPT_ROUNDS ?? '10', 10);
@@ -58,7 +116,7 @@ export class AuthService {
       });
     }
 
-    const normalizedEmail = email.toLowerCase();
+    const normalizedEmail = email.toLowerCase().trim();
 
     const existing = await this.prisma.user.findUnique({
       where: { email: normalizedEmail },
@@ -79,6 +137,7 @@ export class AuthService {
         name: normalizedName,
         email: normalizedEmail,
         passwordHash,
+        role: 'CUSTOMER',
         loyaltyPoints: 0,
       },
     });
@@ -87,15 +146,24 @@ export class AuthService {
       id: user.id,
       name: user.name,
       email: user.email,
+      role: user.role,
       loyaltyPoints: user.loyaltyPoints,
     };
   }
 
-  async login(email: string, password: string) {
-    const normalizedEmail = email.toLowerCase();
+  async login(emailOrIdentifier: string, password: string) {
+    const normalized = emailOrIdentifier.toLowerCase().trim();
 
-    const user = await this.prisma.user.findUnique({
-      where: { email: normalizedEmail },
+    // Find by email or username/name ("admin")
+    const user = await this.prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: normalized },
+          { email: `${normalized}@brewlite.vn` },
+          { email: `${normalized}@brewlite.test` },
+          { name: { equals: normalized, mode: 'insensitive' } },
+        ],
+      },
     });
 
     const invalidCredentials = (): never => {
@@ -112,7 +180,10 @@ export class AuthService {
     const isValid = await bcrypt.compare(password, user.passwordHash);
     if (!isValid) return invalidCredentials();
 
-    const payload = { sub: user.id, email: user.email };
+    // Checked after the password, so a wrong password never reveals that an account is blocked.
+    if (user.blocked) throw accountBlocked();
+
+    const payload = { sub: user.id, email: user.email, role: user.role };
     const accessToken = await this.jwt.signAsync(payload, {
       secret: this.jwtSecret,
       expiresIn: this.jwtExpiresIn,
@@ -128,6 +199,7 @@ export class AuthService {
         id: user.id,
         name: user.name,
         email: user.email,
+        role: user.role,
         loyaltyPoints: user.loyaltyPoints,
       },
     };
@@ -159,6 +231,8 @@ export class AuthService {
       id: user.id,
       name: user.name,
       email: user.email,
+      role: user.role,
+      blocked: user.blocked,
       loyaltyPoints: user.loyaltyPoints,
     };
   }

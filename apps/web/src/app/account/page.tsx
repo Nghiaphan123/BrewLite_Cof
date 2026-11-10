@@ -3,13 +3,14 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth.store';
+import { DetailLinesSkeleton } from '@/components/Skeleton';
 
 export default function AccountPage() {
   const router = useRouter();
   const { token, user } = useAuthStore();
 
   useEffect(() => {
-    if (!token) {
+    if (!useAuthStore.getState().token) {
       router.replace('/login');
     }
   }, [token, router]);
@@ -25,7 +26,7 @@ export default function AccountPage() {
           ← Quay lại
         </button>
         <div className="mt-4 rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
-          <p className="text-stone-500">Đang tải thông tin tài khoản...</p>
+          <DetailLinesSkeleton label="Đang tải thông tin tài khoản" />
         </div>
       </main>
     );

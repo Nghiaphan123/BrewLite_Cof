@@ -9,7 +9,7 @@
  * Behavior:
  * - Extracts token from Authorization header.
  * - Verifies with JWT_SECRET via @nestjs/jwt.
- * - On success: sets request.user = { id: payload.sub, email: payload.email }.
+ * - On success: sets request.user = { id: payload.sub, email: payload.email, role: user.role }.
  * - On missing/invalid/expired: throws UnauthorizedException with
  *   code AUTH_REQUIRED (missing) or AUTH_EXPIRED (expired).
  *   HttpExceptionFilter maps these to the C3 envelope.
@@ -21,7 +21,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { AuthService } from '../../modules/auth/auth.service.js';
+import { AuthService, accountBlocked } from '../../modules/auth/auth.service.js';
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
@@ -45,7 +45,7 @@ export class JwtAuthGuard implements CanActivate {
 
     const token = authHeader.slice(7); // Remove "Bearer "
 
-    let payload: { sub: string; email: string };
+    let payload: { sub: string; email: string; role?: string };
     try {
       payload = await this.jwt.verifyAsync(token, {
         secret: process.env.JWT_SECRET ?? 'dev-secret-change-me',
@@ -78,7 +78,17 @@ export class JwtAuthGuard implements CanActivate {
       });
     }
 
-    request.user = { id: payload.sub, email: payload.email };
+    // A token issued before the admin blocked the account stops working at once,
+    // not only when it expires.
+    if (user.blocked) {
+      throw accountBlocked();
+    }
+
+    request.user = {
+      id: payload.sub,
+      email: payload.email,
+      role: user.role ?? payload.role ?? 'CUSTOMER',
+    };
     return true;
   }
 }

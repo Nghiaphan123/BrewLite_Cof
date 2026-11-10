@@ -15,9 +15,13 @@
  *    - same hash  -> return the stored response (replay, replayed: true)
  *    - diff hash  -> 409 IDEMPOTENCY_CONFLICT
  * 4. Otherwise, in one $transaction:
- *    - assertTransition(order.status, PAID | PAYMENT_FAILED)
+ *    - a PAYMENT_FAILED order is retried through PENDING (PDF §9.1), then
+ *      assertTransition(PENDING, PAID | PAYMENT_FAILED)
  *    - on success: decrement stock under optimistic lock (Product.version),
+ *      decrement topping stock (one portion per cup, see topping-usage.ts),
  *      accrue loyalty (floor(total/1000)), update order, create Payment row.
+ *      A drink or a topping without enough stock fails the whole payment with
+ *      409 OUT_OF_STOCK, and nothing is decremented.
  *    - on failure: update order to PAYMENT_FAILED, create Payment row (FAILED),
  *      no stock change, no points.
  *
@@ -43,6 +47,15 @@ import { assertTransition } from '../orders/order-state-machine.js';
 import { hashPaymentRequest } from './payment-hash.js';
 import { LoyaltyTransactionType, PaymentMethod, PaymentStatus } from '../../generated/prisma/enums.js';
 import { loyaltyPointsFor } from './loyalty.js';
+import { toppingUsage } from '../orders/topping-usage.js';
+
+/**
+ * What a replayed request answers: the outcome of that attempt. A payment that
+ * succeeded and was later refunded (order cancelled) was still a PAID answer.
+ */
+function replayStatus(paymentStatus: PaymentStatus): 'PAID' | 'PAYMENT_FAILED' {
+  return paymentStatus === PaymentStatus.FAILED ? 'PAYMENT_FAILED' : 'PAID';
+}
 
 export interface ProcessPaymentInput {
   userId: string;
@@ -97,13 +110,13 @@ export class PaymentsService {
         });
       }
 
-      // Replay: return the stored response. The status is the ORDER's status,
-      // not the payment's, because a failed attempt leaves the order
-      // PAYMENT_FAILED and a successful one leaves it PAID (ADR 0004 D2).
+      // Replay: return the stored response of THIS attempt. It must not follow
+      // the order's current status: after a failed attempt and a successful
+      // retry, replaying the failed attempt's key still answers PAYMENT_FAILED.
       return {
         paymentId: existingPayment.id,
         orderId: existingPayment.orderId,
-        status: existingPayment.order.status === 'PAID' ? 'PAID' : 'PAYMENT_FAILED',
+        status: replayStatus(existingPayment.status),
         method: existingPayment.method,
         amount: existingPayment.amount,
         replayed: true,
@@ -117,7 +130,7 @@ export class PaymentsService {
       return await this.prisma.$transaction(async (tx) => {
         const order = await tx.order.findUnique({
           where: { id: orderId },
-          include: { items: true },
+          include: { items: { include: { toppings: true } } },
         });
 
         if (!order) {
@@ -160,8 +173,17 @@ export class PaymentsService {
           }
         }
 
+        // A retry after a failed attempt goes back through PENDING, as in the
+        // PDF §9.1 diagram: PAYMENT_FAILED -> PENDING -> PAID | PAYMENT_FAILED.
+        // Both edges are checked, so a second failure is legal (not a 409).
+        let currentStatus = order.status;
+        if (currentStatus === 'PAYMENT_FAILED') {
+          assertTransition(currentStatus, 'PENDING');
+          currentStatus = 'PENDING';
+        }
+
         const nextOrderStatus = isMockSuccess ? 'PAID' : 'PAYMENT_FAILED';
-        assertTransition(order.status, nextOrderStatus);
+        assertTransition(currentStatus, nextOrderStatus);
 
         if (isMockSuccess) {
           for (const item of order.items) {
@@ -191,6 +213,32 @@ export class PaymentsService {
                 statusCode: 409,
                 error: 'Conflict',
                 message: `Concurrent update conflict on stock for product ${product.name}`,
+                code: 'OUT_OF_STOCK',
+              });
+            }
+          }
+
+          // Toppings: one portion per cup. The stock check and the decrement
+          // are one conditional UPDATE (stock >= needed), so two payments that
+          // race for the last portion cannot both succeed: Postgres locks the
+          // row, and the second UPDATE re-reads the stock and matches nothing.
+          const usage = toppingUsage(
+            order.items.map((item) => ({
+              qty: item.qty,
+              toppingIds: item.toppings.map((t) => t.toppingId),
+            })),
+          );
+          for (const [toppingId, needed] of usage) {
+            const taken = await tx.topping.updateMany({
+              where: { id: toppingId, stock: { gte: needed } },
+              data: { stock: { decrement: needed } },
+            });
+            if (taken.count === 0) {
+              const topping = await tx.topping.findUnique({ where: { id: toppingId } });
+              throw new ConflictException({
+                statusCode: 409,
+                error: 'Conflict',
+                message: `Topping ${topping?.name ?? toppingId} is out of stock`,
                 code: 'OUT_OF_STOCK',
               });
             }
@@ -273,7 +321,7 @@ export class PaymentsService {
           return {
             paymentId: existing.id,
             orderId: existing.orderId,
-            status: existing.order.status === 'PAID' ? 'PAID' : 'PAYMENT_FAILED',
+            status: replayStatus(existing.status),
             method: existing.method,
             amount: existing.amount,
             replayed: true,

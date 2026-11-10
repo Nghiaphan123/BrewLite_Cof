@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { API_BASE_URL } from "@/lib/api";
+import { apiFetch, getApiErrorMessage } from "@/lib/api-errors";
 import { useCartStore } from "@/store/cart.store";
 import { useAuthStore } from "@/store/auth.store";
+import { useLogout } from "@/features/auth/useLogout";
 import type { Product } from "@/types";
 import { ProductCard } from "./ProductCard";
 
@@ -60,7 +62,6 @@ function getProductCategory(product: Product): Exclude<MenuTab, "Tất cả"> {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/đ/g, "d");
-
   if (name.includes("da xay")) {
     return "Đá xay";
   }
@@ -77,28 +78,19 @@ function getProductCategory(product: Product): Exclude<MenuTab, "Tất cả"> {
 }
 
 async function fetchProducts(signal: AbortSignal): Promise<MenuProduct[]> {
-  const response = await fetch(`${API_BASE_URL}/products`, {
+  const response = await apiFetch(`${API_BASE_URL}/products`, {
     signal,
     headers: { Accept: "application/json" },
   });
 
   if (!response.ok) {
     const body: unknown = await response.json().catch(() => null);
-    if (typeof body === "object" && body !== null && "message" in body) {
-      const message = body.message;
-      if (typeof message === "string") {
-        throw new Error(message);
-      }
-      if (Array.isArray(message) && message.every((item) => typeof item === "string")) {
-        throw new Error(message.join(", "));
-      }
-    }
-    throw new Error(`Kh├┤ng thß╗â tß║úi menu (HTTP ${response.status}).`);
+    throw new Error(getApiErrorMessage(response.status, body));
   }
 
   const body: unknown = await response.json();
   if (!isProductsResponse(body)) {
-    throw new Error("Dß╗» liß╗çu menu tß╗½ m├íy chß╗º kh├┤ng ─æ├║ng ─æß╗ïnh dß║íng.");
+    throw new Error("Dữ liệu menu từ máy chủ không đúng định dạng.");
   }
 
   return body.items;
@@ -108,7 +100,7 @@ function MenuSkeleton() {
   return (
     <div
       data-testid="menu-loading"
-      aria-label="─Éang tß║úi menu"
+      aria-label="Đang tải menu"
       aria-busy="true"
       className="grid grid-cols-2 gap-4 md:grid-cols-4"
     >
@@ -133,9 +125,11 @@ export function MenuPage() {
   const [retryCount, setRetryCount] = useState(0);
   const [activeTab, setActiveTab] = useState<MenuTab>("Tất cả");
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const totalItems = useCartStore((state) => state.getTotalItems());
-  const cartTotal = useCartStore((state) => state.getTotalPrice());
-  const { token, user, logout } = useAuthStore();
+  // Tính từ state.items, không gọi getTotal...: các hàm đó đọc thẳng store nên lệch HTML của server lúc hydrate.
+  const totalItems = useCartStore((state) => state.items.reduce((sum, item) => sum + item.qty, 0));
+  const cartTotal = useCartStore((state) => (state.items.length > 0 ? state.getTotalPrice() : 0));
+  const { token, user } = useAuthStore();
+  const logoutWithLoading = useLogout();
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -175,7 +169,7 @@ export function MenuPage() {
           message:
             error instanceof Error
               ? error.message
-              : "─É├ú xß║úy ra lß╗ùi khi tß║úi menu.",
+              : "Đã xảy ra lỗi khi tải menu.",
         });
       });
 
@@ -188,28 +182,29 @@ export function MenuPage() {
   }
 
   return (
-    <div className="min-h-full bg-[#faf8f3] pb-28 text-stone-900">
+    <div className="min-h-full bg-[#faf8f3] pb-[calc(6rem+env(safe-area-inset-bottom))] text-stone-900">
       <header className="sticky top-0 z-30 border-b border-stone-200/80 bg-[#faf8f3]/95 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-2 px-3 py-2.5 sm:px-6 sm:py-3 lg:px-8">
           <Link
             href="/"
-            className="flex items-center gap-2 text-xl font-bold tracking-tight text-emerald-950 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-800"
+            className="flex shrink-0 items-center gap-1.5 text-lg font-bold tracking-tight text-emerald-950 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-800 sm:gap-2 sm:text-xl"
           >
-            <span aria-hidden="true" className="text-2xl">Γÿò</span>
+            <span aria-hidden="true" className="text-xl sm:text-2xl">☕</span>
             BrewLite
           </Link>
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
             {token ? (
               <div className="relative" ref={userMenuRef}>
                 <button
                   type="button"
                   onClick={() => setUserMenuOpen((prev) => !prev)}
-                  className="flex items-center gap-2 rounded-full border border-emerald-900/10 bg-white px-3 py-2 text-sm font-semibold text-emerald-950 shadow-sm transition hover:bg-emerald-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-900"
+                  aria-label={`Tài khoản ${user?.name?.trim() || user?.email || ''}`}
+                  className="flex min-h-11 items-center gap-1.5 rounded-full border border-emerald-900/10 bg-white px-2.5 py-2 text-sm font-semibold text-emerald-950 shadow-sm transition hover:bg-emerald-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-900 sm:gap-2 sm:px-3"
                   aria-haspopup="menu"
                   aria-expanded={userMenuOpen}
                 >
                   <span aria-hidden="true">👤</span>
-                  <span className="max-w-[120px] truncate">
+                  <span className="hidden max-w-[120px] truncate sm:inline">
                     {user?.name?.trim() || (user?.email ? user.email.split('@')[0] : 'Tài khoản')}
                   </span>
                   <span aria-hidden="true">▾</span>
@@ -239,7 +234,7 @@ export function MenuPage() {
                       role="menuitem"
                       onClick={() => {
                         setUserMenuOpen(false);
-                        logout();
+                        void logoutWithLoading();
                       }}
                       className="w-full rounded-lg px-2 py-2 text-left text-sm text-red-600 hover:bg-red-50"
                     >
@@ -251,7 +246,7 @@ export function MenuPage() {
             ) : (
               <Link
                 href="/login"
-                className="rounded-full border border-emerald-900/20 px-4 py-2 text-sm font-semibold text-emerald-950 transition hover:bg-emerald-50"
+                className="min-h-11 rounded-full border border-emerald-900/20 px-3 py-2 text-sm font-semibold text-emerald-950 transition hover:bg-emerald-50 sm:px-4"
               >
                 Đăng nhập
               </Link>
@@ -259,11 +254,14 @@ export function MenuPage() {
             <Link
               href="/cart"
               aria-label={`Giỏ hàng, hiện có ${totalItems} sản phẩm`}
-              className="flex items-center gap-2 rounded-full bg-emerald-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-900"
+              className="flex min-h-11 shrink-0 items-center gap-1.5 rounded-full bg-emerald-900 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-900 sm:gap-2 sm:px-4"
             >
               <span aria-hidden="true">🛒</span>
-              <span>Giỏ hàng</span>
-              <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-white px-1.5 text-xs font-bold text-emerald-950">
+              <span className="hidden sm:inline">Giỏ hàng</span>
+              <span
+                key={totalItems}
+                className="flex h-6 min-w-6 animate-pop items-center justify-center rounded-full bg-white px-1.5 text-xs font-bold text-emerald-950"
+              >
                 {totalItems}
               </span>
             </Link>
@@ -271,39 +269,45 @@ export function MenuPage() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
-        <section className="relative mb-8 overflow-hidden rounded-3xl bg-emerald-950 px-6 py-10 text-white sm:px-10 sm:py-14">
+      <main className="mx-auto w-full max-w-6xl px-3 py-5 sm:px-6 sm:py-10 lg:px-8">
+        <section className="relative mb-6 overflow-hidden rounded-2xl bg-emerald-950 px-5 py-7 text-white sm:mb-8 sm:rounded-3xl sm:px-10 sm:py-14">
           <div className="relative z-10 max-w-xl">
-            <p className="mb-3 text-xs font-bold uppercase tracking-[0.24em] text-emerald-200">
-              Pha t╞░╞íi mß╗ùi ng├áy
+            <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-200 sm:mb-3 sm:text-xs sm:tracking-[0.24em]">
+              Pha tươi mỗi ngày
             </p>
-            <h1 className="font-serif text-4xl font-semibold tracking-tight sm:text-5xl">
-              Mß╗Öt ch├║t chill,<br className="hidden sm:block" /> mß╗Öt ch├║t BrewLite.
+            <h1 className="font-serif text-3xl font-semibold leading-tight tracking-tight sm:text-5xl">
+              Một chút chill,<br className="hidden sm:block" /> một chút BrewLite.
             </h1>
-            <p className="mt-4 max-w-md text-sm leading-6 text-emerald-100 sm:text-base">
-              Chß╗ìn m├│n bß║ín th├¡ch, th├¬m nhanh v├áo giß╗Å v├á th╞░ß╗ƒng thß╗⌐c theo c├ích cß╗ºa bß║ín.
+            <p className="mt-3 max-w-md text-sm leading-5 text-emerald-100 sm:mt-4 sm:text-base sm:leading-6">
+              Chọn món bạn thích, thêm nhanh vào giỏ, nhận ưu đãi và thưởng thức theo cách của bạn.
             </p>
+            <a
+              href="#menu"
+              className="mt-4 inline-flex min-h-11 items-center rounded-full bg-white px-5 text-sm font-semibold text-emerald-950 transition hover:bg-emerald-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:mt-5"
+            >
+              Khám phá menu <span aria-hidden="true" className="ml-2">↓</span>
+            </a>
           </div>
           <span
             aria-hidden="true"
-            className="absolute -right-4 -top-14 select-none text-[15rem] opacity-10 sm:right-8 sm:top-[-5.5rem]"
+            className="absolute -right-7 -top-5 select-none text-[8rem] opacity-[0.08] sm:right-8 sm:top-[-5.5rem] sm:text-[15rem] sm:opacity-10"
           >
-            Γÿò
+            ☕
           </span>
         </section>
 
-        <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+        <div id="menu" className="mb-4 flex flex-wrap items-end justify-between gap-2 sm:mb-5 sm:gap-3">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-800">
-              Kh├ím ph├í h╞░╞íng vß╗ï
+              Khám phá hương vị
             </p>
-            <h2 className="mt-1 font-sans text-3xl font-bold tracking-tight">
-              Menu thß╗⌐c uß╗æng
+            <h2 className="mt-1 font-sans text-2xl font-bold tracking-tight sm:text-3xl">
+              Menu thức uống
             </h2>
           </div>
           {menuState.status === "success" && (
             <p className="text-sm text-stone-500">
-              {visibleProducts.length} m├│n
+              {visibleProducts.length} món
             </p>
           )}
         </div>
@@ -316,7 +320,7 @@ export function MenuPage() {
             role="status"
             className="rounded-lg border border-zinc-200 bg-white px-6 py-12 text-center text-zinc-600"
           >
-            Menu ─æang cß║¡p nhß║¡t. Vui l├▓ng quay lß║íi sau.
+            Menu đang cập nhật. Vui lòng quay lại sau.
           </p>
         )}
 
@@ -330,9 +334,9 @@ export function MenuPage() {
             <button
               type="button"
               onClick={retry}
-              className="mt-4 rounded-md bg-zinc-900 px-4 py-2 font-medium text-white hover:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900"
+              className="mt-4 rounded-md bg-[#002C22] px-4 py-2 font-medium text-white hover:bg-[#014034] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#002C22]"
             >
-              Thß╗¡ lß║íi
+              Thử lại
             </button>
           </div>
         )}
@@ -340,8 +344,8 @@ export function MenuPage() {
         {menuState.status === "success" && (
           <div
             role="tablist"
-            aria-label="Danh mß╗Ñc thß╗⌐c uß╗æng"
-            className="mb-6 flex gap-2 overflow-x-auto pb-2"
+            aria-label="Danh mục thức uống"
+            className="mb-5 flex snap-x gap-2 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mb-6"
           >
             {MENU_TABS.map((tab) => {
               const count =
@@ -357,11 +361,10 @@ export function MenuPage() {
                   role="tab"
                   aria-selected={selected}
                   onClick={() => setActiveTab(tab)}
-                  className={`shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-800 ${
-                    selected
+                  className={`min-h-11 shrink-0 snap-start rounded-full border px-3.5 py-2 text-sm font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-800 sm:px-4 ${selected
                       ? "border-emerald-900 bg-emerald-900 text-white shadow-sm"
                       : "border-stone-300 bg-white text-stone-700 hover:border-emerald-700 hover:text-emerald-900"
-                  }`}
+                    }`}
                 >
                   {tab}
                   <span className={`ml-2 text-xs ${selected ? "text-emerald-100" : "text-stone-400"}`}>
@@ -375,36 +378,36 @@ export function MenuPage() {
 
         {menuState.status === "success" && (
           visibleProducts.length > 0 ? (
-            <ul data-testid="menu-grid" className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+            <ul data-testid="menu-grid" className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
               {visibleProducts.map((product) => (
-                <li key={product.id}>
+                <li key={product.id} className="animate-rise-in">
                   <ProductCard product={product} />
                 </li>
               ))}
             </ul>
           ) : (
             <p role="status" className="rounded-2xl border border-stone-200 bg-white px-6 py-12 text-center text-stone-500">
-              Ch╞░a c├│ m├│n trong danh mß╗Ñc n├áy.
+              Chưa có món nào trong danh mục này.
             </p>
           )
         )}
       </main>
 
       {totalItems > 0 && (
-        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-stone-200 bg-white/95 p-3 shadow-[0_-8px_24px_rgba(28,25,23,0.08)] backdrop-blur sm:p-4">
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-stone-200 bg-white/95 px-3 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-8px_24px_rgba(28,25,23,0.08)] backdrop-blur sm:p-4">
           <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-1 sm:px-2">
             <div>
               <p className="text-sm font-semibold text-stone-900">
-                {totalItems} m├│n trong giß╗Å
+                {totalItems} món trong giỏ hàng
               </p>
-              <p className="text-xs text-stone-500">Tß║ím t├¡nh</p>
+              <p className="text-xs text-stone-500">Tạm tính</p>
             </div>
             <Link
               href="/cart"
-              className="flex min-h-12 items-center gap-4 rounded-xl bg-emerald-900 px-5 py-2 text-sm font-semibold text-white transition hover:bg-emerald-800"
+              className="flex min-h-12 items-center gap-2 rounded-xl bg-emerald-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-800 sm:gap-4 sm:px-5"
             >
-              <span>Xem giß╗Å h├áng</span>
-              <span>{new Intl.NumberFormat("vi-VN").format(cartTotal)}Γé½</span>
+              <span>Xem giỏ hàng</span>
+              <span>{new Intl.NumberFormat("vi-VN").format(cartTotal)}₫</span>
             </Link>
           </div>
         </div>

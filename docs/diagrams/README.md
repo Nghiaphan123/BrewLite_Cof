@@ -43,7 +43,7 @@ This directory holds BrewLite's diagrams. This README is the rule sheet: what be
 - **Content rules:**
   - Flow nodes are verbs ("Chọn sản phẩm", "Thanh toán"), not nouns.
   - Error/cancel branches are drawn, not left implicit. The assignment's §5 flowchart has a "Hủy / thanh toán lỗi" branch; `flows/main-v1.mmd` must include it, not just the happy path.
-  - The state machine diagram (`flows/order-state-v1.mmd`) must match ADR 0004's D1/D5 edges exactly, including `PAYMENT_FAILED → PAID` (retry) and the terminal states.
+  - The state machine diagram (`flows/order-state-v1.mmd`) must match ADR 0004's D1/D5 edges exactly, including `PAYMENT_FAILED → PENDING` (retry), `PAID → CANCELLED` and the terminal states, as drawn in PDF §9.1.
   - Each flow's owning scenario ID (`scenarios.md` S-MAIN-1, S-PAY-2, etc.) appears in a `%%` comment at the top of the file.
 - **Forbidden:** flows that show only the happy path and call it "the flow."
 

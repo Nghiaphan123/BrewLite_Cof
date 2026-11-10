@@ -1,4 +1,6 @@
-import { Order, Product, SizeOption, User } from '@/types';
+import { Order, OrderStatus, Product, Promotion, SizeOption, Topping, User } from '@/types';
+import { ApiError, apiFetch, getApiErrorMessage } from '@/lib/api-errors';
+import { useAuthStore } from '@/store/auth.store';
 
 const configuredApiUrl = (
   process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1'
@@ -21,30 +23,30 @@ function getAuthHeaders(): HeadersInit {
 async function handleResponse<T>(res: Response): Promise<T> {
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    const message =
-      data?.message || data?.error?.message || `Lỗi kết nối API (${res.status})`;
-    throw new Error(Array.isArray(message) ? message.join(', ') : message);
+    // Admin vừa khoá tài khoản: token cũ không còn dùng được, nên xoá phiên đăng nhập trên máy.
+    if (data?.code === 'ACCOUNT_BLOCKED') {
+      useAuthStore.getState().logout();
+    }
+    throw new ApiError(getApiErrorMessage(res.status, data), res.status);
   }
   // Hỗ trợ cả trường hợp backend trả trực tiếp data hoặc bọc trong { data: ... }
   return (data?.data !== undefined ? data.data : data) as T;
 }
 
-type ListResponse<T> = { items: T[]; total: number };
-type AuthResponse = {
-  accessToken?: string;
-  access_token?: string;
-  token?: string;
-  user?: User;
+export type ServerCart = {
+  items: Array<{
+    productId: string;
+    size: SizeOption;
+    qty: number;
+    toppingIds: string[];
+    toppings: Topping[];
+    product: Product;
+  }>;
+  promoCode: string;
+  promotion: Promotion | null;
 };
 
-function getAuthResult(result: AuthResponse): { accessToken: string; user?: User } {
-  const accessToken = result.accessToken ?? result.access_token ?? result.token;
-  if (!accessToken) {
-    throw new Error('Phản hồi xác thực không có access token.');
-  }
-  return { accessToken, user: result.user };
-}
-
+type ListResponse<T> = { items: T[]; total: number };
 /** API hiện trả danh sách theo dạng { items, total }; vẫn hỗ trợ mảng cũ để tương thích. */
 function getListItems<T>(
   result: ListResponse<T> | T[],
@@ -64,7 +66,7 @@ function getListItems<T>(
 export const apiClient = {
   // [Task 2 & 3] GET /products
   async getProducts(): Promise<Product[]> {
-    const res = await fetch(`${API_BASE_URL}/products`, {
+    const res = await apiFetch(`${API_BASE_URL}/products`, {
       headers: getAuthHeaders(),
       cache: 'no-store',
     });
@@ -74,7 +76,7 @@ export const apiClient = {
 
   // [Task 2 & 4] GET /products/:id
   async getProductById(id: string): Promise<Product> {
-    const res = await fetch(`${API_BASE_URL}/products/${id}`, {
+    const res = await apiFetch(`${API_BASE_URL}/products/${id}`, {
       headers: getAuthHeaders(),
       cache: 'no-store',
     });
@@ -82,26 +84,17 @@ export const apiClient = {
   },
 
   // [Task 7] POST /auth/register
-  async register(payload: { email: string; password: string; name?: string }): Promise<{
-    accessToken: string;
+  // API chỉ trả { user }, không có token: người dùng phải đăng nhập sau khi đăng ký.
+  // API bắt buộc name (2–80 ký tự, RegisterDto); form đăng ký có ô "Họ và tên" riêng.
+  async register(payload: { name: string; email: string; password: string }): Promise<{
     user?: User;
   }> {
-    const name = payload.name || (payload.email.includes('@') ? payload.email.split('@')[0] : payload.email);
-    const res = await fetch(`${API_BASE_URL}/auth/register`, {
+    const res = await apiFetch(`${API_BASE_URL}/auth/register`, {
       method: 'POST',
       headers: getAuthHeaders(),
-      body: JSON.stringify({ ...payload, name }),
+      body: JSON.stringify(payload),
     });
-    const result = await handleResponse<{
-      accessToken?: string;
-      access_token?: string;
-      token?: string;
-      user?: User;
-    }>(res);
-    return {
-      accessToken: result.accessToken || result.access_token || result.token || '',
-      user: result.user ,
-    };
+    return handleResponse<{ user?: User }>(res);
   },
 
   // [Task 7] POST /auth/login
@@ -109,7 +102,7 @@ export const apiClient = {
     accessToken: string;
     user?: User;
   }> {
-    const res = await fetch(`${API_BASE_URL}/auth/login`, {
+    const res = await apiFetch(`${API_BASE_URL}/auth/login`, {
       method: 'POST',
       headers: getAuthHeaders(),
       body: JSON.stringify(payload),
@@ -128,10 +121,10 @@ export const apiClient = {
 
   // [Task 6 & 10] POST /orders (Bảo vệ bởi JwtAuthGuard)
   async createOrder(payload: {
-    items: Array<{ productId: string; size: SizeOption; qty: number; toppings?: string[] }>;
+    items: Array<{ productId: string; size: SizeOption; qty: number; toppingIds: string[] }>;
     promoCode?: string;
   }): Promise<Order> {
-    const res = await fetch(`${API_BASE_URL}/orders`, {
+    const res = await apiFetch(`${API_BASE_URL}/orders`, {
       method: 'POST',
       headers: getAuthHeaders(),
       body: JSON.stringify(payload),
@@ -149,7 +142,7 @@ export const apiClient = {
     },
     idempotencyKey: string
   ): Promise<{ status: 'PAID' | 'PAYMENT_FAILED'; orderId: string; loyaltyPointsEarned?: number }> {
-    const res = await fetch(`${API_BASE_URL}/payments`, {
+    const res = await apiFetch(`${API_BASE_URL}/payments`, {
       method: 'POST',
       headers: {
         ...getAuthHeaders(),
@@ -177,11 +170,189 @@ export const apiClient = {
 
   // [Task 9] GET /orders/me
   async getMyOrders(): Promise<Order[]> {
-    const res = await fetch(`${API_BASE_URL}/orders/me`, {
+    const res = await apiFetch(`${API_BASE_URL}/orders/me`, {
       headers: getAuthHeaders(),
       cache: 'no-store',
     });
     const result = await handleResponse<ListResponse<Order> | Order[]>(res);
     return getListItems(result, 'lịch sử đơn hàng');
+  },
+
+  // [Task 9] GET /orders/:code — chi tiết một đơn của chính mình, kèm điểm thưởng đã nhận.
+  // Đơn không tồn tại và đơn của người khác đều trả 404 ORDER_NOT_FOUND (không lộ thông tin).
+  async getOrderByCode(code: string): Promise<Order> {
+    const res = await apiFetch(`${API_BASE_URL}/orders/${encodeURIComponent(code)}`, {
+      headers: getAuthHeaders(),
+      cache: 'no-store',
+    });
+    return handleResponse<Order>(res);
+  },
+
+  // POST /promotions/validate — kiểm tra mã, không tính lượt dùng
+  async validatePromotion(code: string, subtotal: number): Promise<Promotion & { discountAmount: number }> {
+    const res = await apiFetch(`${API_BASE_URL}/promotions/validate`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ code, subtotal }),
+    });
+    return handleResponse(res);
+  },
+
+  // GET /cart
+  async getCart(): Promise<ServerCart> {
+    const res = await apiFetch(`${API_BASE_URL}/cart`, {
+      headers: getAuthHeaders(),
+      cache: 'no-store',
+    });
+    return handleResponse<ServerCart>(res);
+  },
+
+  // PUT /cart — gửi nguyên giỏ, items rỗng là xóa giỏ
+  async saveCart(payload: {
+    items: Array<{ productId: string; size: SizeOption; qty: number; toppingIds: string[] }>;
+    promoCode?: string;
+  }): Promise<ServerCart> {
+    const res = await apiFetch(`${API_BASE_URL}/cart`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(payload),
+    });
+    return handleResponse<ServerCart>(res);
+  },
+
+  async getProfile(): Promise<User> {
+    const res = await apiFetch(`${API_BASE_URL}/auth/me`, {
+      headers: getAuthHeaders(),
+      cache: 'no-store',
+    });
+    return handleResponse<User>(res);
+  },
+
+  async changePassword(payload: {
+    currentPassword: string;
+    newPassword: string;
+  }): Promise<{ message: string }> {
+    const res = await apiFetch(`${API_BASE_URL}/auth/password`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(payload),
+    });
+    return handleResponse<{ message: string }>(res);
+  },
+
+  // ---------------------------------------------------- Admin APIs
+  async getAdminProducts(): Promise<Product[]> {
+    const res = await apiFetch(`${API_BASE_URL}/admin/products`, {
+      headers: getAuthHeaders(),
+      cache: 'no-store',
+    });
+    return handleResponse<Product[]>(res);
+  },
+
+  async updateAdminProductStock(id: string, stock: number): Promise<Product> {
+    const res = await apiFetch(`${API_BASE_URL}/admin/products/${id}/stock`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ stock }),
+    });
+    return handleResponse<Product>(res);
+  },
+
+  async getAdminToppings(): Promise<Topping[]> {
+    const res = await apiFetch(`${API_BASE_URL}/admin/toppings`, {
+      headers: getAuthHeaders(),
+      cache: 'no-store',
+    });
+    return handleResponse<Topping[]>(res);
+  },
+
+  async updateAdminToppingStock(id: string, stock: number): Promise<Topping> {
+    const res = await apiFetch(`${API_BASE_URL}/admin/toppings/${id}/stock`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ stock }),
+    });
+    return handleResponse<Topping>(res);
+  },
+
+  async updateAdminToppingPrice(id: string, price: number): Promise<Topping> {
+    const res = await apiFetch(`${API_BASE_URL}/admin/toppings/${id}/price`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ price }),
+    });
+    return handleResponse<Topping>(res);
+  },
+
+  async setAdminUserBlocked(id: string, blocked: boolean): Promise<User> {
+    const res = await apiFetch(`${API_BASE_URL}/admin/users/${id}/block`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ blocked }),
+    });
+    return handleResponse<User>(res);
+  },
+
+  async setAdminPromotionActive(id: string, active: boolean): Promise<Promotion> {
+    const res = await apiFetch(`${API_BASE_URL}/admin/promotions/${id}/active`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ active }),
+    });
+    return handleResponse<Promotion>(res);
+  },
+
+  async getAdminUsers(): Promise<User[]> {
+    const res = await apiFetch(`${API_BASE_URL}/admin/users`, {
+      headers: getAuthHeaders(),
+      cache: 'no-store',
+    });
+    return handleResponse<User[]>(res);
+  },
+
+  async getAdminPromotions(): Promise<Promotion[]> {
+    const res = await apiFetch(`${API_BASE_URL}/admin/promotions`, {
+      headers: getAuthHeaders(),
+      cache: 'no-store',
+    });
+    return handleResponse<Promotion[]>(res);
+  },
+
+  async createAdminPromotion(payload: {
+    code: string;
+    type: 'PERCENT' | 'FIXED';
+    value: number;
+    minOrderTotal?: number;
+    validFrom?: string;
+    validTo: string;
+    active?: boolean;
+    usageLimit?: number | null;
+  }): Promise<Promotion> {
+    const res = await apiFetch(`${API_BASE_URL}/admin/promotions`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(payload),
+    });
+    return handleResponse<Promotion>(res);
+  },
+
+  async getAdminOrders(): Promise<Order[]> {
+    const res = await apiFetch(`${API_BASE_URL}/admin/orders`, {
+      headers: getAuthHeaders(),
+      cache: 'no-store',
+    });
+    return handleResponse<Order[]>(res);
+  },
+
+  async updateAdminOrderStatus(
+    id: string,
+    status: OrderStatus,
+  ): Promise<{ id: string; status: OrderStatus }> {
+    const res = await apiFetch(`${API_BASE_URL}/admin/orders/${id}/status`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ status }),
+    });
+    return handleResponse<{ id: string; status: OrderStatus }>(res);
   },
 };

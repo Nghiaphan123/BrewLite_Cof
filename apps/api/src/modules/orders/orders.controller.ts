@@ -46,6 +46,7 @@ import { IsEnum } from 'class-validator';
 import { OrdersService } from './orders.service.js';
 import { OrderStatus } from '../../generated/prisma/enums.js';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
+import { AdminGuard } from '../../common/guards/admin.guard.js';
 import { CreateOrderDto } from './dto/create-order.dto.js';
 
 class TransitionDto {
@@ -97,7 +98,11 @@ export class OrdersController {
     return this.ordersService.findByCode(req.user.id, code);
   }
 
+  // Staff only: a customer must not move an order (for example PENDING -> PAID
+  // without paying, or someone else's order). Payment edges are rejected inside
+  // OrdersService.transition even for admins.
   @Post(':id/transition')
+  @UseGuards(AdminGuard)
   @HttpCode(HttpStatus.OK)
   async transitionOrder(
     @Param('id') id: string,

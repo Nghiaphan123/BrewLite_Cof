@@ -11,6 +11,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-serif: var(--font-lora), Georgia, serif;
 }
 
 html {
@@ -22,4 +23,52 @@ body {
   background: #ffffff;
   color: #171717;
   font-family: Arial, Helvetica, sans-serif;
+}
+
+@theme {
+  --animate-page-in: page-in 0.28s ease-out both;
+  --animate-rise-in: rise-in 0.32s ease-out both;
+  --animate-pop: pop 0.32s ease-out;
+  --animate-toast-in: toast-in 0.25s ease-out both;
+  --animate-item-out: item-out 0.22s ease-in both;
+  --animate-cup: cup 1.8s ease-in-out infinite;
+  --animate-steam: steam 1.8s ease-in-out infinite;
+
+  @keyframes page-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes rise-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes pop {
+    0% { transform: scale(0.7); }
+    60% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+  }
+  @keyframes toast-in {
+    from { opacity: 0; transform: translateY(-12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes item-out {
+    to { opacity: 0; transform: translateX(24px) scale(0.98); }
+  }
+  @keyframes cup {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+  }
+  @keyframes steam {
+    0% { opacity: 0; transform: translateY(6px); }
+    40% { opacity: 1; }
+    100% { opacity: 0; transform: translateY(-8px); }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
