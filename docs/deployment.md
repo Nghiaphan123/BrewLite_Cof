@@ -54,7 +54,7 @@ docker compose ps
 docker compose logs -f api
 ```
 
-The API container applies pending migrations (`prisma migrate deploy`) every time it starts. Load the sample data once (30 products, 5 toppings, 10 demo users, promotions `BREW10` and `WELCOME20K`); the seed is safe to run again:
+The API container applies pending migrations (`prisma migrate deploy`) every time it starts. Load the sample data once (30 products, 5 toppings, 10 demo customers, the admin `admin@brewlite.vn`, promotions `BREW10` and `WELCOME20K`); the seed is safe to run again:
 
 ```powershell
 docker compose exec api npm run db:seed
@@ -106,7 +106,7 @@ docker compose up --build -d
 ## 7. Compose manifest
 
 - `db` has a `pg_isready` health check and keeps its data in the named volume `db-data`.
-- `api` starts only after `db` is healthy, runs `prisma migrate deploy`, then starts NestJS. Its health check calls `GET /health`, which is added in `C-04`; until then `docker compose ps` shows the API as unhealthy even though it answers on port 3001.
+- `api` starts only after `db` is healthy, runs `prisma migrate deploy`, then starts NestJS. Its health check calls `GET /api/v1` inside the container. While the migrations run, `docker compose ps` shows `health: starting` (on a slow machine it can show `unhealthy` for a few minutes); it turns `healthy` once NestJS has started.
 - `web` is built with `NEXT_PUBLIC_API_URL` as a build argument, because Next.js inlines it at build time. Rebuild the web image after changing it.
 - All services share the default private Compose network; only ports 3000, 3001, and the database port are published for local use.
 - The payment provider is the mock (`PAYMENT_PROVIDER=mock`); local credentials are placeholders.
