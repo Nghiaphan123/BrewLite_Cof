@@ -81,14 +81,14 @@ describe('Thẻ món ở menu: tồn kho (mục 5)', () => {
     render(<ProductCard product={{ id: 'p1', name: 'Latte', price: 45000, imageUrl: '', stock: 0 }} />);
 
     expect(screen.getByTestId('out-of-stock-p1')).toHaveTextContent('Hết hàng');
-    expect(screen.queryByRole('button', { name: 'Thêm nhanh Latte vào giỏ' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Thêm Latte vào giỏ hàng' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Latte đã hết hàng' })).toBeDisabled();
   });
 
   it('còn hàng: thêm nhanh được, hết số ly còn lại thì khoá nút', () => {
     render(<ProductCard product={{ id: 'p1', name: 'Latte', price: 45000, imageUrl: '', stock: 1 }} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Thêm nhanh Latte vào giỏ' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Thêm Latte vào giỏ hàng' }));
     expect(useCartStore.getState().getTotalItems()).toBe(1);
     expect(screen.getByRole('button', { name: 'Giỏ đã có hết số Latte còn lại' })).toBeDisabled();
   });

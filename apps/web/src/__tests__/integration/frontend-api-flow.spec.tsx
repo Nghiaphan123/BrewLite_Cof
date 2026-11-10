@@ -91,7 +91,7 @@ describe('Integration Test: Frontend <-> Backend API', () => {
 
     fireEvent.click(screen.getByRole('tab', { name: /Tất cả/ }));
     fireEvent.click(
-      screen.getByRole('button', { name: 'Thêm nhanh Cà phê sữa vào giỏ' }),
+      screen.getByRole('button', { name: 'Thêm Cà phê sữa vào giỏ hàng' }),
     );
     expect(useCartStore.getState().getTotalItems()).toBe(1);
     expect(screen.getByRole('link', { name: /Giỏ hàng, hiện có 1 sản phẩm/ })).toBeInTheDocument();
