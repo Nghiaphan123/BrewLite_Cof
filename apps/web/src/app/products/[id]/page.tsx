@@ -3,7 +3,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { apiClient } from '@/lib/api';
 import { Product, SizeOption, Topping } from '@/types';
 import {
@@ -15,6 +15,8 @@ import { useCartStore } from '@/store/cart.store';
 import { useUiStore } from '@/store/ui.store';
 import { ProductDetailSkeleton } from '@/components/Skeleton';
 
+const SIZE_OPTIONS: SizeOption[] = ['S', 'M', 'L'];
+
 function ProductDetailContent() {
   const params = useParams();
   const router = useRouter();
@@ -24,7 +26,11 @@ function ProductDetailContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [size, setSize] = useState<SizeOption>('M');
+  // Thẻ món ở menu chuyển sang đây kèm ?size= để giữ size khách đã chọn.
+  const sizeParam = useSearchParams().get('size');
+  const [size, setSize] = useState<SizeOption>(
+    SIZE_OPTIONS.includes(sizeParam as SizeOption) ? (sizeParam as SizeOption) : 'M',
+  );
   const [selectedToppings, setSelectedToppings] = useState<Topping[]>([]);
   const [qty, setQty] = useState<number>(1);
 
@@ -90,7 +96,7 @@ function ProductDetailContent() {
     if (!canAdd) return;
     addItem(product, size, selectedToppings, effectiveQty);
     showToast(`Đã thêm ${product.name} vào giỏ`);
-    router.push('/cart');
+    router.push('/menu');
   };
 
   return (
@@ -153,7 +159,7 @@ function ProductDetailContent() {
               Chọn Size
             </h2>
             <div className="mt-2 grid grid-cols-3 gap-2">
-              {(['S', 'M', 'L'] as SizeOption[]).map((s) => (
+              {SIZE_OPTIONS.map((s) => (
                 <button
                   key={s}
                   type="button"
