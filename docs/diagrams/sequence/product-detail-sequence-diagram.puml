@@ -1,0 +1,30 @@
+@startuml product-detail-sequence-diagram
+title BrewLite – Xem chi tiết món và thêm vào giỏ
+skinparam shadowing false
+skinparam backgroundColor #FFFFFF
+skinparam sequenceMessageAlign left
+autonumber
+
+actor "Khách hàng" as KH
+participant "Web (Next.js)" as UI
+participant "Zustand store\n(localStorage)" as ST
+participant "API (NestJS)" as API
+database "PostgreSQL" as DB
+
+KH -> UI: Chọn một món trên menu
+UI -> API: GET /products/:id
+alt id không phải UUID hoặc không có món
+  API --> UI: 404 PRODUCT_NOT_FOUND
+  UI --> KH: "Không tìm thấy món" + nút về Menu
+else tìm thấy
+  API -> DB: Đọc món + các topping đang bán
+  DB --> API: product, toppings (giá, tồn kho)
+  API --> UI: 200 {product, sizes: S/M/L, toppings}
+  UI --> KH: Ảnh món, chọn size, topping, số lượng
+  KH -> UI: Chọn size M, thêm topping, số lượng 2
+  UI -> UI: Tính giá: giá S + phụ thu size (M +5.000,\nL +10.000) + topping; khoá topping hết hàng,\ngiới hạn số ly theo tồn kho
+  KH -> UI: Bấm "Thêm vào giỏ – <tổng tiền>"
+  UI -> ST: addItem(product, size, toppings, qty)\n(trùng món + size + topping thì cộng dồn)
+  UI --> KH: Toast "Đã thêm ... vào giỏ", sang /cart
+end
+@enduml

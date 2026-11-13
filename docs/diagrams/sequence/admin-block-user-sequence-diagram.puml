@@ -1,0 +1,31 @@
+@startuml admin-block-user-sequence-diagram
+title BrewLite – Admin khoá / mở khoá tài khoản
+skinparam shadowing false
+skinparam backgroundColor #FFFFFF
+skinparam sequenceMessageAlign left
+autonumber
+
+actor "Quản trị viên" as QT
+participant "Web (Next.js)" as UI
+participant "API (NestJS)" as API
+database "PostgreSQL" as DB
+actor "Khách hàng" as KH
+
+QT -> UI: Tab Người dùng, bấm "Khoá"
+UI -> API: PATCH /admin/users/:id/block {blocked: true}
+API -> API: JwtAuthGuard + AdminGuard
+API -> DB: Tìm user theo id
+alt không có user
+  API --> UI: 404 USER_NOT_FOUND
+else user là ADMIN
+  API --> UI: 409 CANNOT_BLOCK_ADMIN
+else khách hàng
+  API -> DB: UPDATE users SET blocked = true
+  API --> UI: 200 user (blocked)
+  UI --> QT: Dòng người dùng hiện "Đã khoá"
+end
+== Khách bị khoá dùng lại token cũ ==
+KH -> API: Bất kỳ request có Bearer token (vd GET /orders/me)
+API -> API: JwtAuthGuard: validateUser → blocked = true
+API --> KH: 403 ACCOUNT_BLOCKED (token cũ hết tác dụng ngay)
+@enduml

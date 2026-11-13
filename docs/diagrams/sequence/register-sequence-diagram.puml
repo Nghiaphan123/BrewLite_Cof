@@ -1,0 +1,35 @@
+@startuml register-sequence-diagram
+title BrewLite – Đăng ký tài khoản
+skinparam shadowing false
+skinparam backgroundColor #FFFFFF
+skinparam sequenceMessageAlign left
+autonumber
+
+actor "Khách hàng" as KH
+participant "Web (Next.js)" as UI
+participant "API (NestJS)" as API
+database "PostgreSQL" as DB
+
+KH -> UI: Nhập họ tên, email, mật khẩu\nbấm "Đăng ký"
+UI -> API: POST /auth/register\n{name, email, password}
+API -> API: ValidationPipe kiểm tra RegisterDto\n(tên 2–80 ký tự, email hợp lệ,\nmật khẩu ≥ 8 ký tự có chữ và số)
+alt dữ liệu không hợp lệ
+  API --> UI: 400 Bad Request
+  UI --> KH: Hiện lỗi tiếng Việt dưới form
+else dữ liệu hợp lệ
+  API -> DB: Tìm user theo email (chữ thường)
+  DB --> API: user | null
+  alt email đã tồn tại
+    API --> UI: 409 EMAIL_TAKEN
+    UI --> KH: "Email này đã được đăng ký."
+  else email mới
+    API -> API: bcrypt.hash(password)
+    API -> DB: INSERT users\n(name, email, passwordHash, loyaltyPoints = 0)
+    DB --> API: user mới
+    API --> UI: 201 {user} (không trả token)
+    UI --> KH: "Đăng ký tài khoản thành công" + loading
+    UI -> UI: Chờ 1,5 giây, chuyển sang form\nĐăng nhập (giữ sẵn email)
+    UI --> KH: "Tài khoản đã sẵn sàng. Vui lòng đăng nhập."
+  end
+end
+@enduml

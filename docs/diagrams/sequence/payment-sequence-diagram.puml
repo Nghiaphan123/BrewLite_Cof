@@ -1,0 +1,47 @@
+@startuml payment-sequence-diagram
+title BrewLite – Thanh toán đơn (idempotent)
+skinparam shadowing false
+skinparam backgroundColor #FFFFFF
+skinparam sequenceMessageAlign left
+autonumber
+
+actor "Khách hàng" as KH
+participant "Web (Next.js)" as UI
+participant "API (NestJS)" as API
+database "PostgreSQL" as DB
+
+KH -> UI: Bấm "Xác nhận thanh toán"
+UI -> UI: Idempotency-Key = idem_<orderId>_<method>\n(thêm _retryN sau mỗi lần thất bại)
+UI -> API: POST /payments + Idempotency-Key\n{orderId, method: WALLET | CARD}
+alt thiếu Idempotency-Key
+  API --> UI: 400 IDEMPOTENCY_KEY_REQUIRED
+else key đã dùng (userId, key)
+  API -> DB: Tìm payment theo (userId, idempotencyKey)
+  DB --> API: payment cũ + requestHash
+  alt hash khác (body khác)
+    API --> UI: 409 IDEMPOTENCY_CONFLICT
+  else cùng hash
+    API --> UI: 200 kết quả cũ, replayed: true (không trừ tiền lần 2)
+  end
+else key mới
+  API -> DB: BEGIN transaction; đọc order + items + topping
+  API -> API: Kiểm tra chủ đơn; PAYMENT_FAILED → PENDING;\nassertTransition(PENDING → PAID | PAYMENT_FAILED)
+  alt mock thanh toán thành công
+    loop mỗi dòng món
+      API -> DB: UPDATE products SET stock -= qty, version += 1\nWHERE id = ? AND version = ? (optimistic lock)
+    end
+    API -> DB: UPDATE toppings SET stock -= số phần\nWHERE stock ≥ số phần
+    alt hết hàng hoặc bị người khác mua trước
+      API --> UI: 409 OUT_OF_STOCK (rollback, đơn giữ PENDING)
+    end
+    API -> DB: Cộng điểm loyalty = floor(total / 1000)\n+ ghi loyalty_transactions (EARN)
+    API -> DB: orders.status = PAID; INSERT payments (SUCCESS)
+    API --> UI: 200 {paymentId, status: PAID, amount}
+    UI --> KH: Xoá giỏ, sang /orders/<mã đơn>/confirmation
+  else mock thanh toán lỗi
+    API -> DB: orders.status = PAYMENT_FAILED;\nINSERT payments (FAILED)
+    API --> UI: 200 {status: PAYMENT_FAILED}
+    UI --> KH: "Thanh toán thất bại", giỏ giữ nguyên,\nbấm lại để thử lại cùng đơn
+  end
+end
+@enduml

@@ -1,0 +1,27 @@
+@startuml view-menu-sequence-diagram
+title BrewLite – Xem menu
+skinparam shadowing false
+skinparam backgroundColor #FFFFFF
+skinparam sequenceMessageAlign left
+autonumber
+
+actor "Khách hàng" as KH
+participant "Web (Next.js)" as UI
+participant "API (NestJS)" as API
+database "PostgreSQL" as DB
+
+KH -> UI: Mở trang Menu (/menu)
+UI -> UI: Hiện skeleton đang tải
+UI -> API: GET /products
+API -> DB: SELECT id, name, price, imageUrl, stock\nFROM products ORDER BY name
+DB --> API: danh sách món
+API -> API: Đổi imageUrl thành URL tuyệt đối
+API --> UI: 200 {items, total}
+alt lỗi mạng / lỗi máy chủ / sai định dạng
+  UI --> KH: Thông báo lỗi + nút "Thử lại"
+else items rỗng
+  UI --> KH: Trạng thái trống: chưa có món
+else có dữ liệu
+  UI --> KH: Lưới ProductCard (ảnh, tên, giá,\nnhãn "Hết hàng" khi stock = 0)
+end
+@enduml

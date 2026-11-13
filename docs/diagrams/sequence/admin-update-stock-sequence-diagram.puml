@@ -1,0 +1,29 @@
+@startuml admin-update-stock-sequence-diagram
+title BrewLite – Admin sửa tồn kho món / topping
+skinparam shadowing false
+skinparam backgroundColor #FFFFFF
+skinparam sequenceMessageAlign left
+autonumber
+
+actor "Quản trị viên" as QT
+participant "Web (Next.js)" as UI
+participant "API (NestJS)" as API
+database "PostgreSQL" as DB
+
+QT -> UI: Tab Tồn kho món (hoặc Topping)
+UI -> API: GET /admin/products | GET /admin/toppings
+API -> API: JwtAuthGuard + AdminGuard
+API --> UI: 200 danh sách kèm tồn kho
+UI --> QT: StockTable: mức tồn (hết / sắp hết / còn)
+QT -> UI: Nhập số tồn kho mới, bấm Lưu
+UI -> API: PATCH /admin/products/:id/stock {stock}\n(hoặc /admin/toppings/:id/stock)
+API -> API: Validate DTO: stock là số nguyên ≥ 0
+API -> DB: Tìm món / topping theo id
+alt không tồn tại
+  API --> UI: 404 PRODUCT_NOT_FOUND | TOPPING_NOT_FOUND
+else tồn tại
+  API -> DB: UPDATE stock (món: tăng version để\ngiữ optimistic lock)
+  API --> UI: 200 bản ghi đã cập nhật
+  UI --> QT: Thông báo đã lưu, cập nhật mức tồn
+end
+@enduml

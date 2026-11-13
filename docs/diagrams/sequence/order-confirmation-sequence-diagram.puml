@@ -1,0 +1,32 @@
+@startuml order-confirmation-sequence-diagram
+title BrewLite – Màn hình xác nhận đơn
+skinparam shadowing false
+skinparam backgroundColor #FFFFFF
+skinparam sequenceMessageAlign left
+autonumber
+
+actor "Khách hàng" as KH
+participant "Web (Next.js)" as UI
+participant "API (NestJS)" as API
+database "PostgreSQL" as DB
+
+KH -> UI: Mở /orders/<mã đơn>/confirmation
+alt chưa đăng nhập
+  UI --> KH: Chuyển tới /login?redirect=<trang này>
+else đã đăng nhập
+  opt đường dẫn là id, không phải mã BL-...
+    UI -> API: GET /orders/me
+    API --> UI: danh sách đơn → tìm mã theo id
+  end
+  UI -> API: GET /orders/:code
+  API -> DB: Đọc order + items + topping + payment SUCCESS
+  DB --> API: order
+  alt không có đơn hoặc không phải đơn của mình
+    API --> UI: 404 ORDER_NOT_FOUND
+    UI --> KH: "Không tìm thấy đơn hàng"
+  else tìm thấy
+    API --> UI: 200 {code, status, subtotal, discountAmount,\ntotal, items, payment.loyaltyPointsEarned}
+    UI --> KH: Mã đơn, trạng thái, giảm giá, tổng tiền,\n+N điểm thưởng; nút Về trang chủ / Xem lịch sử
+  end
+end
+@enduml

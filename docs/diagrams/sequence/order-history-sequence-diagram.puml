@@ -1,0 +1,34 @@
+@startuml order-history-sequence-diagram
+title BrewLite – Lịch sử và chi tiết đơn hàng
+skinparam shadowing false
+skinparam backgroundColor #FFFFFF
+skinparam sequenceMessageAlign left
+autonumber
+
+actor "Khách hàng" as KH
+participant "Web (Next.js)" as UI
+participant "API (NestJS)" as API
+database "PostgreSQL" as DB
+
+KH -> UI: Mở /orders
+UI -> UI: Hiện skeleton danh sách
+UI -> API: GET /orders/me (Bearer token)
+API -> API: JwtAuthGuard → req.user.id
+API -> DB: SELECT orders WHERE userId = ?\nORDER BY createdAt DESC (kèm items, topping)
+DB --> API: danh sách đơn
+API --> UI: 200 {items, total}
+alt chưa có đơn nào
+  UI --> KH: Trạng thái trống + nút "Xem menu"
+else có đơn
+  UI --> KH: Danh sách: mã đơn, ngày, trạng thái, tổng tiền
+  KH -> UI: Bấm một đơn → /orders/<id>
+  UI -> API: GET /orders/me
+  API --> UI: 200 {items}
+  UI -> UI: Tìm đơn theo id (hoặc mã BL-...)
+  alt không thấy đơn
+    UI --> KH: "Không tìm thấy đơn hàng"
+  else thấy đơn
+    UI --> KH: Chi tiết: món, size, topping, giảm giá,\ntổng tiền, trạng thái lấy từ server
+  end
+end
+@enduml
