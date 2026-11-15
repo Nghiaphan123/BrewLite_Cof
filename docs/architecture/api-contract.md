@@ -1,64 +1,64 @@
-# BrewLite - API Contract
+# BrewLite - Hợp đồng API
 
-**Status:** Core customer-MVP API contract; health and deployment references updated for Assignment 2
-**Owner:** H.Tài (Task 7.0)  
-**Related:** [ADR 0005 (conventions)](adr/0005-api-contract-conventions.md), [ADR 0004 (payment/lifecycle)](adr/0004-payment-mock-and-order-lifecycle.md), [ADR 0003 (database)](adr/0003-database-postgres-prisma.md), [Scenarios](../requirements/scenarios.md), [Product Backlog](../requirements/product-backlog.md), [Configuration](../../archive/docs/config.md), [UI Decisions](../design/ui-decisions.md), [Wireframes](../design/wireframes.md)
+**Trạng thái:** Sản phẩm bàn giao Giai đoạn 1
+**Người phụ trách:** H.Tài (Nhiệm vụ 7.0)
+**Liên quan:** [ADR 0005 (quy ước)](adr/0005-api-contract-conventions.md), [ADR 0004 (thanh toán/vòng đời)](adr/0004-payment-mock-and-order-lifecycle.md), [ADR 0003 (cơ sở dữ liệu)](adr/0003-database-postgres-prisma.md), [Scenarios](../requirements/scenarios.md), [Product Backlog](../requirements/product-backlog.md), [Cấu hình](../config.md), [Quyết định UI](../design/ui-decisions.md), [Wireframes](../design/wireframes.md)
 
-This document specifies every HTTP endpoint in the BrewLite MVP. It is the contract between `apps/api` and `apps/web`: the API implements it, the web client consumes it, and the e2e tests in `scenarios.md` §12 assert it. Endpoints not listed here are not part of the MVP.
+Tài liệu này quy định mọi endpoint HTTP trong MVP của BrewLite. Nó là hợp đồng giữa `apps/api` và `apps/web`: API triển khai nó, web client tiêu thụ nó, và các test e2e trong `scenarios.md` §12 khẳng định nó. Các endpoint không được liệt kê ở đây không thuộc MVP.
 
-> **Conventions live in [ADR 0005](adr/0005-api-contract-conventions.md).** This doc does not restate C1–C10; it cites them. If a rule here conflicts with an ADR, the ADR wins and this doc is wrong.
+> **Quy ước nằm trong [ADR 0005](adr/0005-api-contract-conventions.md).** Tài liệu này không lặp lại C1–C10; nó trích dẫn chúng. Nếu một quy tắc ở đây xung đột với một ADR, ADR thắng và tài liệu này sai.
 
-## 1. Scope and base URL
+## 1. Phạm vi và URL cơ sở
 
-- **Base path:** `/api/v1` (C1). Every endpoint below is relative to it.
-- **Base URL in dev:** `http://localhost:3001/api/v1` (the API port; see `config.md` §1.2). The frontend reads `NEXT_PUBLIC_API_URL` which includes `/api/v1`.
-- **Content type:** `application/json` for all request and response bodies, except `204`.
-- **Character encoding:** UTF-8. Vietnamese text in responses is UTF-8, not HTML-escaped.
-- **Auth:** `Authorization: Bearer <jwt>` on protected routes (C4). Public routes are noted per endpoint.
+- **Đường dẫn cơ sở:** `/api/v1` (C1). Mọi endpoint dưới đây là tương đối so với nó.
+- **URL cơ sở trong dev:** `http://localhost:3001/api/v1` (cổng API; xem `config.md` §1.2). Frontend đọc `NEXT_PUBLIC_API_URL` bao gồm `/api/v1`.
+- **Content type:** `application/json` cho mọi body yêu cầu và phản hồi, trừ `204`.
+- **Mã hóa ký tự:** UTF-8. Văn bản tiếng Việt trong phản hồi là UTF-8, không bị HTML-escape.
+- **Xác thực:** `Authorization: Bearer <jwt>` trên các route được bảo vệ (C4). Các route công khai được ghi chú theo từng endpoint.
 
-Endpoints in the assignment (PDF §12.1) are relative to the `/api/v1` base path: `GET /products`, `GET /products/:id`, `POST /auth/register`, `POST /auth/login`, `POST /orders`, `POST /payments`, and `GET /orders/me`. The public health endpoint is `GET /api/v1/health`; the confirmation route also reads `GET /orders/:code` under that base path. Assignment 2 adds promotion, cart, loyalty, and limited admin endpoints; this page remains the contract for the core customer-facing routes, not an exhaustive inventory of optional extensions.
+Các endpoint trong bài tập (PDF §12.1): `GET /products`, `GET /products/:id`, `POST /auth/register`, `POST /auth/login`, `POST /orders`, `POST /payments`, `GET /orders/me`. Cộng với `GET /orders/:code` (cần cho màn hình xác nhận, `wireframes.md` §8) và `GET /health` (dùng bởi `setup.md` §8). Task 10 thêm các endpoint promo/loyalty (không thuộc các endpoint Giai đoạn 1 dưới đây; được liệt kê trong §9 như dự trữ).
 
-## 2. Endpoint summary
+## 2. Tóm tắt endpoint
 
-| Method | Path             | Auth    | Success                                        | Reference |
-| ------ | ---------------- | ------- | ---------------------------------------------- | --------- |
-| `GET`  | `/health`        | Public  | `200 { status, version }`                      | §3        |
-| `GET`  | `/products`      | Public  | `200 { items, total }`                         | §4        |
-| `GET`  | `/products/:id`  | Public  | `200 Product` / `404`                          | §5        |
-| `POST` | `/auth/register` | Public  | `201 { user }` / `409`                         | §6        |
-| `POST` | `/auth/login`    | Public  | `200 { accessToken, expiresIn, user }` / `401` | §7        |
-| `GET`  | `/auth/me`       | **JWT** | `200 UserProfile` / `401`                      | §7.1      |
-| `PATCH`| `/auth/password` | **JWT** | `200 { message }` / `400` / `401`              | §7.2      |
-| `POST` | `/orders`        | **JWT** | `201 Order` / `400` / `401`                    | §8        |
-| `POST` | `/payments`      | **JWT** | `200 PaymentResult` / `400` / `401` / `409`    | §9        |
-| `GET`  | `/orders/me`     | **JWT** | `200 { items, total }` / `401`                 | §10       |
-| `GET`  | `/orders/:code`  | **JWT** | `200 Order` / `404`                            | §11       |
-| `GET`  | `/cart`          | **JWT** | `200 Cart` / `401`                             | §11.1     |
-| `PUT`  | `/cart`          | **JWT** | `200 Cart` / `400` / `401` / `404`             | §11.1     |
-| `GET`/`PATCH` | `/admin/products`, `/admin/toppings` (stock) | **Admin** | `200` / `400` / `403` / `404` | §11.2     |
-| `PATCH` | `/admin/users/:id/block`, `/admin/promotions/:id/active`, `/admin/toppings/:id/price` | **Admin** | `200` / `400` / `403` / `404` / `409` | §11.3 |
+| Method        | Đường dẫn                                                                             | Xác thực  | Thành công                                     | Tham chiếu |
+| ------------- | ------------------------------------------------------------------------------------- | --------- | ---------------------------------------------- | ---------- |
+| `GET`         | `/health`                                                                             | Công khai | `200 { status, version }`                      | §3         |
+| `GET`         | `/products`                                                                           | Công khai | `200 { items, total }`                         | §4         |
+| `GET`         | `/products/:id`                                                                       | Công khai | `200 Product` / `404`                          | §5         |
+| `POST`        | `/auth/register`                                                                      | Công khai | `201 { user }` / `409`                         | §6         |
+| `POST`        | `/auth/login`                                                                         | Công khai | `200 { accessToken, expiresIn, user }` / `401` | §7         |
+| `GET`         | `/auth/me`                                                                            | **JWT**   | `200 UserProfile` / `401`                      | §7.1       |
+| `PATCH`       | `/auth/password`                                                                      | **JWT**   | `200 { message }` / `400` / `401`              | §7.2       |
+| `POST`        | `/orders`                                                                             | **JWT**   | `201 Order` / `400` / `401`                    | §8         |
+| `POST`        | `/payments`                                                                           | **JWT**   | `200 PaymentResult` / `400` / `401` / `409`    | §9         |
+| `GET`         | `/orders/me`                                                                          | **JWT**   | `200 { items, total }` / `401`                 | §10        |
+| `GET`         | `/orders/:code`                                                                       | **JWT**   | `200 Order` / `404`                            | §11        |
+| `GET`         | `/cart`                                                                               | **JWT**   | `200 Cart` / `401`                             | §11.1      |
+| `PUT`         | `/cart`                                                                               | **JWT**   | `200 Cart` / `400` / `401` / `404`             | §11.1      |
+| `GET`/`PATCH` | `/admin/products`, `/admin/toppings` (stock)                                          | **Admin** | `200` / `400` / `403` / `404`                  | §11.2      |
+| `PATCH`       | `/admin/users/:id/block`, `/admin/promotions/:id/active`, `/admin/toppings/:id/price` | **Admin** | `200` / `400` / `403` / `404` / `409`          | §11.3      |
 
-`/health`, `GET /products`, `GET /products/:id`, `POST /auth/register`, and `POST /auth/login` are public. User profile and password changes, orders, payments, and the saved cart require JWT.
+`/health`, `GET /products`, `GET /products/:id`, `POST /auth/register`, và `POST /auth/login` là công khai. Hồ sơ người dùng và thay đổi mật khẩu, đơn hàng, thanh toán, và giỏ hàng đã lưu yêu cầu JWT.
 
 ## 3. `GET /api/v1/health`
 
-**Auth:** Public.  
-**Purpose:** liveness and version check (`setup.md` §8).
+**Xác thực:** Công khai.
+**Mục đích:** kiểm tra liveness và phiên bản (`setup.md` §8).
 
-**Response `200`:**
+**Phản hồi `200`:**
 ```json
 { "status": "ok", "version": "v1" }
 ```
 
-No other responses. Not cached; no rate limit in Phase 1.
+Không có phản hồi khác. Không cache; không giới hạn tốc độ trong Giai đoạn 1.
 
 ## 4. `GET /api/v1/products`
 
-**Auth:** Public.  
-**Purpose:** menu list (`scenarios.md` S-MAIN-1 step 1; `product-backlog.md` Task 2/3).  
-**Query params:** none in Phase 1. Pagination is reserved (C9) but not implemented.
+**Xác thực:** Công khai.
+**Mục đích:** danh sách menu (`scenarios.md` S-MAIN-1 bước 1; `product-backlog.md` Task 2/3).
+**Tham số truy vấn:** không trong Giai đoạn 1. Phân trang được dự trữ (C9) nhưng chưa triển khai.
 
-**Response `200` (C2 collection):**
+**Phản hồi `200` (bộ sưu tập C2):**
 ```json
 {
   "items": [
@@ -81,23 +81,23 @@ No other responses. Not cached; no rate limit in Phase 1.
 }
 ```
 
-**Rules:**
-- `price` and `stock` are integers (`config.md` §3; C7).
-- `total` is the array length in Phase 1 (C9).
-- Order of items is stable (by `name` asc, or by a `sortOrder` column if added in Task 1.0's ERD). The frontend does not re-sort.
-- Empty menu returns `{ "items": [], "total": 0 }` with `200`, not `404`. The UI shows the empty state (`wireframes.md` §4).
-- `imageUrl` is absolute; the frontend renders it directly. Product photos are stored in `apps/web/public/images/products/` as `1.jpg` through `30.jpg`. In `apps/api/prisma/seed.ts`, each seeded product uses `/images/products/<n>.jpg`, where `<n>` is its 1-based position in the `products` array. Keep the seed order and filenames aligned when adding or reordering products.
+**Quy tắc:**
+- `price` và `stock` là số nguyên (`config.md` §3; C7).
+- `total` là độ dài mảng trong Giai đoạn 1 (C9).
+- Thứ tự các mục ổn định (theo `name` tăng dần, hoặc theo cột `sortOrder` nếu được thêm trong ERD của Task 1.0). Frontend không sắp xếp lại.
+- Menu trống trả về `{ "items": [], "total": 0 }` với `200`, không phải `404`. UI hiển thị trạng thái trống (`wireframes.md` §4).
+- `imageUrl` là tuyệt đối; frontend render trực tiếp. Ảnh sản phẩm được lưu trong `apps/web/public/images/products/` dưới dạng `1.jpg` đến `30.jpg`. Trong `apps/api/prisma/seed.ts`, mỗi sản phẩm được seed dùng `/images/products/<n>.jpg`, trong đó `<n>` là vị trí 1-based của nó trong mảng `products`. Giữ thứ tự seed và tên tệp khớp nhau khi thêm hoặc sắp xếp lại sản phẩm.
 
-**Errors:** none expected for a valid request. A DB failure returns `500` (C3) with `requestId` (C10).
+**Lỗi:** không có lỗi kỳ vọng cho một yêu cầu hợp lệ. Lỗi DB trả về `500` (C3) với `requestId` (C10).
 
 ## 5. `GET /api/v1/products/:id`
 
-**Auth:** Public.  
-**Purpose:** product detail (`scenarios.md` S-MAIN-1 step 2; `product-backlog.md` Task 4).
+**Xác thực:** Công khai.
+**Mục đích:** chi tiết sản phẩm (`scenarios.md` S-MAIN-1 bước 2; `product-backlog.md` Task 4).
 
-**Path param:** `id` — the product UUID. Must be a valid UUID; a malformed id returns `404` (not `400`) to avoid leaking id-format information.
+**Tham số đường dẫn:** `id` — UUID của sản phẩm. Phải là UUID hợp lệ; id sai định dạng trả về `404` (không phải `400`) để tránh rò rỉ thông tin định dạng id.
 
-**Response `200` (C2 single resource):**
+**Phản hồi `200` (tài nguyên đơn C2):**
 ```json
 {
   "id": "0f8fad5b-d9cb-469f-a165-70867728950e",
@@ -113,44 +113,44 @@ No other responses. Not cached; no rate limit in Phase 1.
 }
 ```
 
-**Rules:**
-- `sizes` and `toppings` are returned here, not on the list endpoint, to keep the menu response small. The detail page uses them to render the selector (`wireframes.md` §5).
-- The base `price` is the **S** size price. Size-specific prices are computed by the pricing rule (`ui-decisions.md` §4.2), not returned as a table. If the team later wants a size-price table, add `sizePrices: { S: 35000, M: 40000, L: 45000 }` — non-breaking additive.
-- `toppings` is the full catalogue; a product may restrict toppings later (Phase 2+). In Phase 1 all products accept all toppings.
-- `toppings[].stock` is the number of portions left. Each cup with a topping uses one portion, taken at payment (§9). The web disables a topping whose stock is `0`.
+**Quy tắc:**
+- `sizes` và `toppings` được trả về ở đây, không phải trên endpoint danh sách, để giữ phản hồi menu nhỏ. Trang chi tiết dùng chúng để render bộ chọn (`wireframes.md` §5).
+- `price` cơ sở là giá size **S**. Giá theo size được tính bởi quy tắc giá (`ui-decisions.md` §4.2), không được trả về dưới dạng bảng. Nếu nhóm sau này muốn một bảng giá theo size, thêm `sizePrices: { S: 35000, M: 40000, L: 45000 }` — bổ sung không phá vỡ.
+- `toppings` là danh mục đầy đủ; một sản phẩm có thể hạn chế topping sau này (Giai đoạn 2+). Trong Giai đoạn 1 mọi sản phẩm chấp nhận mọi topping.
+- `toppings[].stock` là số phần còn lại. Mỗi ly có topping dùng một phần, được lấy tại thanh toán (§9). Web vô hiệu hóa một topping có `stock` là `0`.
 
-**Response `404` (C3):**
+**Phản hồi `404` (C3):**
 ```json
 { "statusCode": 404, "error": "Not Found", "message": "Product not found", "code": "PRODUCT_NOT_FOUND" }
 ```
 
-**Errors:** `404` for unknown id; `500` for DB failure. Malformed UUID → `404` (see above).
+**Lỗi:** `404` cho id không tồn tại; `500` cho lỗi DB. UUID sai định dạng → `404` (xem ở trên).
 
 ## 6. `POST /api/v1/auth/register`
 
-**Auth:** Public.  
-**Purpose:** create an account (`scenarios.md` S-AUTH-1, S-AUTH-2; `product-backlog.md` Task 7).
+**Xác thực:** Công khai.
+**Mục đích:** tạo tài khoản (`scenarios.md` S-AUTH-1, S-AUTH-2; `product-backlog.md` Task 7).
 
-**Request body:**
+**Body yêu cầu:**
 ```json
 { "name": "An Nguyen", "email": "an@example.com", "password": "correct-horse-battery" }
 ```
 
-**Validation (`class-validator`):**
-- `name`: 2–80 characters after trimming.
-- `email`: valid email format, normalized to lowercase before storage.
-- `password`: ≥ 8 chars, at least one letter and one digit. The same rule is enforced client-side (`wireframes.md` §10); if one changes, both change.
+**Validate (`class-validator`):**
+- `name`: 2–80 ký tự sau khi trim.
+- `email`: định dạng email hợp lệ, được chuẩn hóa thành chữ thường trước khi lưu.
+- `password`: ≥ 8 ký tự, ít nhất một chữ cái và một chữ số. Cùng quy tắc được thực thi phía client (`wireframes.md` §10); nếu một cái thay đổi, cả hai thay đổi.
 
-**Response `201`:**
+**Phản hồi `201`:**
 ```json
 {
   "user": { "id": "a3f1...", "name": "An Nguyen", "email": "an@example.com", "loyaltyPoints": 0 }
 }
 ```
 
-No token is returned here. The client calls `POST /auth/login` after register (`scenarios.md` S-AUTH-1 step 3). Auto-login on register is not part of the contract; if the team adds it, it returns the same body as `/auth/login` and this section is updated.
+Không có token được trả về ở đây. Client gọi `POST /auth/login` sau khi đăng ký (`scenarios.md` S-AUTH-1 bước 3). Tự động đăng nhập khi đăng ký không thuộc hợp đồng; nếu nhóm thêm nó, nó trả về cùng body như `/auth/login` và phần này được cập nhật.
 
-**Response `400` (C3):**
+**Phản hồi `400` (C3):**
 ```json
 {
   "statusCode": 400,
@@ -163,27 +163,27 @@ No token is returned here. The client calls `POST /auth/login` after register (`
 }
 ```
 
-**Response `409` (C3):**
+**Phản hồi `409` (C3):**
 ```json
 { "statusCode": 409, "error": "Conflict", "message": "Email already registered", "code": "EMAIL_TAKEN" }
 ```
 
-**Rules:**
-- Password is bcrypt-hashed with `BCRYPT_ROUNDS` (`config.md` §2.1). The hash never appears in any response.
-- Duplicate email returns `409`, never `200` with a "user exists" body (no account enumeration beyond the explicit email the requester already knows).
-- `loyaltyPoints` starts at `0`.
+**Quy tắc:**
+- Mật khẩu được hash bcrypt với `BCRYPT_ROUNDS` (`config.md` §2.1). Hash không bao giờ xuất hiện trong bất kỳ phản hồi nào.
+- Email trùng lặp trả về `409`, không bao giờ `200` với body "user exists" (không liệt kê tài khoản ngoài email rõ ràng mà người yêu cầu đã biết).
+- `loyaltyPoints` bắt đầu từ `0`.
 
 ## 7. `POST /api/v1/auth/login`
 
-**Auth:** Public.  
-**Purpose:** authenticate and receive a JWT (`scenarios.md` S-AUTH-1, S-AUTH-3; `product-backlog.md` Task 7).
+**Xác thực:** Công khai.
+**Mục đích:** xác thực và nhận JWT (`scenarios.md` S-AUTH-1, S-AUTH-3; `product-backlog.md` Task 7).
 
-**Request body:**
+**Body yêu cầu:**
 ```json
 { "email": "an@example.com", "password": "correct-horse-battery" }
 ```
 
-**Response `200`:**
+**Phản hồi `200`:**
 ```json
 {
   "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
@@ -192,25 +192,25 @@ No token is returned here. The client calls `POST /auth/login` after register (`
 }
 ```
 
-**Rules:**
-- `expiresIn` is seconds, matching `JWT_EXPIRES_IN=1d` (`config.md` §2.1). The frontend may use it to warn before expiry; Phase 1 does not refresh.
-- The JWT payload contains `sub` (user id), `email`, and `iat`/`exp`. It does **not** contain `loyaltyPoints` (that would go stale); the frontend fetches the user via a future `GET /auth/me` if needed. Phase 1 reads `loyaltyPoints` from login/register responses only.
+**Quy tắc:**
+- `expiresIn` là giây, khớp với `JWT_EXPIRES_IN=1d` (`config.md` §2.1). Frontend có thể dùng nó để cảnh báo trước khi hết hạn; Giai đoạn 1 không refresh.
+- Payload JWT chứa `sub` (id người dùng), `email`, và `iat`/`exp`. Nó **không** chứa `loyaltyPoints` (sẽ bị cũ); frontend lấy người dùng qua `GET /auth/me` tương lai nếu cần. Giai đoạn 1 chỉ đọc `loyaltyPoints` từ phản hồi login/register.
 
-**Response `401` (C3):**
+**Phản hồi `401` (C3):**
 ```json
 { "statusCode": 401, "error": "Unauthorized", "message": "Invalid credentials", "code": "AUTH_INVALID" }
 ```
 
-**Response `403`** when an admin has blocked the account (§11.3). It is returned only after the password is checked, so a wrong password still answers `401`:
+**Phản hồi `403`** khi một admin đã chặn tài khoản (§11.3). Nó chỉ được trả về sau khi mật khẩu đã được kiểm tra, nên mật khẩu sai vẫn trả lời `401`:
 ```json
 { "statusCode": 403, "error": "Forbidden", "message": "This account has been blocked", "code": "ACCOUNT_BLOCKED" }
 ```
 
 ## 7.1. `GET /api/v1/auth/me`
 
-**Auth:** JWT. Returns only the authenticated user's profile; the password hash is never selected.
+**Xác thực:** JWT. Chỉ trả về hồ sơ của người dùng đã xác thực; hash mật khẩu không bao giờ được chọn.
 
-**Response `200`:**
+**Phản hồi `200`:**
 ```json
 {
   "id": "a3f1...",
@@ -223,25 +223,25 @@ No token is returned here. The client calls `POST /auth/login` after register (`
 
 ## 7.2. `PATCH /api/v1/auth/password`
 
-**Auth:** JWT.
+**Xác thực:** JWT.
 
-**Request body:**
+**Body yêu cầu:**
 ```json
 { "currentPassword": "correct-horse-battery", "newPassword": "another-correct-password" }
 ```
 
-The current password must be verified before storing a bcrypt hash of the new password. The new password must be at least 8 characters and contain a letter and a digit. An incorrect current password returns `401 CURRENT_PASSWORD_INVALID`.
+Mật khẩu hiện tại phải được xác minh trước khi lưu một hash bcrypt của mật khẩu mới. Mật khẩu mới phải có ít nhất 8 ký tự và chứa một chữ cái và một chữ số. Mật khẩu hiện tại không đúng trả về `401 CURRENT_PASSWORD_INVALID`.
 
-**Rules:**
-- The `401` body is **identical** for "unknown email" and "wrong password" (`scenarios.md` S-AUTH-3). Do not return "email not found."
-- No rate limiting in Phase 1; a Phase 2+ item.
+**Quy tắc:**
+- Body `401` là **giống hệt** cho "email không tồn tại" và "sai mật khẩu" (`scenarios.md` S-AUTH-3). Không trả về "email not found."
+- Không giới hạn tốc độ trong Giai đoạn 1; một mục Giai đoạn 2+.
 
 ## 8. `POST /api/v1/orders`
 
-**Auth:** **JWT required** (C4). Missing or invalid token → `401` with `code: "AUTH_REQUIRED"` or `"AUTH_EXPIRED"`.  
-**Purpose:** create a `PENDING` order from a cart (`scenarios.md` S-MAIN-1 step 8, S-ORD-1..3; `product-backlog.md` Task 6).
+**Xác thực:** **Yêu cầu JWT** (C4). Token thiếu hoặc không hợp lệ → `401` với `code: "AUTH_REQUIRED"` hoặc `"AUTH_EXPIRED"`.
+**Mục đích:** tạo một đơn hàng `PENDING` từ giỏ hàng (`scenarios.md` S-MAIN-1 bước 8, S-ORD-1..3; `product-backlog.md` Task 6).
 
-**Request body:**
+**Body yêu cầu:**
 ```json
 {
   "items": [
@@ -251,19 +251,19 @@ The current password must be verified before storing a bcrypt hash of the new pa
 }
 ```
 
-**Validation (`class-validator`):**
-- `items`: non-empty array; each item has `productId` (UUID), `size` (`S`|`M`|`L`), `toppingIds` (array of strings, possibly empty), `qty` (integer ≥ 1, ≤ 99).
-- Unknown `productId` → `400` with `code: "PRODUCT_NOT_FOUND"` (specific, not a generic validation error).
-- Unknown `toppingId` for a valid product → `400` with `code: "TOPPING_NOT_FOUND"`.
-- `size` not in the product's `sizes` → `400` with `code: "INVALID_SIZE"`.
+**Validate (`class-validator`):**
+- `items`: mảng không rỗng; mỗi mục có `productId` (UUID), `size` (`S`|`M`|`L`), `toppingIds` (mảng chuỗi, có thể rỗng), `qty` (số nguyên ≥ 1, ≤ 99).
+- `productId` không tồn tại → `400` với `code: "PRODUCT_NOT_FOUND"` (cụ thể, không phải lỗi validate chung).
+- `toppingId` không tồn tại cho một sản phẩm hợp lệ → `400` với `code: "TOPPING_NOT_FOUND"`.
+- `size` không nằm trong `sizes` của sản phẩm → `400` với `code: "INVALID_SIZE"`.
 
-**Server behavior:**
-- **Recomputes `total` and each `lineTotal` from the DB.** Client-supplied prices are ignored (`scenarios.md` S-ORD-1). The pricing rule is the shared fixture (`ui-decisions.md` §4.2): unit price = S price + size surcharge (S 0, M 5,000, L 10,000) + topping prices.
-- Creates `Order` with `status = "PENDING"`, `userId` from the JWT, `createdAt`, and `code` (D3). **Does not decrement stock** (ADR 0004 D1).
-- Creates `OrderItem` rows with `productId`, `size`, `qty`, `lineTotal`, and the topping ids.
-- Returns `201` with the order summary; the client then calls `POST /payments` (`scenarios.md` S-MAIN-1 step 8).
+**Hành vi server:**
+- **Tính lại `total` và từng `lineTotal` từ DB.** Giá do client cung cấp bị bỏ qua (`scenarios.md` S-ORD-1). Quy tắc giá là fixture dùng chung (`ui-decisions.md` §4.2): giá đơn vị = giá S + phụ phí size (S 0, M 5.000, L 10.000) + giá topping.
+- Tạo `Order` với `status = "PENDING"`, `userId` từ JWT, `createdAt`, và `code` (D3). **Không giảm stock** (ADR 0004 D1).
+- Tạo các dòng `OrderItem` với `productId`, `size`, `qty`, `lineTotal`, và các id topping.
+- Trả về `201` với tóm tắt đơn hàng; client sau đó gọi `POST /payments` (`scenarios.md` S-MAIN-1 bước 8).
 
-**Response `201`:**
+**Phản hồi `201`:**
 ```json
 {
   "id": "8a1c...",
@@ -278,48 +278,48 @@ The current password must be verified before storing a bcrypt hash of the new pa
 }
 ```
 
-**Rules:**
-- The order `code` format is `BL-YYYY-NNNN` (year + zero-padded sequence per year). The sequence is server-generated, unique, immutable. Recorded here as the decision that closes ADR 0004's open question.
-- `id` is a UUID, included for internal linking but **not** used in user-facing URLs (D3: confirmation route is keyed by `code`).
-- Empty `items` → `400` with `code: "CART_EMPTY"` (`scenarios.md` S-ORD-2).
-- The response includes `items` with `name` resolved for the confirmation screen; the client does not need a second call to render the confirmation summary.
-- **No idempotency key here** (ADR 0004 D4). A double-submit creates two orders; this is a documented limitation (`scenarios.md` S-PAY-4), not a contract violation.
+**Quy tắc:**
+- Định dạng `code` đơn hàng là `BL-YYYY-NNNN` (năm + số thứ tự zero-padded theo năm). Số thứ tự được server tạo, duy nhất, bất biến. Được ghi ở đây như quyết định đóng câu hỏi mở của ADR 0004.
+- `id` là UUID, được bao gồm để liên kết nội bộ nhưng **không** được dùng trong URL hướng đến người dùng (D3: route xác nhận khóa bằng `code`).
+- `items` rỗng → `400` với `code: "CART_EMPTY"` (`scenarios.md` S-ORD-2).
+- Phản hồi bao gồm `items` với `name` được resolve cho màn hình xác nhận; client không cần gọi thứ hai để render tóm tắt xác nhận.
+- **Không có idempotency key ở đây** (ADR 0004 D4). Submit hai lần tạo hai đơn hàng; đây là hạn chế đã ghi (`scenarios.md` S-PAY-4), không phải vi phạm hợp đồng.
 
-**Errors:**
-- `400` validation (`code: "VALIDATION_FAILED"` with `details`).
+**Lỗi:**
+- `400` validate (`code: "VALIDATION_FAILED"` với `details`).
 - `400` `CART_EMPTY`, `PRODUCT_NOT_FOUND`, `TOPPING_NOT_FOUND`, `INVALID_SIZE`.
-- `401` missing/expired JWT.
-- `500` unexpected (C3, C10).
+- `401` thiếu/hết hạn JWT.
+- `500` bất ngờ (C3, C10).
 
 ## 9. `POST /api/v1/payments`
 
-**Auth:** **JWT required**. The order must belong to the caller; a cross-user order returns `404` (not `403`, to avoid leaking existence — `scenarios.md` S-ORD-4).  
-**Purpose:** pay a `PENDING` or `PAYMENT_FAILED` order (`scenarios.md` S-MAIN-1 steps 8–9, S-PAY-1..6; `product-backlog.md` Task 8, Task 10b).
+**Xác thực:** **Yêu cầu JWT**. Đơn hàng phải thuộc về người gọi; một đơn hàng chéo người dùng trả về `404` (không phải `403`, để tránh rò rỉ sự tồn tại — `scenarios.md` S-ORD-4).
+**Mục đích:** thanh toán một đơn hàng `PENDING` hoặc `PAYMENT_FAILED` (`scenarios.md` S-MAIN-1 bước 8–9, S-PAY-1..6; `product-backlog.md` Task 8, Task 10b).
 
-**Headers:**
-- `Idempotency-Key: <uuid>` — **required** (C5, ADR 0004 D4). Missing → `400` with `code: "IDEMPOTENCY_KEY_REQUIRED"`.
+**Header:**
+- `Idempotency-Key: <uuid>` — **bắt buộc** (C5, ADR 0004 D4). Thiếu → `400` với `code: "IDEMPOTENCY_KEY_REQUIRED"`.
 
-**Request body:**
+**Body yêu cầu:**
 ```json
 { "orderId": "8a1c...", "method": "WALLET" }
 ```
 
-`method` ∈ `WALLET` | `CARD`. `orderId` is the DB `id` from `POST /orders` (not the `code`; the code is for URLs).
+`method` ∈ `WALLET` | `CARD`. `orderId` là `id` DB từ `POST /orders` (không phải `code`; code dành cho URL).
 
-**Server behavior (ADR 0004):**
-- Inside a `prisma.$transaction`:
-  1. Look up the order; if not found or not owned by caller → `404`.
-  2. Assert the current state is `PENDING` or `PAYMENT_FAILED`; otherwise `409` with `code: "INVALID_STATE_TRANSITION"` (Task 10a).
-  3. Check stock for all items under optimistic lock (`version`); if insufficient → `409` with `code: "OUT_OF_STOCK"` (Task 10c). Topping stock is checked for the whole order (one portion per cup, added up across lines) with a conditional update (`stock >= needed`); if a topping is short → `409` `OUT_OF_STOCK` and nothing is decremented.
-  4. Call the mock gateway (`PAYMENT_MOCK_MODE`; `config.md` §2.1).
-  5. On success: decrement drink and topping stock, transition to `PAID`, accrue loyalty points (ADR 0004 D1, D7). Cancelling a `PAID` order gives both back.
-  6. On failure: transition to `PAYMENT_FAILED`, no stock change, no points.
-  7. Store the `Payment` row with `idempotencyKey`, `requestHash`, `method`, `amount`, `status`.
-- If the `idempotencyKey` already exists:
-  - Same `requestHash` → return the stored response (same payment id, same order status).
-  - Different `requestHash` → `409` with `code: "IDEMPOTENCY_CONFLICT"` (ADR 0004 D4; `scenarios.md` S-PAY-6).
+**Hành vi server (ADR 0004):**
+- Bên trong một `prisma.$transaction`:
+  1. Tra cứu đơn hàng; nếu không tìm thấy hoặc không thuộc người gọi → `404`.
+  2. Khẳng định trạng thái hiện tại là `PENDING` hoặc `PAYMENT_FAILED`; nếu không → `409` với `code: "INVALID_STATE_TRANSITION"` (Task 10a).
+  3. Kiểm tra stock cho mọi mục dưới khóa lạc quan (`version`); nếu không đủ → `409` với `code: "OUT_OF_STOCK"` (Task 10c). Stock topping được kiểm tra cho toàn bộ đơn hàng (một phần mỗi ly, cộng dồn qua các dòng) với cập nhật có điều kiện (`stock >= needed`); nếu một topping bị thiếu → `409` `OUT_OF_STOCK` và không có gì bị giảm.
+  4. Gọi cổng mock (`PAYMENT_MOCK_MODE`; `config.md` §2.1).
+  5. Khi thành công: giảm stock đồ uống và topping, chuyển sang `PAID`, tích lũy điểm trung thành (ADR 0004 D1, D7). Hủy một đơn hàng `PAID` trả lại cả hai.
+  6. Khi thất bại: chuyển sang `PAYMENT_FAILED`, không thay đổi stock, không điểm.
+  7. Lưu dòng `Payment` với `idempotencyKey`, `requestHash`, `method`, `amount`, `status`.
+- Nếu `idempotencyKey` đã tồn tại:
+  - Cùng `requestHash` → trả về phản hồi đã lưu (cùng payment id, cùng trạng thái đơn hàng).
+  - Khác `requestHash` → `409` với `code: "IDEMPOTENCY_CONFLICT"` (ADR 0004 D4; `scenarios.md` S-PAY-6).
 
-**Response `200` (success):**
+**Phản hồi `200` (thành công):**
 ```json
 {
   "orderId": "8a1c...",
@@ -334,7 +334,7 @@ The current password must be verified before storing a bcrypt hash of the new pa
 }
 ```
 
-**Response `200` (payment failed — ADR 0004 D2):**
+**Phản hồi `200` (thanh toán thất bại — ADR 0004 D2):**
 ```json
 {
   "orderId": "8a1c...",
@@ -346,27 +346,27 @@ The current password must be verified before storing a bcrypt hash of the new pa
 }
 ```
 
-**Rules:**
-- Failure is `200` with `status: "PAYMENT_FAILED"`, not `402` (ADR 0004 D2). The frontend checks the body `status`, not `res.ok`.
-- The order remains retrievable; the cart is preserved (`scenarios.md` S-PAY-2). The user retries with a **new** `Idempotency-Key` (ADR 0004 D5); the order goes `PAYMENT_FAILED → PENDING → PAID` on success, or back to `PAYMENT_FAILED` if the retry fails too (PDF §9.1). A replay of an earlier attempt's key answers that attempt's own result.
-- `loyaltyPointsEarned` = `floor(amount / 1000)` (ADR 0004 D7). `userLoyaltyPoints` is the post-accrual total.
-- A replay with the same key and same body returns the **same** response body (including `paymentId`), even if the original was a failure. Idempotency covers both outcomes, not just success.
+**Quy tắc:**
+- Thất bại là `200` với `status: "PAYMENT_FAILED"`, không phải `402` (ADR 0004 D2). Frontend kiểm tra `status` trong body, không phải `res.ok`.
+- Đơn hàng vẫn có thể truy xuất; giỏ hàng được bảo toàn (`scenarios.md` S-PAY-2). Người dùng thử lại với một `Idempotency-Key` **mới** (ADR 0004 D5); đơn hàng đi `PAYMENT_FAILED → PENDING → PAID` khi thành công, hoặc trở lại `PAYMENT_FAILED` nếu lần thử lại cũng thất bại (PDF §9.1). Một lần phát lại key của lần thử trước đó trả lời kết quả của chính lần thử đó.
+- `loyaltyPointsEarned` = `floor(amount / 1000)` (ADR 0004 D7). `userLoyaltyPoints` là tổng sau tích lũy.
+- Một lần phát lại với cùng key và cùng body trả về **cùng** body phản hồi (bao gồm `paymentId`), ngay cả khi lần gốc là thất bại. Idempotency bao gồm cả hai kết quả, không chỉ thành công.
 
-**Errors:**
-- `400` missing/invalid body, missing `Idempotency-Key` (`IDEMPOTENCY_KEY_REQUIRED`).
-- `401` missing/expired JWT.
-- `404` order not found or not owned (`ORDER_NOT_FOUND`).
+**Lỗi:**
+- `400` body thiếu/không hợp lệ, thiếu `Idempotency-Key` (`IDEMPOTENCY_KEY_REQUIRED`).
+- `401` thiếu/hết hạn JWT.
+- `404` đơn hàng không tìm thấy hoặc không thuộc (`ORDER_NOT_FOUND`).
 - `409` `INVALID_STATE_TRANSITION`, `OUT_OF_STOCK`, `IDEMPOTENCY_CONFLICT`.
-- `500` unexpected.
+- `500` bất ngờ.
 
 ## 10. `GET /api/v1/orders/me`
 
-**Auth:** **JWT required**.  
-**Purpose:** order history (`scenarios.md` S-ORD-4; `product-backlog.md` Task 9; `wireframes.md` §11).
+**Xác thực:** **Yêu cầu JWT**.
+**Mục đích:** lịch sử đơn hàng (`scenarios.md` S-ORD-4; `product-backlog.md` Task 9; `wireframes.md` §11).
 
-**Query params:** none in Phase 1. Pagination reserved (C9).
+**Tham số truy vấn:** không trong Giai đoạn 1. Phân trang dự trữ (C9).
 
-**Response `200` (C2 collection):**
+**Phản hồi `200` (bộ sưu tập C2):**
 ```json
 {
   "items": [
@@ -400,22 +400,22 @@ The current password must be verified before storing a bcrypt hash of the new pa
 }
 ```
 
-**Rules:**
-- Sorted by `createdAt` **descending** (newest first; `wireframes.md` §11). Server-side sort, not client-side.
-- Only the caller's orders. Cross-user orders are absent, not `403`.
-- Each order includes its line items with product name and toppings, because the history screen shows what was bought. `toppings[].price` is the price snapshot from order time.
-- Empty history returns `{ "items": [], "total": 0 }` with `200`; the UI shows the empty state.
+**Quy tắc:**
+- Sắp xếp theo `createdAt` **giảm dần** (mới nhất trước; `wireframes.md` §11). Sắp xếp phía server, không phải phía client.
+- Chỉ đơn hàng của người gọi. Đơn hàng chéo người dùng vắng mặt, không phải `403`.
+- Mỗi đơn hàng bao gồm các dòng mục của nó với tên sản phẩm và topping, vì màn hình lịch sử hiển thị những gì đã mua. `toppings[].price` là ảnh chụp giá từ thời điểm đặt hàng.
+- Lịch sử trống trả về `{ "items": [], "total": 0 }` với `200`; UI hiển thị trạng thái trống.
 
-**Errors:** `401` missing/expired JWT; `500` unexpected.
+**Lỗi:** `401` thiếu/hết hạn JWT; `500` bất ngờ.
 
 ## 11. `GET /api/v1/orders/:code`
 
-**Auth:** **JWT required**. Owner-scoped.  
-**Purpose:** confirmation and order detail (`scenarios.md` S-MAIN-1 step 10, S-ORD-4; `wireframes.md` §8).
+**Xác thực:** **Yêu cầu JWT**. Theo phạm vi chủ sở hữu.
+**Mục đích:** xác nhận và chi tiết đơn hàng (`scenarios.md` S-MAIN-1 bước 10, S-ORD-4; `wireframes.md` §8).
 
-**Path param:** `code` — the human-readable order code (`BL-YYYY-NNNN`), not the UUID (ADR 0004 D3).
+**Tham số đường dẫn:** `code` — mã đơn hàng dễ đọc (`BL-YYYY-NNNN`), không phải UUID (ADR 0004 D3).
 
-**Response `200`:**
+**Phản hồi `200`:**
 ```json
 {
   "id": "8a1c...",
@@ -435,19 +435,19 @@ The current password must be verified before storing a bcrypt hash of the new pa
 }
 ```
 
-**Rules:**
-- `payment` is `null` if the order has never had a successful payment (e.g. `PENDING` or all attempts `PAYMENT_FAILED`). The confirmation screen (`wireframes.md` §8) renders the status badge accordingly.
-- The order code is the URL key; the `id` is included for internal linking but is not used in user-facing URLs.
-- **Not found and not-yours both return `404`** with `code: "ORDER_NOT_FOUND"` (`scenarios.md` S-ORD-4 step 2). The UI shows the same safe message for both (`wireframes.md` §8).
+**Quy tắc:**
+- `payment` là `null` nếu đơn hàng chưa từng có thanh toán thành công (ví dụ `PENDING` hoặc tất cả lần thử `PAYMENT_FAILED`). Màn hình xác nhận (`wireframes.md` §8) render huy hiệu trạng thái tương ứng.
+- Mã đơn hàng là khóa URL; `id` được bao gồm để liên kết nội bộ nhưng không được dùng trong URL hướng đến người dùng.
+- **Không tìm thấy và không phải của bạn đều trả về `404`** với `code: "ORDER_NOT_FOUND"` (`scenarios.md` S-ORD-4 bước 2). UI hiển thị cùng thông điệp an toàn cho cả hai (`wireframes.md` §8).
 
-**Errors:** `401` missing/expired JWT; `404` not found or not owned; `500` unexpected.
+**Lỗi:** `401` thiếu/hết hạn JWT; `404` không tìm thấy hoặc không thuộc; `500` bất ngờ.
 
-## 11.1. `GET` and `PUT /api/v1/cart`
+## 11.1. `GET` và `PUT /api/v1/cart`
 
-**Auth:** **JWT required** (C4). The user comes from the token; there is one cart per user.  
-**Purpose:** keep a logged-in customer's cart across devices. A guest's cart stays in the browser only. The web app merges it into the saved cart at login and clears the browser copy at sign-out.
+**Xác thực:** **Yêu cầu JWT** (C4). Người dùng đến từ token; có một giỏ hàng mỗi người dùng.
+**Mục đích:** giữ giỏ hàng của khách hàng đã đăng nhập qua các thiết bị. Giỏ hàng của khách vãng lai chỉ ở trong trình duyệt. Ứng dụng web gộp nó vào giỏ hàng đã lưu khi đăng nhập và xóa bản sao trong trình duyệt khi đăng xuất.
 
-**`PUT` request body** (replaces the whole cart; `items: []` clears it):
+**Body yêu cầu `PUT`** (thay thế toàn bộ giỏ hàng; `items: []` xóa nó):
 ```json
 {
   "items": [
@@ -457,9 +457,9 @@ The current password must be verified before storing a bcrypt hash of the new pa
 }
 ```
 
-**Validation:** `items` is an array of at most 100 lines; each has `productId` (UUID), `size` (`S`|`M`|`L`), `toppingIds` (optional, at most 20 strings), and `qty` (integer 1..99). `promoCode` is an optional string of at most 40 characters. Lines with the same product, size, and toppings are merged, with `qty` capped at 99.
+**Validate:** `items` là một mảng tối đa 100 dòng; mỗi dòng có `productId` (UUID), `size` (`S`|`M`|`L`), `toppingIds` (tùy chọn, tối đa 20 chuỗi), và `qty` (số nguyên 1..99). `promoCode` là chuỗi tùy chọn tối đa 40 ký tự. Các dòng có cùng sản phẩm, size, và topping được gộp, với `qty` giới hạn ở 99.
 
-**Response `200`** (both methods; a user with no saved cart gets `items: []`, `promoCode: ""`, and `promotion: null`):
+**Phản hồi `200`** (cả hai phương thức; một người dùng không có giỏ hàng đã lưu nhận `items: []`, `promoCode: ""`, và `promotion: null`):
 ```json
 {
   "items": [
@@ -477,128 +477,128 @@ The current password must be verified before storing a bcrypt hash of the new pa
 }
 ```
 
-**Rules:**
-- The cart does not reserve stock and does not validate `promoCode`. Both are checked by the order and payment flows (§8, §9).
-- `product.stock` and `toppings[].stock` are read live on every `GET`, so the web can warn about a drink or topping that ran out after the cart was saved. They are information only; the payment enforces stock.
-- `promotion` is the rule the web uses to preview the discount. It is `null` when the code is unknown, inactive, expired, or used up.
-- The cart stores no prices. `POST /orders` computes the amount from server prices.
-- `toppingIds` has no foreign key: a topping that is removed or inactive drops out of the response.
+**Quy tắc:**
+- Giỏ hàng không đặt trước stock và không validate `promoCode`. Cả hai được kiểm tra bởi luồng đơn hàng và thanh toán (§8, §9).
+- `product.stock` và `toppings[].stock` được đọc trực tiếp trên mỗi `GET`, để web có thể cảnh báo về một đồ uống hoặc topping đã hết sau khi giỏ hàng được lưu. Chúng chỉ là thông tin; thanh toán thực thi stock.
+- `promotion` là quy tắc web dùng để xem trước giảm giá. Nó là `null` khi mã không xác định, không hoạt động, hết hạn, hoặc đã dùng hết.
+- Giỏ hàng không lưu giá. `POST /orders` tính số tiền từ giá server.
+- `toppingIds` không có khóa ngoại: một topping bị xóa hoặc không hoạt động sẽ rơi khỏi phản hồi.
 
-**Errors:** `400` validation; `401` missing/expired JWT; `404` with `code: "PRODUCT_NOT_FOUND"` for an unknown product (the saved cart is unchanged); `500` unexpected.
+**Lỗi:** `400` validate; `401` thiếu/hết hạn JWT; `404` với `code: "PRODUCT_NOT_FOUND"` cho một sản phẩm không xác định (giỏ hàng đã lưu không đổi); `500` bất ngờ.
 
-## 11.2. Admin stock endpoints
+## 11.2. Endpoint stock admin
 
-**Auth:** JWT with role `ADMIN` (C4); other users get `403`.
+**Xác thực:** JWT với vai trò `ADMIN` (C4); người dùng khác nhận `403`.
 
-| Method  | Path                          | Body             | Success                                            |
-| ------- | ----------------------------- | ---------------- | -------------------------------------------------- |
-| `GET`   | `/admin/products`             | —                | `200 [{ id, name, price, imageUrl, stock }]`       |
-| `PATCH` | `/admin/products/:id/stock`   | `{ "stock": 25 }` | `200 { id, name, price, imageUrl, stock }`         |
-| `GET`   | `/admin/toppings`             | —                | `200 [{ id, name, price, stock, active }]`         |
-| `PATCH` | `/admin/toppings/:id/stock`   | `{ "stock": 50 }` | `200 { id, name, price, stock, active }`           |
+| Method  | Đường dẫn                   | Body              | Thành công                                   |
+| ------- | --------------------------- | ----------------- | -------------------------------------------- |
+| `GET`   | `/admin/products`           | —                 | `200 [{ id, name, price, imageUrl, stock }]` |
+| `PATCH` | `/admin/products/:id/stock` | `{ "stock": 25 }` | `200 { id, name, price, imageUrl, stock }`   |
+| `GET`   | `/admin/toppings`           | —                 | `200 [{ id, name, price, stock, active }]`   |
+| `PATCH` | `/admin/toppings/:id/stock` | `{ "stock": 50 }` | `200 { id, name, price, stock, active }`     |
 
-**Rules:**
-- `stock` is the new absolute count (cups for a drink, portions for a topping), an integer from `0`; drinks accept at most `100000`.
-- Setting a drink's stock also increments `Product.version`, so a payment that read the old stock cannot overwrite the new value (ADR 0004 D1).
+**Quy tắc:**
+- `stock` là số tuyệt đối mới (ly cho đồ uống, phần cho topping), một số nguyên từ `0`; đồ uống chấp nhận tối đa `100000`.
+- Đặt stock của đồ uống cũng tăng `Product.version`, để một thanh toán đã đọc stock cũ không thể ghi đè giá trị mới (ADR 0004 D1).
 
-**Errors:** `400` validation (negative, non-integer); `401`; `403` not an admin; `404` `PRODUCT_NOT_FOUND` / `TOPPING_NOT_FOUND` for an unknown or malformed id.
+**Lỗi:** `400` validate (âm, không phải số nguyên); `401`; `403` không phải admin; `404` `PRODUCT_NOT_FOUND` / `TOPPING_NOT_FOUND` cho một id không xác định hoặc sai định dạng.
 
-## 11.3. Admin management endpoints
+## 11.3. Endpoint quản lý admin
 
-**Auth:** JWT with role `ADMIN` (C4); other users get `403`.
+**Xác thực:** JWT với vai trò `ADMIN` (C4); người dùng khác nhận `403`.
 
-| Method  | Path                          | Body                  | Success                                         |
-| ------- | ----------------------------- | --------------------- | ----------------------------------------------- |
-| `GET`   | `/admin/users`                | —                     | `200 [{ id, name, email, role, blocked, loyaltyPoints, createdAt, _count }]` |
-| `PATCH` | `/admin/users/:id/block`      | `{ "blocked": true }` | `200 { id, name, email, role, blocked }`        |
-| `PATCH` | `/admin/promotions/:id/active` | `{ "active": false }` | `200 Promotion`                                |
-| `PATCH` | `/admin/toppings/:id/price`   | `{ "price": 7000 }`   | `200 { id, name, price, stock, active }`        |
+| Method  | Đường dẫn                      | Body                  | Thành công                                                                   |
+| ------- | ------------------------------ | --------------------- | ---------------------------------------------------------------------------- |
+| `GET`   | `/admin/users`                 | —                     | `200 [{ id, name, email, role, blocked, loyaltyPoints, createdAt, _count }]` |
+| `PATCH` | `/admin/users/:id/block`       | `{ "blocked": true }` | `200 { id, name, email, role, blocked }`                                     |
+| `PATCH` | `/admin/promotions/:id/active` | `{ "active": false }` | `200 Promotion`                                                              |
+| `PATCH` | `/admin/toppings/:id/price`    | `{ "price": 7000 }`   | `200 { id, name, price, stock, active }`                                     |
 
-**Rules:**
-- **Block:** a blocked user gets `403 ACCOUNT_BLOCKED` at login (§7), and `JwtAuthGuard` rejects tokens they already hold with the same error, so the block takes effect at once. `blocked: false` opens the account again. An `ADMIN` account cannot be blocked (`409 CANNOT_BLOCK_ADMIN`), so an admin cannot lock themselves out.
-- **Cancel a promotion:** `active: false` cancels the code; new orders using it get `400 PROMO_INACTIVE` and the cart preview returns `promotion: null`. Orders that already used it keep their discount. `active: true` turns it back on.
-- **Topping price:** whole VND, `0..100000`. New orders use it at once; past orders keep the price stored in `order_item_toppings.unit_price`.
+**Quy tắc:**
+- **Chặn:** một người dùng bị chặn nhận `403 ACCOUNT_BLOCKED` khi đăng nhập (§7), và `JwtAuthGuard` từ chối các token họ đã giữ với cùng lỗi, nên việc chặn có hiệu lực ngay lập tức. `blocked: false` mở lại tài khoản. Một tài khoản `ADMIN` không thể bị chặn (`409 CANNOT_BLOCK_ADMIN`), để một admin không thể tự khóa mình ra ngoài.
+- **Hủy khuyến mãi:** `active: false` hủy mã; đơn hàng mới dùng nó nhận `400 PROMO_INACTIVE` và bản xem trước giỏ hàng trả về `promotion: null`. Các đơn hàng đã dùng nó giữ giảm giá của chúng. `active: true` bật lại.
+- **Giá topping:** toàn bộ VND, `0..100000`. Đơn hàng mới dùng nó ngay lập tức; đơn hàng trước đây giữ giá được lưu trong `order_item_toppings.unit_price`.
 
-**Errors:** `400` validation; `401`; `403` not an admin; `404` `USER_NOT_FOUND` / `PROMOTION_NOT_FOUND` / `TOPPING_NOT_FOUND`; `409` `CANNOT_BLOCK_ADMIN`.
+**Lỗi:** `400` validate; `401`; `403` không phải admin; `404` `USER_NOT_FOUND` / `PROMOTION_NOT_FOUND` / `TOPPING_NOT_FOUND`; `409` `CANNOT_BLOCK_ADMIN`.
 
-## 12. Reserved endpoints (Task 10, not Phase 1)
+## 12. Endpoint dự trữ (Task 10, không phải Giai đoạn 1)
 
-These are listed so the frontend and API agree on the shape before Task 10 adds them. They are **not** implemented in Phase 1 and are not part of Task 7.0's acceptance criteria.
+Những endpoint này được liệt kê để frontend và API đồng ý về hình dạng trước khi Task 10 thêm chúng. Chúng **không** được triển khai trong Giai đoạn 1 và không thuộc tiêu chí chấp nhận của Task 7.0.
 
-| Method | Path                   | Purpose                  | Notes                                                                            |
-| ------ | ---------------------- | ------------------------ | -------------------------------------------------------------------------------- |
-| `POST` | `/orders/:code/cancel` | Cancel a `PENDING` order | ADR 0004 D6 says no auto-cancel; explicit cancel is a possible Phase 2 addition. |
-| `POST` | `/orders/:id/transition` | Drive an order status transition (graded test a) | Staff only: JWT with role `ADMIN` (customers get `403`). Only non-payment edges of PDF §9.1 are allowed; `→ PENDING`, `→ PAID`, `→ PAYMENT_FAILED` answer `409 INVALID_STATE_TRANSITION` (ADR 0004, "Manual transitions"). Not part of the public MVP API. |
-| `POST` | `/promotions/validate` | Validate a promo code    | Task 10d; `product-backlog.md` §13 10d.                                          |
-| `GET`  | `/loyalty/me`          | Current points balance   | Task 10d; the login/register responses carry `loyaltyPoints` in Phase 1.         |
+| Method | Đường dẫn                | Mục đích                                                 | Ghi chú                                                                                                                                                                                                                                                                       |
+| ------ | ------------------------ | -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST` | `/orders/:code/cancel`   | Hủy một đơn hàng `PENDING`                               | ADR 0004 D6 nói không tự động hủy; hủy rõ ràng là một bổ sung Giai đoạn 2 khả thi.                                                                                                                                                                                            |
+| `POST` | `/orders/:id/transition` | Điều khiển chuyển trạng thái đơn hàng (test được chấm a) | Chỉ nhân viên: JWT với vai trò `ADMIN` (khách hàng nhận `403`). Chỉ các cạnh không phải thanh toán của PDF §9.1 được phép; `→ PENDING`, `→ PAID`, `→ PAYMENT_FAILED` trả lời `409 INVALID_STATE_TRANSITION` (ADR 0004, "Chuyển đổi thủ công"). Không thuộc API MVP công khai. |
+| `POST` | `/promotions/validate`   | Validate một mã khuyến mãi                               | Task 10d; `product-backlog.md` §13 10d.                                                                                                                                                                                                                                       |
+| `GET`  | `/loyalty/me`            | Số dư điểm hiện tại                                      | Task 10d; phản hồi login/register mang `loyaltyPoints` trong Giai đoạn 1.                                                                                                                                                                                                     |
 
-If any is added, it follows ADR 0005 conventions and is appended to this doc.
+Nếu bất kỳ cái nào được thêm, nó tuân theo quy ước ADR 0005 và được thêm vào cuối tài liệu này.
 
-## 13. Cross-cutting behaviors
+## 13. Hành vi xuyên suốt
 
-These are conventions from ADR 0005 that apply to every endpoint; listed here for convenience.
+Đây là các quy ước từ ADR 0005 áp dụng cho mọi endpoint; được liệt kê ở đây để tiện.
 
-- **Error envelope:** C3. Every `4xx`/`5xx` body matches it.
-- **Timestamps:** C6. ISO 8601 UTC with milliseconds.
-- **Money:** C7. Integer VND.
-- **Correlation id:** C10. Every response has `X-Request-Id`; `500` bodies include it.
-- **No `{ data }` wrapper:** C2. Single resources are returned directly; collections are `{ items, total }`.
-- **Auth:** C4. `Authorization: Bearer <jwt>`.
-- **Idempotency:** C5. `Idempotency-Key` required for `POST /payments` only.
+- **Phong bì lỗi:** C3. Mọi body `4xx`/`5xx` khớp với nó.
+- **Dấu thời gian:** C6. ISO 8601 UTC với mili giây.
+- **Tiền:** C7. Số nguyên VND.
+- **Correlation id:** C10. Mọi phản hồi có `X-Request-Id`; body `500` bao gồm nó.
+- **Không có wrapper `{ data }`:** C2. Tài nguyên đơn được trả về trực tiếp; bộ sưu tập là `{ items, total }`.
+- **Xác thực:** C4. `Authorization: Bearer <jwt>`.
+- **Idempotency:** C5. `Idempotency-Key` bắt buộc chỉ cho `POST /payments`.
 
-## 14. Frontend integration notes
+## 14. Ghi chú tích hợp frontend
 
-- **Client:** `apps/web/src/lib/api.ts` has one `request<T>(path, init)` that sets the base URL, attaches the JWT when present, sets `Content-Type`, attaches `Idempotency-Key` for payments, and maps the C3 error envelope into a typed `ApiError`. Every feature calls this function; no feature calls `fetch` directly.
-- **Payment handling:** because failure is `200 + status` (ADR 0004 D2), the payment handler checks `body.status === "PAID"` and not `res.ok`. This is the one place the "check `res.ok`" reflex is wrong.
-- **Token storage:** `localStorage` under `brewlite.token` (`ui-decisions.md` §5.2). The client clears it on `401` `code: "AUTH_EXPIRED"` and redirects to `/auth/login`.
-- **Base URL:** `NEXT_PUBLIC_API_URL` includes `/api/v1` (`config.md` §2.2). Do not append `/api/v1` in `api.ts`; the env var owns it.
+- **Client:** `apps/web/src/lib/api.ts` có một `request<T>(path, init)` đặt URL cơ sở, đính kèm JWT khi có, đặt `Content-Type`, đính kèm `Idempotency-Key` cho thanh toán, và ánh xạ phong bì lỗi C3 thành một `ApiError` có kiểu. Mọi tính năng gọi hàm này; không tính năng nào gọi `fetch` trực tiếp.
+- **Xử lý thanh toán:** vì thất bại là `200 + status` (ADR 0004 D2), trình xử lý thanh toán kiểm tra `body.status === "PAID"` và không phải `res.ok`. Đây là nơi duy nhất mà phản xạ "kiểm tra `res.ok`" là sai.
+- **Lưu trữ token:** `localStorage` dưới `brewlite.token` (`ui-decisions.md` §5.2). Client xóa nó khi `401` `code: "AUTH_EXPIRED"` và chuyển hướng đến `/auth/login`.
+- **URL cơ sở:** `NEXT_PUBLIC_API_URL` bao gồm `/api/v1` (`config.md` §2.2). Không nối `/api/v1` trong `api.ts`; biến env sở hữu nó.
 
-## 15. Open items
+## 15. Mục còn mở
 
-| Item                                                                                                       | Owner | Closes when                               |
-| ---------------------------------------------------------------------------------------------------------- | ----- | ----------------------------------------- |
-| Confirm `GET /products` includes `sizes`/`toppings` on detail only, not list                               | Nghĩa | Task 2.0/4.0 `● Xong`                     |
-| Confirm the `POST /orders` response includes resolved item `name`s (avoids a second call for confirmation) | H.Tài | Task 6.0 `● Xong`                         |
-| Confirm the `BL-YYYY-NNNN` code sequence is per-year and server-generated                                  | Nghĩa | Task 1.0 ERD (sequence/unique constraint) |
-| Confirm payment retry uses a new `Idempotency-Key` (ADR 0004 D5)                                           | H.Tài | Task 8.0 `● Xong`                         |
-| Decide whether `GET /orders/me` paginates in Phase 1 (currently no)                                        | H.Tài | Sprint 3 Planning                         |
-| Update `config.md` §7 (error envelope, `Idempotency-Key`) to point at this doc                             | H.Tài | Same PR that accepts ADR 0005             |
-| Update `scenarios.md` §13 (D2, D3 closed) to point at this doc                                             | H.Tài | Same PR                                   |
-| Update `wireframes.md` §8 and `ui-decisions.md` §2 for `[code]` route (ADR 0004 D3)                        | Nghĩa | Same PR that accepts ADR 0004             |
-| Add the `HttpExceptionFilter` (C3) in Task 7.0 or Task 11.0                                                | H.Tài | Task 7.0 `● Xong`                         |
+| Mục                                                                                                 | Người phụ trách | Đóng khi                                  |
+| --------------------------------------------------------------------------------------------------- | --------------- | ----------------------------------------- |
+| Xác nhận `GET /products` bao gồm `sizes`/`toppings` chỉ trên chi tiết, không phải danh sách         | Nghĩa           | Task 2.0/4.0 `● Xong`                     |
+| Xác nhận phản hồi `POST /orders` bao gồm `name` của mục đã resolve (tránh gọi thứ hai cho xác nhận) | H.Tài           | Task 6.0 `● Xong`                         |
+| Xác nhận chuỗi code `BL-YYYY-NNNN` là theo năm và do server tạo                                     | Nghĩa           | ERD Task 1.0 (sequence/unique constraint) |
+| Xác nhận thử lại thanh toán dùng `Idempotency-Key` mới (ADR 0004 D5)                                | H.Tài           | Task 8.0 `● Xong`                         |
+| Quyết định liệu `GET /orders/me` có phân trang trong Giai đoạn 1 (hiện không)                       | H.Tài           | Sprint 3 Planning                         |
+| Cập nhật `config.md` §7 (phong bì lỗi, `Idempotency-Key`) để trỏ đến tài liệu này                   | H.Tài           | Cùng PR chấp nhận ADR 0005                |
+| Cập nhật `scenarios.md` §13 (D2, D3 đã đóng) để trỏ đến tài liệu này                                | H.Tài           | Cùng PR                                   |
+| Cập nhật `wireframes.md` §8 và `ui-decisions.md` §2 cho route `[code]` (ADR 0004 D3)                | Nghĩa           | Cùng PR chấp nhận ADR 0004                |
+| Thêm `HttpExceptionFilter` (C3) trong Task 7.0 hoặc Task 11.0                                       | H.Tài           | Task 7.0 `● Xong`                         |
 
-## 16. References
+## 16. Tham khảo
 
-- Assignment PDF §12.1 (endpoint list), §12.2 (entities), §4.3 (US-05), §9.2 (idempotency).
-- [ADR 0005](adr/0005-api-contract-conventions.md) — C1–C10 conventions this doc references.
-- [ADR 0004](adr/0004-payment-mock-and-order-lifecycle.md) — D1 (stock at `PAID`), D2 (`200 + status`), D3 (order `code`), D4 (idempotency), D5 (retry), D7 (loyalty).
-- [ADR 0003](adr/0003-database-postgres-prisma.md) — `price Int`, `version` for locking.
-- [Configuration](../../archive/docs/config.md) §2.1 (`JWT_EXPIRES_IN`, `PAYMENT_MOCK_MODE`), §2.2 (`NEXT_PUBLIC_API_URL`), §3 (currency, states, `Idempotency-Key`).
-- [Scenarios](../requirements/scenarios.md) §3–§10 (flows this contract serves), §13 (D2, D3 closed here).
-- [Product Backlog](../requirements/product-backlog.md) Task 6, 7, 8, 9, 10 (acceptance criteria).
-- [UI Decisions](../design/ui-decisions.md) §2 (routes), §4 (money), §5 (auth).
-- [Wireframes](../design/wireframes.md) §4–§11 (screens that consume these endpoints).
+- PDF bài tập §12.1 (danh sách endpoint), §12.2 (thực thể), §4.3 (US-05), §9.2 (idempotency).
+- [ADR 0005](adr/0005-api-contract-conventions.md) — các quy ước C1–C10 mà tài liệu này tham chiếu.
+- [ADR 0004](adr/0004-payment-mock-and-order-lifecycle.md) — D1 (stock tại `PAID`), D2 (`200 + status`), D3 (`code` đơn hàng), D4 (idempotency), D5 (thử lại), D7 (loyalty).
+- [ADR 0003](adr/0003-database-postgres-prisma.md) — `price Int`, `version` cho khóa.
+- [Cấu hình](../config.md) §2.1 (`JWT_EXPIRES_IN`, `PAYMENT_MOCK_MODE`), §2.2 (`NEXT_PUBLIC_API_URL`), §3 (tiền tệ, trạng thái, `Idempotency-Key`).
+- [Scenarios](../requirements/scenarios.md) §3–§10 (các luồng mà hợp đồng này phục vụ), §13 (D2, D3 đã đóng ở đây).
+- [Product Backlog](../requirements/product-backlog.md) Task 6, 7, 8, 9, 10 (tiêu chí chấp nhận).
+- [Quyết định UI](../design/ui-decisions.md) §2 (route), §4 (tiền), §5 (xác thực).
+- [Wireframes](../design/wireframes.md) §4–§11 (màn hình tiêu thụ các endpoint này).
 
 ---
 
-## Notes on choices I made (so you can accept or override)
+## Ghi chú về các lựa chọn tôi đã đưa ra (để bạn chấp nhận hoặc ghi đè)
 
-1. **The doc cites ADR 0005 by section ID (`C3`, `C7`) instead of restating conventions.** This is the single most important structural decision: if `api-contract.md` restated the error envelope, `config.md` §7's "error envelope" row would have two sources of truth, and a change to one would silently diverge. Citing `C3` means there's exactly one place to change the envelope, and this doc stays a *shape* spec, not a *convention* spec.
+1. **Tài liệu trích dẫn ADR 0005 theo ID phần (`C3`, `C7`) thay vì lặp lại quy ước.** Đây là quyết định cấu trúc quan trọng nhất: nếu `api-contract.md` lặp lại phong bì lỗi, dòng "error envelope" của `config.md` §7 sẽ có hai nguồn chân lý, và một thay đổi ở một cái sẽ âm thầm phân kỳ. Trích dẫn `C3` có nghĩa là có đúng một nơi để thay đổi phong bì, và tài liệu này vẫn là một spec *hình dạng*, không phải spec *quy ước*.
 
-2. **Endpoint sections follow a fixed template: Auth / Purpose / Request / Response / Rules / Errors.** That's boring and that's the point — a reviewer or frontend dev can jump to any section and know where to look. The `Purpose` line cites the `scenarios.md` IDs and `product-backlog.md` tasks, so every endpoint traces to a requirement. This is the "traceability" the spreadsheet's evidence notes will point at.
+2. **Các phần endpoint theo một template cố định: Auth / Purpose / Request / Response / Rules / Errors.** Điều đó nhàm chán và đó là điểm — một reviewer hoặc dev frontend có thể nhảy đến bất kỳ phần nào và biết tìm ở đâu. Dòng `Purpose` trích các ID `scenarios.md` và nhiệm vụ `product-backlog.md`, nên mọi endpoint truy nguyên đến một yêu cầu. Đây là "truy nguyên" mà ghi chú bằng chứng của bảng tính sẽ trỏ đến.
 
-3. **The `POST /orders` response includes resolved item `name`s, and I flagged it as an open item.** This is a real design fork: returning names means the order creation response is self-sufficient for the confirmation screen; not returning them means the client needs a second call. The self-sufficient version is what `wireframes.md` §8 assumes (the confirmation page renders without a second fetch), so I wrote it that way — but if the team prefers a leaner `POST /orders` and a second fetch on confirmation, this is the place to flip it. The open item gives that decision a home.
+3. **Phản hồi `POST /orders` bao gồm `name` của mục đã resolve, và tôi đã gắn cờ nó như một mục còn mở.** Đây là một ngã ba thiết kế thực sự: trả về tên có nghĩa là phản hồi tạo đơn hàng tự đủ cho màn hình xác nhận; không trả về chúng có nghĩa là client cần gọi thứ hai. Phiên bản tự đủ là thứ mà `wireframes.md` §8 giả định (trang xác nhận render mà không cần fetch thứ hai), nên tôi viết nó theo cách đó — nhưng nếu nhóm thích một `POST /orders` gọn hơn và một fetch thứ hai khi xác nhận, đây là nơi để lật. Mục còn mở cho quyết định đó một chỗ.
 
-4. **`GET /orders/:code` is added even though PDF §12.1 doesn't list it.** The PDF lists `GET /orders/me` but the confirmation screen (`wireframes.md` §8) needs single-order detail. `GET /orders/me` returns summaries; without a detail endpoint, the confirmation screen would have to filter the history client-side, which breaks for a fresh order whose history hasn't refreshed. The detail endpoint is one Nest controller method and it closes `wireframes.md` §8's "renders `GET /orders/:id`" forward reference (updated to `:code` per ADR 0004 D3).
+4. **`GET /orders/:code` được thêm dù PDF §12.1 không liệt kê nó.** PDF liệt kê `GET /orders/me` nhưng màn hình xác nhận (`wireframes.md` §8) cần chi tiết một đơn hàng. `GET /orders/me` trả về tóm tắt; không có endpoint chi tiết, màn hình xác nhận sẽ phải lọc lịch sử phía client, điều này hỏng cho một đơn hàng mới mà lịch sử chưa refresh. Endpoint chi tiết là một phương thức controller Nest và nó đóng tham chiếu chuyển tiếp "render `GET /orders/:id`" của `wireframes.md` §8 (được cập nhật thành `:code` theo ADR 0004 D3).
 
-5. **The `BL-YYYY-NNNN` code format is decided here, not in ADR 0004.** ADR 0004 D3 says "format decided in `api-contract.md`" — this is that decision. Putting it here rather than in the ADR keeps the ADR about the *decision to use a code*, and this doc about the *format*. If the format needs to change (e.g. to `BL-26-0001`), it's a one-line edit to this doc and its open-item row.
+5. **Định dạng code `BL-YYYY-NNNN` được quyết định ở đây, không phải trong ADR 0004.** ADR 0004 D3 nói "định dạng được quyết định trong `api-contract.md`" — đây là quyết định đó. Đặt nó ở đây thay vì trong ADR giữ ADR về *quyết định dùng một code*, và tài liệu này về *định dạng*. Nếu định dạng cần thay đổi (ví dụ thành `BL-26-0001`), đó là một chỉnh sửa một dòng cho tài liệu này và dòng mục còn mở của nó.
 
-6. **`GET /products` returns the list without `sizes`/`toppings`, and `GET /products/:id` returns them.** This keeps the menu response small (a grid of cards needs name/price/image, not size tables) and matches `wireframes.md` §4 (menu cards show base price only) and §5 (detail screen shows the selector). If the menu later needs to filter by size, this split is the thing to revisit — but that's a Phase 2 concern.
+6. **`GET /products` trả về danh sách không có `sizes`/`toppings`, và `GET /products/:id` trả về chúng.** Điều này giữ phản hồi menu nhỏ (một lưới card cần tên/giá/ảnh, không phải bảng size) và khớp với `wireframes.md` §4 (card menu chỉ hiển thị giá cơ sở) và §5 (màn hình chi tiết hiển thị bộ chọn). Nếu menu sau này cần lọc theo size, sự phân tách này là thứ cần xem lại — nhưng đó là mối quan tâm Giai đoạn 2.
 
-7. **The `POST /payments` failure path returns `200` with `status: "PAYMENT_FAILED"`, and the section says *twice* that the frontend must check `body.status`, not `res.ok`.** ADR 0004 D2 is the *decision*; this is the *contract consequence*, and it's the single most likely place for a frontend bug. Stating it in the endpoint section and again in §14 is deliberate redundancy — the payment handler is the one place where the "check `res.ok`" reflex is wrong, and a junior dev will get it wrong unless told twice.
+7. **Đường thất bại của `POST /payments` trả về `200` với `status: "PAYMENT_FAILED"`, và phần này nói *hai lần* rằng frontend phải kiểm tra `body.status`, không phải `res.ok`.** ADR 0004 D2 là *quyết định*; đây là *hệ quả hợp đồng*, và đây là nơi có khả năng cao nhất cho một lỗi frontend. Nêu nó trong phần endpoint và một lần nữa trong §14 là sự dư thừa có chủ ý — trình xử lý thanh toán là nơi duy nhất mà phản xạ "kiểm tra `res.ok`" là sai, và một dev junior sẽ làm sai trừ khi được nói hai lần.
 
-8. **§12 (reserved endpoints) is a scope-control device.** Task 10 adds promotions and loyalty, and the frontend will eventually need a promo-validation endpoint. Listing them as "reserved, not Phase 1" means the frontend can be designed against the shape without anyone thinking they're in scope. It also stops a reviewer from asking "where's the promo endpoint?" — the answer is "§12, Task 10, not now."
+8. **§12 (endpoint dự trữ) là một thiết bị kiểm soát phạm vi.** Task 10 thêm khuyến mãi và loyalty, và frontend cuối cùng sẽ cần một endpoint validate promo. Liệt kê chúng là "dự trữ, không phải Giai đoạn 1" có nghĩa là frontend có thể được thiết kế theo hình dạng mà không ai nghĩ chúng thuộc phạm vi. Nó cũng ngăn một reviewer hỏi "endpoint promo đâu?" — câu trả lời là "§12, Task 10, không phải bây giờ."
 
-9. **§15 (open items) has nine rows, and three of them are cross-doc updates** (`config.md` §7, `scenarios.md` §13, `wireframes.md`/`ui-decisions.md` for the `[code]` route). That's a lot for one doc, but they're all consequences of the four ADRs this contract is built on — when an ADR is accepted, its dependent docs must be updated, and this table is the checklist. The alternative (updating them silently in the ADR's PR without a checklist) is how docs drift.
+9. **§15 (mục còn mở) có chín dòng, và ba trong số đó là cập nhật chéo tài liệu** (`config.md` §7, `scenarios.md` §13, `wireframes.md`/`ui-decisions.md` cho route `[code]`). Đó là nhiều cho một tài liệu, nhưng chúng đều là hệ quả của bốn ADR mà hợp đồng này được xây trên — khi một ADR được chấp nhận, các tài liệu phụ thuộc của nó phải được cập nhật, và bảng này là checklist. Lựa chọn thay thế (cập nhật chúng âm thầm trong PR của ADR mà không có checklist) là cách tài liệu trôi dạt.
 
-10. **One small inconsistency to fix in `wireframes.md` after this:** §8 of `wireframes.md` says the confirmation route renders `GET /orders/:id`; with ADR 0004 D3 and this doc, it's `GET /orders/:code`. That's already on the open-items table (§15's eighth row), but it's worth flagging here because `wireframes.md` §1's screen inventory and §8's layout both say `[id]`. The update is mechanical: `:id` → `:code` in three places in `wireframes.md` and two in `ui-decisions.md` §2.
+10. **Một điểm không nhất quán nhỏ cần sửa trong `wireframes.md` sau tài liệu này:** §8 của `wireframes.md` nói route xác nhận render `GET /orders/:id`; với ADR 0004 D3 và tài liệu này, nó là `GET /orders/:code`. Điều đó đã có trên bảng mục còn mở (dòng thứ tám của §15), nhưng đáng gắn cờ ở đây vì cả kiểm kê màn hình §1 và layout §8 của `wireframes.md` đều nói `[id]`. Việc cập nhật là máy móc: `:id` → `:code` ở ba nơi trong `wireframes.md` và hai nơi trong `ui-decisions.md` §2.

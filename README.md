@@ -1,8 +1,21 @@
 # BrewLite
 
-BrewLite is a mobile-first web app for ordering coffee at a counter. A customer browses the menu, chooses size and toppings, builds a cart, signs in, pays through a simulated Wallet or Card gateway, and sees the confirmation and order history. It is the course project for Assignment 1 and Assignment 2 (Software Engineering).
+BrewLite is a mobile-first web app for ordering coffee at a counter. A customer browses the menu, chooses size and toppings, builds a cart, signs in, pays through a simulated Wallet or Card gateway, and sees the confirmation and order history. It is the course project for Assignment 1 (Software Engineering).
 
-> **Status:** Assignment 2 requirements, modeling, architecture, application code, and CI/CD workflows are in the repository. Production deployment, recorded CI evidence, and sprint handover activities are still open; see [CI evidence](docs/delivery/ci-evidence.md) and [deployment](docs/deployment.md).
+> **Status:** Sprint 3 (handover). All 10 backlog tasks are implemented: menu, product options, cart, orders, JWT auth, mock payment, confirmation and history, Docker Compose, and the order state machine with idempotent payments and stock control. The demo walkthrough is in [docs/demo-script.md](docs/demo-script.md).
+
+## Features
+
+| Area         | What the user can do                                                                                                                                                                                  |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Menu         | Browse 30 drinks with image, name and price; pick size S/M/L on the card, then "Thêm vào giỏ" (opens the product page to add toppings, then returns to the menu) or "Mua ngay" (straight to checkout) |
+| Product      | Choose size S/M/L and toppings; the price updates as options change; a sold-out drink or topping cannot be chosen                                                                                     |
+| Cart         | Add, change quantity, remove; the total and the cart badge update automatically; the cart is kept per account and warns when a drink or topping runs short                                            |
+| Account      | Register (name, email, password) and sign in with JWT; the profile shows loyalty points, past orders, password change                                                                                 |
+| Checkout     | Apply a promotion code, pay by Wallet or Card; the "Thanh toán" button shows the total                                                                                                                |
+| Payment      | Success marks the order `PAID` and takes drink and topping stock; failure marks it `PAYMENT_FAILED` and keeps the cart so the customer can retry                                                      |
+| Confirmation | The order code, status and items; order history at `/orders`                                                                                                                                          |
+| Admin        | `/admin`: drink stock, topping stock and price, block / open user accounts, create and cancel promotion codes, order status changes that follow the state machine                                     |
 
 ## Tech stack
 
@@ -11,65 +24,68 @@ BrewLite is a mobile-first web app for ordering coffee at a counter. A customer 
 | Web       | Next.js (App Router), React, TypeScript, Tailwind CSS, Zustand for the cart |
 | API       | NestJS, TypeScript, Prisma ORM, Vitest and Supertest                        |
 | Database  | PostgreSQL                                                                  |
-| Payment   | Mock provider behind a `PaymentProvider` interface (no real money)          |
+| Payment   | Mock provider (no real money), controlled by `PAYMENT_MOCK_MODE`            |
 | Local run | Docker Compose                                                              |
-| Hosting   | Render (accepted, [ADR 0007](docs/architecture/adr/0007-hosting-platform.md)) |
 
-Architecture decisions and their rationale are documented in the [architecture overview](docs/architecture/overview.md) and [ADRs](docs/architecture/).
+Design decisions and their reasons are in the [ADRs](docs/architecture/adr/).
 
 ## Repository structure
 
 ```text
-BrewLite/
+BrewLite_Cof/
 |-- apps/
-|   |-- api/                 # NestJS API, Prisma schema/migrations, port 3001
-|   `-- web/                 # Next.js App Router, port 3000
-|-- tests/e2e/                # Playwright menu-to-confirmation browser test
-|-- docs/                    # requirements, diagrams, architecture, plans, testing
-|-- .github/                 # PR template and CI/CD workflows
-|-- docker-compose.yml
+|   |-- api/                 # NestJS API, Prisma schema/migrations/seed, tests, port 3001
+|   `-- web/                 # Next.js App Router, tests, port 3000
+|-- docs/                    # requirements, design, diagrams, architecture, testing, demo
+|-- .github/                 # PR template
+|-- docker-compose.yml       # db + api + web
 |-- .env.example
 `-- README.md
 ```
 
-This is the monorepo layout. Assignment 2 architecture is described in the [architecture overview](docs/architecture/overview.md); the older project-structure reference is in the [archive](archive/docs/architecture/architecture.md). Assignment 2 requirements and planned work are in the [product backlog](docs/requirements/product-backlog.md).
-
 ## Prerequisites
 
 - Git
-- Node.js 24 LTS (`node -v`) and npm
-- Docker Desktop with Docker Compose v2, for the database and the full stack
+- Docker Desktop with Docker Compose v2 (enough for the whole stack)
+- Node.js 24 LTS and npm (only to run the apps or tests outside Docker)
 
-## Install
-
-There is no root `package.json`. Install each app separately:
+## Quick start with Docker Compose (whole stack)
 
 ```powershell
 git clone https://github.com/Nghiaphan123/BrewLite_Cof.git
 cd BrewLite_Cof
-cd apps/api; npm install
-cd ../web; npm install
-cd ../..
-Copy-Item .env.example .env      # macOS/Linux: cp .env.example .env
+Copy-Item .env.example .env              # macOS/Linux: cp .env.example .env
+docker compose up --build -d             # builds and starts db, api, web
+docker compose ps                        # wait until api shows (healthy)
+docker compose exec api npm run db:seed  # sample menu, users and promotion codes
 ```
 
-Edit `.env` if you need other local values. Never commit `.env`.
+Then open:
 
-## Run with Docker Compose (whole stack)
+- Web: http://localhost:3000 (starts at sign-in; after signing in you land on `/menu`)
+- API: http://localhost:3001/api/v1 (for example `GET /api/v1/products`)
 
-```powershell
-docker compose up --build -d
-docker compose exec api npm run db:seed
-docker compose ps
-```
+Notes:
 
-- Web: http://localhost:3000
-- API: http://localhost:3001
-- Opening the web URL starts at sign-in/registration; after successful authentication, BrewLite opens the menu at `/menu`.
-- The menu header shows the signed-in customer's name beside the cart; the account dropdown opens profile details, password change, and sign-out.
-- The API applies database migrations when it starts. Its health endpoint is `GET /api/v1/health`.
+- The API applies database migrations every time it starts. On a slow machine `docker compose ps` can show the API as `health: starting` or `unhealthy` for the first minutes; it becomes `healthy` once NestJS has started.
+- The first build downloads and installs all packages and can take a long time on a low-memory machine. Later runs without code changes only need `docker compose up -d`.
+- If port 5432 is already used on your machine, set `POSTGRES_PORT` (and the port in `DATABASE_URL`) in `.env` to a free port.
+- Change `JWT_SECRET` in `.env` to your own random value of at least 32 characters. Never commit `.env`.
 
-Stop with `docker compose down`; add `-v` to delete the local database. More detail and troubleshooting: [docs/deployment.md](docs/deployment.md).
+Stop with `docker compose down` (data is kept); add `-v` to delete the local database. **After `git pull`, rebuild with `docker compose up --build -d`**: the images contain the code from the last build, so without `--build` the stack keeps running the old version. New migrations (for example `add_user_blocked`) are applied when the API starts. More detail and troubleshooting: [docs/deployment.md](docs/deployment.md).
+
+## Demo accounts and data
+
+The seed (`npm run db:seed`) is safe to run again. It creates:
+
+| Data            | Value                                                                                                    |
+| --------------- | -------------------------------------------------------------------------------------------------------- |
+| Customers       | `customer01@brewlite.test` to `customer10@brewlite.test`, password `Brewlite@123` (`SEED_USER_PASSWORD`) |
+| Admin           | `admin@brewlite.vn`, password `123456`                                                                   |
+| Promotion codes | `BREW10` (10% off), `WELCOME20K` (20,000 VND off orders from 50,000 VND)                                 |
+| Low-stock item  | "Cà phê phin giới hạn" starts with stock 1, for the sold-out demo                                        |
+
+These are demo values only. Re-running the seed refreshes the menu but does not reset live stock or loyalty points.
 
 ## Run the apps on your machine (development)
 
@@ -79,13 +95,24 @@ Start only the database in Docker, then run each app in its own terminal:
 docker compose up -d db
 
 cd apps/api
+npm install
+npm run db:generate      # Prisma client into src/generated/
 npm run db:deploy        # apply migrations (DATABASE_URL from .env uses localhost)
-npm run db:seed          # sample menu, toppings, users, BREW10 and WELCOME20K
+npm run db:seed
 npm run start:dev        # http://localhost:3001
 
 cd apps/web
+npm install
 npm run dev              # http://localhost:3000
 ```
+
+There is no root `package.json`; install and run scripts inside each app. Step-by-step onboarding: [docs/setup.md](docs/setup.md).
+
+After every `git pull`, run `npm run db:deploy` and `npm run db:generate` in `apps/api` before starting the API: a pull can bring a new migration, and the API fails at login if the database misses a column the code reads.
+
+### Simulating a failed payment
+
+The mock gateway reads `PAYMENT_MOCK_MODE` (`success` or `failure`). Set `PAYMENT_MOCK_MODE=failure` in `.env` and restart the API (`docker compose up -d api`, or restart `npm run start:dev`). A payment then returns `PAYMENT_FAILED` and the cart is kept. Set it back to `success` and pay the same order again to see it become `PAID`.
 
 ## Database scripts (`apps/api`)
 
@@ -94,105 +121,54 @@ npm run dev              # http://localhost:3000
 | `npm run db:generate` | Generate the Prisma client into `src/generated/` |
 | `npm run db:validate` | Check `prisma/schema.prisma`                     |
 | `npm run db:migrate`  | Create and apply a migration (development)       |
-| `npm run db:deploy`   | Apply committed migrations (CI, production)      |
+| `npm run db:deploy`   | Apply committed migrations                       |
 | `npm run db:seed`     | Load sample data; safe to run again              |
 | `npm run db:reset`    | Drop and rebuild the local database              |
-
-Seeded demo users are `customer01@brewlite.test` to `customer10@brewlite.test`; the password is set by `SEED_USER_PASSWORD` (default in `prisma/seed.ts`). They are demo data only.
 
 ## Test and lint
 
 ```powershell
 cd apps/api
 npm test                 # unit tests (Vitest)
-npm run test:e2e         # API tests with Supertest
+npm run test:e2e         # API tests with Supertest; needs the database running
 npm run lint
 npm run build
 
-cd ../web
-npm test                 # unit and integration tests (Vitest)
+cd apps/web
+npm test                 # unit and component tests (Vitest + Testing Library)
 npm run lint
 npm run build
 ```
 
-The browser journey from menu to confirmation is `tests/e2e`. It is a separate package because this repo has no root `package.json`. Start and seed PostgreSQL first; Playwright starts the API and web servers from its configuration.
+The e2e tests use a separate database (`brewlite_test`, created automatically), so demo data is not touched.
 
-```powershell
-docker compose up -d db
+### Graded business-rule tests (Task 10)
 
-Push-Location apps/api
-npm run db:deploy
-npm run db:seed
-Pop-Location
+| Rule                                                     | Test file                                                                                                  |
+| -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| (a) Invalid order state transitions are rejected         | `apps/api/src/modules/orders/order-state-machine.spec.ts`, `apps/api/test/order-state-machine.e2e-spec.ts` |
+| (b) The same `Idempotency-Key` twice creates one payment | `apps/api/test/payments.e2e-spec.ts`                                                                       |
+| (c) Concurrent orders never oversell stock               | `apps/api/test/orders-concurrent-stock.e2e-spec.ts`                                                        |
 
-cd tests/e2e
-npm ci
-npm run test:install
-npm test
-```
+Run one file, for example: `npx vitest run --config ./vitest.config.e2e.ts test/payments.e2e-spec.ts` (inside `apps/api`).
 
-## Build
-
-Each app builds in its own directory. There is no root `package.json`.
-
-```powershell
-cd apps/api
-npm run build            # prisma generate, then nest build
-
-cd ../web
-npm run build            # next build
-```
-
-Docker images, from the repository root:
-
-```powershell
-docker compose build
-```
-
-`NEXT_PUBLIC_API_URL` is baked into the web image at build time. Rebuild the web image after changing it.
-
-## Recent updates
-
-- Auth flow: yêu cầu đăng nhập trước khi vào trang chủ, hỗ trợ đăng nhập/đăng ký, lưu token và thông tin người dùng.
-- Profile page: hiển thị thông tin tài khoản, điểm tích lũy, đơn hàng đã mua và đổi mật khẩu.
-- Order details: hiển thị đầy đủ sản phẩm, số lượng, size, giá tiền và trạng thái đơn hàng.
-- Menu header: thêm nút người dùng với menu (Thông tin chi tiết, Đăng xuất).
-- Assignment 2 adds the health endpoint, loyalty accrual, installable PWA shell, request-id logging, CI/CD workflows, and a Playwright menu-to-confirmation test. A limited role-protected admin area is also present.
-
-The test levels and evidence requirements are in the [test strategy](docs/testing/test-strategy.md). CI runs on pull requests; API integration and Playwright browser tests are also available. Actual CI run evidence is tracked in [ci-evidence.md](docs/delivery/ci-evidence.md).
-
-## Deploy and rollback
-
-Target platform: Render. Images are tagged with the commit SHA and stored in GHCR. A version tag `v*` runs [`.github/workflows/cd.yml`](.github/workflows/cd.yml). It stops if the Render secrets are missing. The decision is [ADR 0007](docs/architecture/adr/0007-hosting-platform.md). The steps are in [docs/deployment.md](docs/deployment.md) §9–§12.
-
-These URLs are not assigned. Do not replace them with a guessed host.
-
-| Check | URL |
-| --- | --- |
-| Web | Not assigned |
-| API | Not assigned |
-| Health `GET /api/v1/health` | Not assigned |
-
-`GET /api/v1/health` is implemented. Pull requests run [`.github/workflows/ci.yml`](.github/workflows/ci.yml): install, lint, unit test, and build for both apps, API integration tests against Postgres, and a Playwright menu-to-confirmation browser test against a separate seeded Postgres service. That workflow fails the check when a step fails. GitHub branch protection must require the checks before a merge is blocked. No pipeline run is recorded yet. The public health URL is still not assigned. Evidence slots are in [docs/delivery/ci-evidence.md](docs/delivery/ci-evidence.md). There is no production release: [docs/delivery/release-notes.md](docs/delivery/release-notes.md).
-
-Rollback, once a SHA has been deployed, is "deploy the previous image SHA" for both web and API, then call the health URL again. It is not `docker compose down -v`. That command deletes only a local database volume.
+The order lifecycle follows the assignment diagram (§9.1): `PENDING → PAID → PREPARING → READY → COMPLETED`, with `PENDING → PAYMENT_FAILED → PENDING` for a retry and `CANCELLED` from `PENDING`, `PAYMENT_FAILED` or `PAID`. Details: [ADR 0004](docs/architecture/adr/0004-payment-mock-and-order-lifecycle.md).
 
 ## Documentation
 
-| Topic                        | Document                                                                                                                                                      |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Requirements and backlog     | [docs/requirements/product-backlog.md](docs/requirements/product-backlog.md), [context and scope](docs/requirements/context-and-scope.md)                      |
-| Decisions                    | [architecture overview](docs/architecture/overview.md), [ADRs](docs/architecture/)                                                                           |
-| Context, scope, requirements | [context-and-scope.md](docs/requirements/context-and-scope.md), [srs.md](docs/requirements/srs.md), [UC-01](docs/requirements/use-case-uc01-place-and-pay.md) |
-| Diagrams                     | [docs/diagrams/](docs/diagrams/)                                                                                                                              |
-| Architecture                 | [overview](docs/architecture/overview.md), [ADRs](docs/architecture/)                                                                                               |
-| Testing                      | [docs/testing/test-strategy.md](docs/testing/test-strategy.md), [CI evidence](docs/delivery/ci-evidence.md)                                                   |
-| Traceability                 | [docs/traceability-matrix.md](docs/traceability-matrix.md)                                                                                                    |
-| Deployment                   | [docs/deployment.md](docs/deployment.md), [ADR 0007](docs/architecture/adr/0007-hosting-platform.md)                                                          |
-| Handover                     | [release notes](docs/delivery/release-notes.md), [sprint review](docs/delivery/sprint-review.md), [retrospective](docs/delivery/sprint-retrospective.md)    |
-| Contributing                 | [CONTRIBUTING.md](CONTRIBUTING.md) and [.github/pull_request_template.md](.github/pull_request_template.md)                                                  |
+| Topic                   | Document                                                                                                                                                                                                                                    |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Demo and handover       | [Demo script](docs/demo-script.md), Sprint Retrospectives: [Sprint 1](docs/plans/retro-sprint-1.md), [Sprint 2](docs/plans/retro-sprint-2.md), [Sprint 3](docs/plans/retro-sprint-3.md), [assignment checklist](docs/brewlite-checklist.md) |
+| Requirements            | [Product backlog](docs/requirements/product-backlog.md), [scenarios](docs/requirements/scenarios.md)                                                                                                                                        |
+| Design                  | [Wireframes](docs/design/wireframes.md), [UI decisions](docs/design/ui-decisions.md)                                                                                                                                                        |
+| Diagrams                | [docs/diagrams/](docs/diagrams/), [Sprint plan](docs/diagrams/sprint-plan.md)                                                                                                                                                               |
+| Architecture            | [Architecture](docs/architecture/architecture.md), [API contract](docs/architecture/api-contract.md), [ADRs](docs/architecture/adr/)                                                                                                        |
+| Setup and configuration | [Setup](docs/setup.md), [configuration](docs/config.md), [local deployment](docs/deployment.md)                                                                                                                                             |
+| Testing                 | [Test strategy](docs/testing/test-strategy.md), [traceability matrix](docs/traceability-matrix.md)                                                                                                                                          |
+| Team process            | [Working agreement](docs/working-agreement.md), [kickoff note](docs/plans/kickoff-2026-10-22.md)                                                                                                                                            |
 
 ## Working rules
 
 - Branch, commit, PR naming rules, review checklists, and Definition of Done are in [CONTRIBUTING.md](CONTRIBUTING.md). The PR description template is in [.github/pull_request_template.md](.github/pull_request_template.md).
 - All changes go through pull requests with a teammate review; lint, test, or build failures block the merge.
+- A task counts as done when it meets the Definition of Done (assignment §10): it builds and meets its acceptance criteria, has clear reviewed commits, the API validates input, the UI handles loading and error states, and this README explains how to run it.

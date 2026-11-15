@@ -8,62 +8,71 @@ Columns follow the Assignment 2 template: requirement, use case, design, code or
 
 Status words:
 
-| Status | Meaning |
-| --- | --- |
-| Covered | The named code and test exist in this repo. |
-| Partial | Some of the requirement is implemented or tested. The gap is named. |
-| Documented | The design exists. The code or the test does not. |
-| Refused | The requirement is Won't. No code is expected. |
-| Not run | The check needs a pipeline, a deploy, or a measurement that has not happened. |
+| Status     | Meaning                                                                       |
+| ---------- | ----------------------------------------------------------------------------- |
+| Covered    | The named code and test exist in this repo.                                   |
+| Partial    | Some of the requirement is implemented or tested. The gap is named.           |
+| Documented | The design exists. The code or the test does not.                             |
+| Refused    | The requirement is Won't. No code is expected.                                |
+| Not run    | The check needs a pipeline, a deploy, or a measurement that has not happened. |
 
 No row claims a production URL or a recorded CI run. The Playwright browser-test source and CI job exist at `tests/e2e/menu-to-confirmation.spec.ts` and `.github/workflows/ci.yml`; no browser-test run is recorded yet.
 
-## 1. Functional requirements
+## 1. Functional requirements (PDF §4.1)
 
-| Requirement | Use case | Design | Code / API | Test | Status |
-| --- | --- | --- | --- | --- | --- |
-| FR-01 View menu | UC-MENU | [activity-order-flow.puml](diagrams/activity-order-flow.puml), [use-case-system.puml](diagrams/use-case-system.puml) | `GET /api/v1/products`. `apps/web/src/features/menu/menu-page.tsx` | `apps/api/test/products.e2e-spec.ts`. `tests/e2e/menu-to-confirmation.spec.ts` opens the menu in a browser. | Partial. The happy-path menu is in the browser test. Empty and error states are not. |
-| FR-02 Product detail, size, toppings | UC-DETAIL | activity diagram, [ui-decisions.md](design/ui-decisions.md) | `GET /api/v1/products/:id`. `apps/web/src/app/products/[id]/page.tsx` | `products.e2e-spec.ts` covers the API, including 404. UI price update is not in an e2e test. | Partial |
-| FR-03 Cart and total | UC-CART | activity diagram | `apps/web/src/store/cart.store.ts`, `apps/web/src/app/cart/page.tsx` | `apps/web/src/__tests__/unit/pricing-and-cart.spec.ts` | Covered for the cart rules that spec asserts. Persistence across reload is not required. |
-| FR-04 Register, login, JWT | UC-AUTH | [api-contract.md](architecture/api-contract.md) §6–§7 | `POST /api/v1/auth/register`, `POST /api/v1/auth/login`. `apps/api/src/modules/auth/` | `apps/api/test/auth.e2e-spec.ts` | Covered for the API cases in that file. |
-| FR-05 Place order | UC-01 | [sequence-checkout.puml](diagrams/sequence-checkout.puml) | `POST /api/v1/orders`. `apps/api/src/modules/orders/` | Order creation is exercised by `payments.e2e-spec.ts` and `promotions.e2e-spec.ts` | Partial. Server total is the stored total. A dedicated tamper test file is not named here. |
-| FR-06 Mock Wallet / Card payment | UC-01 | sequence diagram, [ADR 0004](architecture/adr/0004-payment-mock-and-order-lifecycle.md) | `POST /api/v1/payments`. Methods `WALLET` and `CARD`. `apps/api/src/modules/payments/` | `payments.e2e-spec.ts` includes `PAYMENT_FAILED`. `tests/e2e/menu-to-confirmation.spec.ts` pays with Wallet in the browser. | Partial. The browser test covers Wallet success. Card and a declined payment are API tests, not this browser journey. |
-| FR-07 Confirmation and history | UC-TRACK | activity diagram, ADR 0004 D3 | `GET /api/v1/orders/me`, `GET /api/v1/orders/:code`. UI: `apps/web/src/app/orders/[id]/page.tsx` | `orders-read.e2e-spec.ts` | Partial. API owner-scope is tested. The running confirmation route is `/orders/[id]`, not `/orders/[code]/confirmation`. |
-| FR-08 Order status, illegal transition rejected | UC-TRACK | [class-domain.puml](diagrams/class-domain.puml) `OrderStatus` | `apps/api/src/modules/orders/order-state-machine.ts` | `order-state-machine.spec.ts`, `order-state-machine.e2e-spec.ts` | Covered |
-| FR-09 Validate input on both sides | UC-01 | API contract, DTOs under `apps/api/src/modules/**/dto/` | class-validator on the API. Client forms use required fields. | Auth, payment, and promotion e2e tests cover several 400 responses. | Partial. There is no single test that walks every malformed field. |
-| FR-10 Idempotent payment | UC-01 | sequence diagram, ADR 0004 D4 | `Payment.idempotencyKey`, `requestHash` | `payments.e2e-spec.ts`: same key and body, same key and different body | Covered |
-| FR-11 No oversell | UC-01 | sequence diagram, ADR 0004 D1 | `Product.stock`, `Product.version`. Stock moves at `PAID`. | `orders-concurrent-stock.e2e-spec.ts` | Covered |
-| FR-12 Promotion | UC-01 A2 | class diagram `Promotion` | `POST /api/v1/promotions/validate`, promo on `POST /api/v1/orders` | `promotions.e2e-spec.ts` | Covered for the cases in that file. Priority is Should. |
-| FR-13 Loyalty accrual | UC-01 | class diagram `LoyaltyTransaction` | `loyalty_transactions` table. Written in `payments.service.ts` when points are greater than zero. | `loyalty.spec.ts` for the formula. `payments.e2e-spec.ts` asserts one `EARN` row on success and none on failure. | Covered. Point redemption remains refused. |
-| FR-14 Retry a failed payment on the same order | UC-01 A3 | state machine `PAYMENT_FAILED → PAID` | `order-state-machine.ts` | `order-state-machine.spec.ts` allows the edge. | Partial. The legal edge is unit-tested. An API test that pays again and keeps one order is not cited here. |
-| FR-C1 Demo QR | not a payment step | checkout page note | `apps/web/src/app/checkout/page.tsx` | `frontend-api-flow.spec.tsx` | Could. Not required to pass FR-06. |
-| FR-W1 Real bank or VietQR | none | context-and-scope §4 | none | none | Refused |
-| FR-W2 Counter-staff screen | none | context-and-scope §4 | none | none | Refused. A limited manager/admin extension exists; it is not a staff screen or a required MVP feature. |
-| FR-W3 Delivery, multi-store, notifications, full product-catalog administration, reports, point redemption | none | context-and-scope §4 | none | none | Refused. Limited topping, promotion, read-only user, and order-status administration is documented in context-and-scope §3.1. |
-| FR-W4 Guest checkout of a paid order | none | UC-01 E2 | orders require JWT | `auth.e2e-spec.ts` unauthenticated payment is 401 | Refused |
+| #   | Requirement                                   | Owning task               | Evidence (doc / test / commit)                                                          | Status |
+| --- | --------------------------------------------- | ------------------------- | --------------------------------------------------------------------------------------- | ------ |
+| F1  | Menu list with image, name, price             | Task 2 (API), Task 3 (UI) | `api-contract.md` §4; `scenarios.md` S-MAIN-1; `GET /api/v1/products`                   | TBD    |
+| F2  | Product detail, choose size and toppings      | Task 4                    | `api-contract.md` §5; `scenarios.md` S-MAIN-1; `ui-decisions.md` §4.2 (pricing fixture) | TBD    |
+| F3  | Cart add/edit/remove; auto total              | Task 5                    | `scenarios.md` S-CART-1, S-CART-2; `ui-decisions.md` §5.1                               | TBD    |
+| F4  | Register / login (JWT)                        | Task 7                    | `api-contract.md` §6–§7; `scenarios.md` S-AUTH-1..3                                     | TBD    |
+| F5  | Create order and pay cashless                 | Task 6, Task 8            | `api-contract.md` §8–§9; `scenarios.md` S-MAIN-1, S-PAY-1..6                            | TBD    |
+| F6  | Confirmation (code, status) and order history | Task 9                    | `api-contract.md` §10–§11; `scenarios.md` S-ORD-4; `wireframes.md` §8, §11              | TBD    |
 
-## 2. Non-functional requirements
+## 2. Non-functional requirements (PDF §4.2)
 
-| Requirement | Use case | Design | Code / API | Test | Status |
-| --- | --- | --- | --- | --- | --- |
-| NFR-01 Response under 500 ms on seed data | UC-MENU, UC-01 | [overview.md](architecture/overview.md) | `GET /api/v1/products`, `POST /api/v1/orders` | none | Not run. No measurement is stored. |
-| NFR-02 Secrets, hash, JWT, owner scope | UC-AUTH, UC-01 | ADR 0005, ADR 0007 | bcrypt hash, JWT guard, owner-scoped order reads. `.env` is gitignored. | `auth.e2e-spec.ts`, `orders-read.e2e-spec.ts` | Partial. The workflow must not print secrets. No CI log has been checked yet. |
-| NFR-03 Phone layout, loading, empty, error, status text | UC-MENU, UC-TRACK | ui-decisions.md | menu, cart, checkout, orders pages | `tests/e2e/menu-to-confirmation.spec.ts` checks the main flow for horizontal overflow at 390 px. | Partial. The browser check is configured but has not yet been run; loading, empty, and error states are not all covered by that journey. |
-| NFR-04 PWA manifest and service worker | none yet | overview.md §2 | `apps/web/src/app/manifest.ts`, `apps/web/public/sw.js`, `apps/web/public/icons/` | `apps/web/src/__tests__/unit/manifest.spec.ts` | Partial. The files exist and the manifest test checks install fields. A browser install prompt is not automated. Ordering is still network-only. |
-| NFR-05 Compose, health, CI, HTTPS, private database, rollback | deploy | [deployment-production.puml](diagrams/deployment-production.puml), [ADR 0007](architecture/adr/0007-hosting-platform.md), [deployment.md](deployment.md) | `GET /api/v1/health`. Compose probes that path. `.github/workflows/ci.yml` runs install, lint, test, build, API integration, and Playwright browser E2E. | `apps/api/test/app.e2e-spec.ts`; `tests/e2e/menu-to-confirmation.spec.ts`. CI evidence is not recorded. | Partial. Workflow files and test sources exist. A recorded run and production URL do not. |
-| NFR-06 Integer VND, server price wins | UC-01 | ADR 0005, ui-decisions.md | Prisma `Int` money fields. Server recomputes the order total. | `pricing-and-cart.spec.ts` | Partial. The shared pricing fixture named in older docs is not the proof used here. The cart unit test is the current web proof. |
-| NFR-07 Logs without secrets | operations | overview.md §5 | `apps/api/src/common/logging.interceptor.ts`, `redact.ts`. `500` responses include `requestId`. | `redact.spec.ts`, `logging.interceptor.spec.ts` | Covered for the redaction and request-id rules. Render log review is still open. |
-| NFR-08 Diagrams match this SRS | UC-01 | activity, sequence, and class diagrams | docs only | review, not an automated test | Documented. The class diagram now includes the loyalty table that the init migration already created. |
+| #   | Requirement                            | Owning task                           | Evidence                                                                                                                                                                                                                         | Status |
+| --- | -------------------------------------- | ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| N1  | API response < 500 ms on sample data   | Task 2 (products), Task 9 (NFR check) | [`testing/nfr-response-time.md`](testing/nfr-response-time.md) (15/11/2026): p95 of `GET /products`, `GET /products/:id`, `POST /auth/login`, `GET /orders/me` all < 500 ms; script `apps/api/scripts/measure-response-time.mjs` | Done   |
+| N2  | Password hashed, JWT, input validation | Task 7, Task 6                        | `api-contract.md` §6–§8; `config.md` §4; tests                                                                                                                                                                                   | TBD    |
+| N3  | Works on web browsers                  | Task 3–Task 9                         | `ui-decisions.md` §3; e2e (Phase 2+)                                                                                                                                                                                             | TBD    |
 
-## 3. Assignment 2 tasks
+## 3. Backlog tasks (PDF §8) — one row per scored task
 
-| Task | Design | Code / API | Test or evidence | Status |
-| --- | --- | --- | --- | --- |
-| 1 Requirements | `docs/requirements/context-and-scope.md`, `srs.md`, `use-case-uc01-place-and-pay.md`, use-case diagrams | none required | this matrix | Documented |
-| 2 Modeling | `activity-order-flow`, `sequence-checkout`, `class-domain` | none required | this matrix | Documented |
-| 3 Architecture | `docs/architecture/overview.md`, ADR 0007, `deployment-production` | none required | this matrix | Documented. Host is chosen. Services are not created. |
-| 4 Sprint 1 and CI | menu and products API already exist | `GET /api/v1/products`, `GET /api/v1/products/:id`. `.github/workflows/ci.yml` | [ci-evidence.md](delivery/ci-evidence.md) | Partial. The workflow file exists. A green run and a failed run are not recorded. |
-| 5 Sprint 2 and delivery | ADR 0007, deployment.md §9–§12 | order, payment, auth, Dockerfiles | `tests/e2e/menu-to-confirmation.spec.ts`; CI job configured, but no recorded E2E run or production URL. | Partial. See [release-notes.md](delivery/release-notes.md). |
+| Task    | Acceptance criteria     | Owning spreadsheet rows          | Evidence                                             | Status |
+| ------- | ----------------------- | -------------------------------- | ---------------------------------------------------- | ------ |
+| Task 1  | `product-backlog.md` §4 | 10.0–12.0                        | `setup.md`, `config.md`, `README.md`                 | TBD    |
+| Task 2  | §5                      | 14.0–15.0, 19.0                  | `api-contract.md` §4–§5; unit tests                  | TBD    |
+| Task 3  | §6                      | 16.0, 18.0                       | `wireframes.md` §4; e2e                              | TBD    |
+| Task 4  | §7                      | 13.0, 17.0                       | `wireframes.md` §5; pricing fixture test             | TBD    |
+| Task 5  | §8                      | 23.0, 29.0                       | `wireframes.md` §6; cart tests                       | TBD    |
+| Task 6  | §9                      | 22.0, 25.0, 28.0                 | `api-contract.md` §8; order tests                    | TBD    |
+| Task 7  | §10                     | 24.0, 26.0, 27.0, 30.0, 31.0     | `api-contract.md` §6–§7; auth tests                  | TBD    |
+| Task 8  | §11                     | 35.0–37.0, 41.0                  | `api-contract.md` §9; payment tests                  | TBD    |
+| Task 9  | §12                     | 38.0–40.0, 42.0, 57.0, 59.0–61.0 | `api-contract.md` §10–§11; `deployment.md` (Phase 6) | TBD    |
+| Task 10 | §13 (10a–10d)           | 44.0–55.0                        | ADR 0004; `scenarios.md` S-ORD-5, S-PAY-5, S-ORD-6   | TBD    |
+
+## 4. Graded tests (PDF §9) — the three the grader checks
+
+| Test                                         | Requirement | Scenario                        | Evidence                               | Status |
+| -------------------------------------------- | ----------- | ------------------------------- | -------------------------------------- | ------ |
+| (a) Invalid state transition rejected        | Task 10a    | `scenarios.md` S-ORD-5          | unit test; `assertTransition`          | TBD    |
+| (b) Same `Idempotency-Key` twice → one order | Task 10b    | `scenarios.md` S-PAY-5, S-PAY-6 | integration test; `api-contract.md` §9 | TBD    |
+| (c) Concurrent orders do not oversell        | Task 10c    | `scenarios.md` S-ORD-6          | integration test; ADR 0004 D1          | TBD    |
+
+## 5. Definition of Done (PDF §10) — per task, not per row
+
+DoD is verified per task via the spreadsheet's evidence note (`working-agreement.md` §4), not via a matrix row. The matrix's §3 rows cite the evidence note; the DoD checklist itself lives in `working-agreement.md` §5.
+
+## 6. Entities (PDF §12.2)
+
+| Entity      | Owning task | Evidence                                                              | Status |
+| ----------- | ----------- | --------------------------------------------------------------------- | ------ |
+| `Product`   | Task 2      | `prisma/schema.prisma`; ADR 0003                                      | TBD    |
+| `User`      | Task 7      | `prisma/schema.prisma`; ADR 0003 open Q (loyalty column)              | TBD    |
+| `Order`     | Task 6      | `prisma/schema.prisma`; ADR 0004                                      | TBD    |
+| `OrderItem` | Task 6      | `prisma/schema.prisma`                                                | TBD    |
+| `Payment`   | Task 8      | `prisma/schema.prisma`; ADR 0004 D4 (`idempotencyKey`, `requestHash`) | TBD    |
 
 ## 4. How to update a row
 

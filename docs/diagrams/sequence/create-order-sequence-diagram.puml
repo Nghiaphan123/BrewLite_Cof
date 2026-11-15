@@ -1,0 +1,38 @@
+@startuml create-order-sequence-diagram
+title BrewLite – Tạo đơn hàng khi thanh toán
+skinparam shadowing false
+skinparam backgroundColor #FFFFFF
+skinparam sequenceMessageAlign left
+autonumber
+
+actor "Khách hàng" as KH
+participant "Web (Next.js)" as UI
+participant "API (NestJS)" as API
+database "PostgreSQL" as DB
+
+KH -> UI: Ở /checkout chọn phương thức, bấm xác nhận
+UI -> API: POST /orders (Bearer token)\n{items[productId, size, qty, toppingIds], promoCode?}
+API -> API: JwtAuthGuard: kiểm tra token,\nuser còn tồn tại và chưa bị khoá
+alt token thiếu / sai / hết hạn
+  API --> UI: 401 AUTH_REQUIRED | AUTH_INVALID | AUTH_EXPIRED
+  UI --> KH: "Phiên đăng nhập hết hạn" + nút Đăng nhập\n(giỏ hàng vẫn giữ nguyên)
+else token hợp lệ
+  API -> API: ValidationPipe: ≥ 1 dòng, size S/M/L, qty 1–99
+  API -> DB: BEGIN transaction
+  API -> DB: Đọc giá món và topping
+  DB --> API: products, toppings
+  alt món không tồn tại / topping không có hoặc ngừng bán
+    API --> UI: 404 PRODUCT_NOT_FOUND | 400 TOPPING_*
+  else hợp lệ
+    API -> API: Server tự tính giá: giá S + phụ thu size\n+ topping (không tin giá từ client)
+    opt có promoCode
+      API -> DB: Kiểm tra mã, tăng usedCount
+    end
+    API -> DB: nextval('order_code_seq') → mã BL-YYYY-NNNN
+    API -> DB: INSERT orders (PENDING) + order_items\n+ order_item_toppings; COMMIT
+    API --> UI: 201 {id, code, status: PENDING, subtotal,\ndiscountAmount, total, items}
+    UI --> KH: QR: hiện mã QR của đơn (lưu sessionStorage)\nVí/Thẻ: chuyển ngay sang bước thanh toán
+  end
+end
+note over KH, DB: Tồn kho chưa bị trừ ở bước này; chỉ trừ khi thanh toán thành công (ADR 0004)
+@enduml

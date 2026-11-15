@@ -1,352 +1,352 @@
 # BrewLite - Product Backlog
 
-**Status:** Phase 1 deliverable  
-**Owner:** H.Tài, Nghĩa (Task 2.0)  
-**Related:** [Working Agreement](../../archive/docs/working-agreement.md), [Scenarios](scenarios.md), [API Contract](../architecture/api-contract.md), [Design: Wireframes](../design/wireframes.md), Task spreadsheet `BrewLite-DanhSachTask.xlsx`
+**Trạng thái:** Sản phẩm bàn giao Giai đoạn 1
+**Người phụ trách:** H.Tài, Nghĩa (Nhiệm vụ 2.0)
+**Liên quan:** [Thỏa thuận làm việc](../working-agreement.md), [Scenarios](scenarios.md), [Hợp đồng API](../architecture/api-contract.md), [Thiết kế: Wireframes](../design/wireframes.md), Bảng tính nhiệm vụ `BrewLite-DanhSachTask.xlsx`
 
-This is the Product Backlog for the BrewLite MVP. It is the authoritative list of *what* the team is building, in priority order, with acceptance criteria that make "done" testable. The spreadsheet is the schedule and status view; this document is the requirement view.
+Đây là Product Backlog cho MVP của BrewLite. Nó là danh sách có thẩm quyền về *cái gì* nhóm đang xây dựng, theo thứ tự ưu tiên, với tiêu chí chấp nhận làm cho "xong" có thể kiểm thử được. Bảng tính là góc nhìn lịch trình và trạng thái; tài liệu này là góc nhìn yêu cầu.
 
-> **Scope:** MVP from product selection to payment and confirmation, per assignment PDF §4.1. Out of scope: barista/back-office order management, real payment gateway integration, multi-store support, loyalty redemption (accrual only).
+> **Phạm vi:** MVP từ chọn sản phẩm đến thanh toán và xác nhận, theo PDF bài tập §4.1. Ngoài phạm vi: quản lý đơn hàng phía barista/back-office, tích hợp cổng thanh toán thật, hỗ trợ đa cửa hàng, đổi điểm trung thành (chỉ tích lũy).
 
-## 1. Product Vision and stakeholders
+## 1. Tầm nhìn sản phẩm và các bên liên quan
 
-This section records the two context items the assignment requires before the backlog itself: the Product Vision (PDF §3.1) and the stakeholders (PDF §3.2). They are repeated here — not in a separate file — because Task 2.0's reviewer should see them next to the tasks they justify. Task 3.0 (kickoff) may refine the vision and the role assignments; the backlog's tasks do not change when it does.
+Phần này ghi lại hai mục ngữ cảnh mà bài tập yêu cầu trước chính backlog: Tầm nhìn sản phẩm (PDF §3.1) và các bên liên quan (PDF §3.2). Chúng được lặp lại ở đây — không phải trong một tệp riêng — vì reviewer của Nhiệm vụ 2.0 nên thấy chúng bên cạnh các nhiệm vụ mà chúng biện minh. Nhiệm vụ 3.0 (kickoff) có thể tinh chỉnh tầm nhìn và phân công vai trò; các nhiệm vụ của backlog không thay đổi khi nó làm vậy.
 
-### 1.1 Product Vision
+### 1.1 Tầm nhìn sản phẩm
 
 > **BrewLite giúp khách hàng đặt và thanh toán đồ uống không dùng tiền mặt chỉ trong vài chạm, giảm thời gian xếp hàng và nhận đơn nhanh tại quầy.**
 
-In English, for the reviewers who read the code and docs in English:
+Bằng tiếng Anh, cho các reviewer đọc code và tài liệu bằng tiếng Anh:
 
 > BrewLite lets customers order and pay for drinks cashlessly in a few taps, reducing queue time and speeding up pickup at the counter.
 
-The vision scopes the MVP: **order → pay → confirm**, not back-office, not delivery, not loyalty redemption. Every task in §4–§13 traces to one of those three steps; anything that doesn't is listed as out of scope in §16.
+Tầm nhìn giới hạn phạm vi MVP: **đặt → thanh toán → xác nhận**, không phải back-office, không phải giao hàng, không phải đổi điểm trung thành. Mọi nhiệm vụ trong §4–§13 truy nguyên đến một trong ba bước đó; bất cứ thứ gì không làm vậy được liệt kê là ngoài phạm vi trong §16.
 
-### 1.2 Stakeholders
+### 1.2 Các bên liên quan
 
-The six stakeholders from PDF §3.2, and what each expects from the MVP:
+Sáu bên liên quan từ PDF §3.2, và mỗi bên kỳ vọng gì từ MVP:
 
-| Stakeholder                              | What they expect                                                                 | Where it shows up in this backlog                                                                                                                                                              |
-| ---------------------------------------- | -------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Khách hàng (customer)**                | Order a drink, choose size/topping, pay cashlessly, see order status and history | Tasks 3–9; every User Story is written from this stakeholder's point of view                                                                                                                   |
-| **Nhân viên quầy / Barista**             | Receive orders and update preparation status                                     | **Out of MVP scope** (PDF §3.2: "nằm ngoài phạm vi MVP"). The `OrderStatus` enum reserves `PREPARING`/`READY`/`COMPLETED` for a future barista UI, but no screen is built in Phase 1. See §16. |
-| **Quản lý cửa hàng / Product Owner**     | Define requirements, prioritize the backlog, accept each increment               | This document (the backlog itself) + the Sprint Review acceptance in `working-agreement.md` §2. The PO role is assigned at Task 3.0.                                                           |
-| **Giảng viên nghiệm thu (lecturer)**     | Evaluate process, product, and acceptance criteria                               | The graded tests in Task 10 (PDF §9), the DoD in `working-agreement.md` §5, the evidence notes in the spreadsheet, and this backlog's traceability to the PDF's 10 tasks.                      |
-| **Nhóm phát triển (dev team)**           | Analyze, design, build, test, hand over                                          | The backlog's task assignments, the `Owner` column in §3, and the spreadsheet's `Người làm` column.                                                                                            |
-| **Đơn vị thanh toán (payment provider)** | Provide or be simulated as the payment gateway                                   | Task 8 (mock payment, ADR 0004). The mock is in-process; no external integration in MVP.                                                                                                       |
+| Bên liên quan                            | Họ kỳ vọng gì                                                                                    | Nó xuất hiện ở đâu trong backlog này                                                                                                                                                                         |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Khách hàng (customer)**                | Đặt đồ uống, chọn kích cỡ/topping, thanh toán không tiền mặt, xem trạng thái và lịch sử đơn hàng | Nhiệm vụ 3–9; mọi User Story được viết từ góc nhìn của bên liên quan này                                                                                                                                     |
+| **Nhân viên quầy / Barista**             | Nhận đơn hàng và cập nhật trạng thái pha chế                                                     | **Ngoài phạm vi MVP** (PDF §3.2: "nằm ngoài phạm vi MVP"). Enum `OrderStatus` dự trữ `PREPARING`/`READY`/`COMPLETED` cho UI barista tương lai, nhưng không màn hình nào được xây trong Giai đoạn 1. Xem §16. |
+| **Quản lý cửa hàng / Product Owner**     | Định nghĩa yêu cầu, ưu tiên backlog, nghiệm thu từng increment                                   | Tài liệu này (chính backlog) + nghiệm thu Sprint Review trong `working-agreement.md` §2. Vai trò PO được phân công tại Nhiệm vụ 3.0.                                                                         |
+| **Giảng viên nghiệm thu (lecturer)**     | Đánh giá quy trình, sản phẩm, và tiêu chí chấp nhận                                              | Các test được chấm trong Nhiệm vụ 10 (PDF §9), DoD trong `working-agreement.md` §5, ghi chú bằng chứng trong bảng tính, và truy nguyên của backlog này đến 10 nhiệm vụ của PDF.                              |
+| **Nhóm phát triển (dev team)**           | Phân tích, thiết kế, xây dựng, kiểm thử, bàn giao                                                | Phân công nhiệm vụ của backlog, cột `Owner` trong §3, và cột `Người làm` của bảng tính.                                                                                                                      |
+| **Đơn vị thanh toán (payment provider)** | Cung cấp hoặc được mô phỏng như cổng thanh toán                                                  | Nhiệm vụ 8 (thanh toán giả lập, ADR 0004). Mock chạy trong tiến trình; không tích hợp bên ngoài trong MVP.                                                                                                   |
 
-**Roles vs. stakeholders:** `working-agreement.md` §1 defines the team's *roles* (PO, SM, Dev Team) — who does the work. This table defines the *stakeholders* — who cares about the outcome. The customer and the barista are stakeholders, not team roles; the PO is both a role and a stakeholder.
+**Vai trò vs. bên liên quan:** `working-agreement.md` §1 định nghĩa *vai trò* của nhóm (PO, SM, Dev Team) — ai làm việc. Bảng này định nghĩa *các bên liên quan* — ai quan tâm đến kết quả. Khách hàng và barista là bên liên quan, không phải vai trò nhóm; PO vừa là vai trò vừa là bên liên quan.
 
-### 1.3 How to read this document
+### 1.3 Cách đọc tài liệu này
 
-- One section per backlog item, numbered `Task 1` … `Task 10` to match the assignment PDF §8. This is the **scoring** numbering (1 point each, 10 total).
-- Each task lists: the User Story, Acceptance Criteria (testable), scope boundary (what is *not* included), the spreadsheet rows that implement it, the Sprint/Phase, owner, and evidence docs.
-- The **spreadsheet STT** (e.g. `1.0`, `10.0`) is the **scheduling** numbering and does not match the task number. A single backlog task can span many spreadsheet rows (e.g. Task 9 spans rows 38.0–43.0, 57.0–61.0). The mapping table in §15 is the cross-reference.
-- Acceptance criteria are written as Given/When/Then where the behavior is testable, and as a checklist where it is structural (scaffolding, docs).
-- **Priority:** `P0` = required for MVP demo, `P1` = required for scoring but not demo-blocking, `P2` = stretch. All 10 tasks are P0 by assignment.
-- **Traceability:** each task's "Traces to" line points at the scenarios in `scenarios.md` (Task 4.0) that exercise it. The scenarios are the *how*; this doc is the *what*.
+- Mỗi mục backlog một phần, được đánh số `Task 1` … `Task 10` để khớp với PDF bài tập §8. Đây là cách đánh số **chấm điểm** (1 điểm mỗi nhiệm vụ, tổng 10).
+- Mỗi nhiệm vụ liệt kê: User Story, Tiêu chí chấp nhận (có thể kiểm thử), ranh giới phạm vi (cái *không* được bao gồm), các dòng bảng tính triển khai nó, Sprint/Giai đoạn, người phụ trách, và tài liệu bằng chứng.
+- **STT bảng tính** (ví dụ `1.0`, `10.0`) là cách đánh số **lập lịch** và không khớp với số nhiệm vụ. Một nhiệm vụ backlog có thể trải qua nhiều dòng bảng tính (ví dụ Nhiệm vụ 9 trải qua các dòng 38.0–43.0, 57.0–61.0). Bảng ánh xạ trong §15 là tham chiếu chéo.
+- Tiêu chí chấp nhận được viết dưới dạng Given/When/Then khi hành vi có thể kiểm thử, và dưới dạng checklist khi nó mang tính cấu trúc (scaffolding, tài liệu).
+- **Ưu tiên:** `P0` = bắt buộc cho demo MVP, `P1` = bắt buộc cho chấm điểm nhưng không chặn demo, `P2` = mở rộng. Cả 10 nhiệm vụ đều là P0 theo bài tập.
+- **Truy nguyên:** dòng "Traces to" của mỗi nhiệm vụ trỏ đến các scenario trong `scenarios.md` (Nhiệm vụ 4.0) thực thi nó. Scenarios là *cách*; tài liệu này là *cái gì*.
 
-## 2. Definition of Ready
+## 2. Định nghĩa Sẵn sàng (Definition of Ready)
 
-A backlog item is ready to be pulled into a Sprint when:
+Một mục backlog sẵn sàng để được kéo vào Sprint khi:
 
-- The User Story and Acceptance Criteria are written (this doc).
-- The spreadsheet rows are created and estimated.
-- Dependencies are identified and either resolved or scheduled earlier.
-- The owning ADR (if any) is accepted or explicitly deferred with a note.
+- User Story và Tiêu chí chấp nhận đã được viết (tài liệu này).
+- Các dòng bảng tính đã được tạo và ước lượng.
+- Phụ thuộc đã được xác định và hoặc đã giải quyết hoặc đã lên lịch sớm hơn.
+- ADR sở hữu (nếu có) đã được chấp nhận hoặc hoãn rõ ràng kèm ghi chú.
 
-Items not meeting this are not pulled. The PO may pull a not-ready item at their discretion, and records why.
+Các mục không đáp ứng điều này sẽ không được kéo. PO có thể kéo một mục chưa sẵn sàng theo quyết định của họ, và ghi lại lý do.
 
-## 3. Backlog summary
+## 3. Tóm tắt backlog
 
-| Task    | Title                           | Priority | Sprint   | Spreadsheet rows                 | Primary owner  |
-| ------- | ------------------------------- | -------- | -------- | -------------------------------- | -------------- |
-| Task 1  | Project init and structure      | P0       | Sprint 1 | 10.0–12.0                        | Nghĩa          |
-| Task 2  | Products API                    | P0       | Sprint 1 | 14.0–15.0, 19.0                  | Nghĩa          |
-| Task 3  | Menu page (frontend)            | P0       | Sprint 1 | 16.0, 18.0                       | H.Tài (backup) |
-| Task 4  | Product detail and options      | P0       | Sprint 1 | 13.0, 17.0                       | H.Tài (backup) |
-| Task 5  | Cart                            | P0       | Sprint 2 | 23.0, 29.0                       | Nghĩa          |
-| Task 6  | Create order API                | P0       | Sprint 2 | 22.0, 25.0, 28.0                 | H.Tài          |
-| Task 7  | Register / login (JWT)          | P0       | Sprint 2 | 24.0, 26.0, 27.0, 30.0, 31.0     | H.Tài          |
-| Task 8  | Mock payment                    | P0       | Sprint 3 | 35.0–37.0, 41.0                  | H.Tài          |
-| Task 9  | Confirmation, history, handover | P0       | Sprint 3 | 38.0–40.0, 42.0, 57.0, 59.0–61.0 | Nghĩa          |
-| Task 10 | Backend business rules          | P0       | Sprint 3 | 44.0–55.0                        | H.Tài          |
+| Nhiệm vụ | Tiêu đề                       | Ưu tiên | Sprint   | Dòng bảng tính                   | Người phụ trách chính |
+| -------- | ----------------------------- | ------- | -------- | -------------------------------- | --------------------- |
+| Task 1   | Khởi tạo dự án và cấu trúc    | P0      | Sprint 1 | 10.0–12.0                        | Nghĩa                 |
+| Task 2   | API Sản phẩm                  | P0      | Sprint 1 | 14.0–15.0, 19.0                  | Nghĩa                 |
+| Task 3   | Trang Menu (frontend)         | P0      | Sprint 1 | 16.0, 18.0                       | H.Tài (dự phòng)      |
+| Task 4   | Chi tiết sản phẩm và tùy chọn | P0      | Sprint 1 | 13.0, 17.0                       | H.Tài (dự phòng)      |
+| Task 5   | Giỏ hàng                      | P0      | Sprint 2 | 23.0, 29.0                       | Nghĩa                 |
+| Task 6   | API Tạo đơn hàng              | P0      | Sprint 2 | 22.0, 25.0, 28.0                 | H.Tài                 |
+| Task 7   | Đăng ký / đăng nhập (JWT)     | P0      | Sprint 2 | 24.0, 26.0, 27.0, 30.0, 31.0     | H.Tài                 |
+| Task 8   | Thanh toán giả lập            | P0      | Sprint 3 | 35.0–37.0, 41.0                  | H.Tài                 |
+| Task 9   | Xác nhận, lịch sử, bàn giao   | P0      | Sprint 3 | 38.0–40.0, 42.0, 57.0, 59.0–61.0 | Nghĩa                 |
+| Task 10  | Quy tắc nghiệp vụ backend     | P0      | Sprint 3 | 44.0–55.0                        | H.Tài                 |
 
-Sprint assignments follow the assignment PDF §2.3. The spreadsheet's Phases 1–6 subdivide these further; see §13.
+Phân công Sprint theo PDF bài tập §2.3. Các Giai đoạn 1–6 của bảng tính chia nhỏ thêm; xem §13.
 
-## 4. Task 1 — Project init and structure
+## 4. Nhiệm vụ 1 — Khởi tạo dự án và cấu trúc
 
-**Priority:** P0 · **Sprint:** 1 · **Owner:** Nghĩa
-
-### User Story
-
-> As a developer on the team, I want a runnable two-app scaffold with documented setup, so that I can start feature work without spending a day on environment problems.
-
-### Acceptance Criteria
-
-- [ ] `apps/api` is a NestJS app that responds on its configured port; `apps/web` is a Next.js App Router app that renders a starter page on port 3000.
-- [ ] Both apps install and run from their own directory with the commands in `docs/setup.md`; the root has no `package.json`.
-- [ ] `apps/api/.env.example` and `apps/web/.env.example` exist and match `docs/config.md` §2.
-- [ ] `.gitignore` excludes `node_modules`, `.env`, `.next`, `dist`.
-- [ ] `README.md` at root and per-app READMEs exist and link to `docs/setup.md`.
-- [ ] A teammate clones on a clean machine and reaches the "Hello" check table in `docs/setup.md` §8 without asking for help.
-
-### Out of scope
-
-CI workflows, deployment, production Dockerfiles. `apps/api/Dockerfile` and `apps/web/Dockerfile` may exist from the scaffold but are not wired into Compose until Task 9/Phase 6.
-
-### Evidence
-
-`docs/setup.md`, `docs/config.md`, `.env.example` files, `README.md`. Spreadsheet rows 10.0–12.0.
-
-## 5. Task 2 — Products API
-
-**Priority:** P0 · **Sprint:** 1 · **Owner:** Nghĩa
+**Ưu tiên:** P0 · **Sprint:** 1 · **Người phụ trách:** Nghĩa
 
 ### User Story
 
-> As a customer, I want the app to load the drinks menu from the server, so that the menu can change without redeploying the frontend.
+> Là một lập trình viên trong nhóm, tôi muốn có một scaffold hai ứng dụng chạy được với tài liệu cài đặt, để tôi có thể bắt đầu công việc tính năng mà không mất một ngày cho các vấn đề môi trường.
 
-### Acceptance Criteria
+### Tiêu chí chấp nhận
 
-- [ ] `GET /products` returns a JSON array; each item has `id`, `name`, `price`, `imageUrl`, `stock`.
-- [ ] `GET /products/:id` returns one product or `404` with the standard error envelope.
-- [ ] `price` is an integer in VND (no decimal point); see `docs/config.md` §3.
-- [ ] Data comes from PostgreSQL via Prisma, seeded by `prisma/seed.ts` with at least 6 drinks covering all sizes used in the demo.
-- [ ] Unit tests cover the service and controller happy path and the `404` case.
-- [ ] `GET /products` responds in < 500 ms against seed data (assignment PDF §4.2).
+- [ ] `apps/api` là một ứng dụng NestJS phản hồi trên cổng được cấu hình; `apps/web` là một ứng dụng Next.js App Router render trang khởi đầu trên cổng 3000.
+- [ ] Cả hai ứng dụng cài đặt và chạy từ thư mục riêng với các lệnh trong `docs/setup.md`; thư mục gốc không có `package.json`.
+- [ ] `apps/api/.env.example` và `apps/web/.env.example` tồn tại và khớp với `docs/config.md` §2.
+- [ ] `.gitignore` loại trừ `node_modules`, `.env`, `.next`, `dist`.
+- [ ] `README.md` ở gốc và README từng ứng dụng tồn tại và liên kết đến `docs/setup.md`.
+- [ ] Một thành viên clone trên máy sạch và đạt bảng kiểm tra "Hello" trong `docs/setup.md` §8 mà không cần hỏi trợ giúp.
 
-### Out of scope
+### Ngoài phạm vi
 
-Pagination, filtering, search, product images upload, stock mutation. Stock is read-only here; it is decremented in Task 10.
+Workflow CI, triển khai, Dockerfile production. `apps/api/Dockerfile` và `apps/web/Dockerfile` có thể tồn tại từ scaffold nhưng chưa được nối vào Compose cho đến Nhiệm vụ 9/Giai đoạn 6.
 
-### Evidence
+### Bằng chứng
 
-`apps/api/src/modules/products/`, `apps/api/prisma/schema.prisma`, `apps/api/prisma/seed.ts`. Spreadsheet rows 14.0–15.0, 19.0.
+`docs/setup.md`, `docs/config.md`, các tệp `.env.example`, `README.md`. Dòng bảng tính 10.0–12.0.
 
-## 6. Task 3 — Menu page (frontend)
+## 5. Nhiệm vụ 2 — API Sản phẩm
 
-**Priority:** P0 · **Sprint:** 1 · **Owner:** H.Tài (backup; primary to be confirmed at Sprint Planning)
-
-### User Story
-
-> As a customer, I want to browse the menu as a grid of cards, so that I can pick a drink quickly.
-
-### Acceptance Criteria
-
-- [ ] The menu route (`/`) renders a grid of `ProductCard` components from `GET /products`.
-- [x] Each card shows image, name, and price formatted as VND.
-- [x] The page handles three states explicitly: **loading** (skeleton or spinner), **empty** (message), **error** (retry affordance).
-- [x] Clicking a card navigates to the product detail route.
-- [ ] Layout is responsive at 360 px and 1280 px widths.
-- [ ] A header shows the cart badge with item count (0 when empty).
-
-### Out of scope
-
-Infinite scroll, filtering by category, search, favorites.
-
-### Evidence
-
-`apps/web/src/app/page.tsx`, `apps/web/src/features/menu/menu-page.tsx`, `apps/web/src/features/menu/ProductCard.tsx`. Wireframe: `docs/design/wireframes.md` (Menu). Spreadsheet rows 16.0, 18.0.
-
-## 7. Task 4 — Product detail and options
-
-**Priority:** P0 · **Sprint:** 1 · **Owner:** H.Tài (backup; primary to be confirmed at Sprint Planning)
+**Ưu tiên:** P0 · **Sprint:** 1 · **Người phụ trách:** Nghĩa
 
 ### User Story
 
-> As a customer, I want to choose a size and toppings on the product page, so that the price reflects what I am ordering.
+> Là một khách hàng, tôi muốn ứng dụng tải menu đồ uống từ server, để menu có thể thay đổi mà không cần triển khai lại frontend.
 
-### Acceptance Criteria
+### Tiêu chí chấp nhận
 
-- [ ] The product detail route (`/products/[id]`) shows name, image, base price, and size selector S/M/L.
-- [ ] Size selection updates the displayed price deterministically; the rule is in `docs/design/ui-decisions.md` and mirrored in the backend price function.
-- [ ] Topping selection is multi-select; each topping adds a fixed amount; the displayed total updates on every change.
-- [ ] "Add to cart" is disabled until a size is selected; the button label includes the current total.
-- [ ] The frontend total and the backend-computed `lineTotal` (Task 6) agree for the same inputs. This is verified by a shared fixture, not by eyeballing.
+- [ ] `GET /products` trả về một mảng JSON; mỗi mục có `id`, `name`, `price`, `imageUrl`, `stock`.
+- [ ] `GET /products/:id` trả về một sản phẩm hoặc `404` với phong bì lỗi chuẩn.
+- [ ] `price` là số nguyên bằng VND (không dấu thập phân); xem `docs/config.md` §3.
+- [ ] Dữ liệu đến từ PostgreSQL qua Prisma, được seed bởi `prisma/seed.ts` với ít nhất 6 đồ uống bao phủ mọi kích cỡ dùng trong demo.
+- [ ] Unit test bao phủ service và controller happy path và trường hợp `404`.
+- [ ] `GET /products` phản hồi trong < 500 ms với dữ liệu seed (PDF bài tập §4.2).
 
-### Out of scope
+### Ngoài phạm vi
 
-Per-item notes, quantity discount, size-specific stock.
+Phân trang, lọc, tìm kiếm, upload ảnh sản phẩm, thay đổi stock. Stock chỉ đọc ở đây; nó bị giảm trong Nhiệm vụ 10.
 
-### Evidence
+### Bằng chứng
 
-`apps/web/src/app/products/[id]/page.tsx`, `apps/web/src/features/product/`, `docs/design/ui-decisions.md` (price rule). Wireframe: `docs/design/wireframes.md` (Chi tiết). Spreadsheet rows 13.0, 17.0.
+`apps/api/src/modules/products/`, `apps/api/prisma/schema.prisma`, `apps/api/prisma/seed.ts`. Dòng bảng tính 14.0–15.0, 19.0.
 
-## 8. Task 5 — Cart
+## 6. Nhiệm vụ 3 — Trang Menu (frontend)
 
-**Priority:** P0 · **Sprint:** 2 · **Owner:** Nghĩa
-
-### User Story
-
-> As a customer, I want a cart that survives navigation, so that I can add several drinks and pay once.
-
-### Acceptance Criteria
-
-- [ ] A Zustand store holds cart items with `productId`, `name`, `size`, `toppings`, `qty`, `lineTotal`.
-- [ ] Adding the same product with the same size and toppings increments quantity instead of creating a duplicate line.
-- [ ] The cart page (`/cart`) lists items with quantity controls and a remove button; the total recomputes on every change.
-- [ ] The header badge reflects the total quantity, not the number of lines.
-- [ ] Cart state survives client-side navigation but not a full page reload (persistence is out of scope).
-- [ ] The cart total matches the backend total for the same cart; verified by the shared price fixture from Task 4.
-
-### Out of scope
-
-Server-side cart, cart merge across devices, saved carts, coupons (Task 10 adds discount *application*, not cart storage).
-
-### Evidence
-
-`apps/web/src/store/cart-store.ts`, `apps/web/src/app/cart/page.tsx`, `apps/web/src/features/cart/`. Wireframe: `docs/design/wireframes.md` (Giỏ hàng). Spreadsheet rows 23.0, 29.0.
-
-## 9. Task 6 — Create order API
-
-**Priority:** P0 · **Sprint:** 2 · **Owner:** H.Tài
+**Ưu tiên:** P0 · **Sprint:** 1 · **Người phụ trách:** H.Tài (dự phòng; chính sẽ được xác nhận tại Sprint Planning)
 
 ### User Story
 
-> As a customer, I want my cart to become an order on the server, so that it can be paid and later looked up.
+> Là một khách hàng, tôi muốn duyệt menu dưới dạng lưới card, để tôi có thể chọn một đồ uống nhanh chóng.
 
-### Acceptance Criteria
+### Tiêu chí chấp nhận
 
-- [ ] `POST /orders` accepts a cart payload, validates it with `class-validator`, and persists an `Order` with status `PENDING` plus its `OrderItem` rows.
-- [ ] The server recomputes `total` and each `lineTotal`; client-supplied prices are ignored. A tampered payload yields the server's price, not the client's.
-- [ ] The response includes the order `id` (human-readable order code per `docs/design/ui-decisions.md`) and `status`.
-- [ ] Invalid payloads return `400` with field-level messages; the error envelope matches `docs/architecture/api-contract.md`.
-- [ ] Unit tests cover: valid cart, empty cart, invalid size, missing product, price tampering, total calculation.
-- [ ] The order is not paid here; `PAID` is set by Task 8.
+- [ ] Route menu (`/`) render một lưới các component `ProductCard` từ `GET /products`.
+- [x] Mỗi card hiển thị ảnh, tên, và giá được định dạng VND.
+- [x] Trang xử lý ba trạng thái rõ ràng: **loading** (skeleton hoặc spinner), **empty** (thông điệp), **error** (khả năng thử lại).
+- [x] Click vào một card điều hướng đến route chi tiết sản phẩm.
+- [ ] Layout responsive ở chiều rộng 360 px và 1280 px.
+- [ ] Một header hiển thị huy hiệu giỏ hàng với số lượng mục (0 khi trống).
 
-### Out of scope
+### Ngoài phạm vi
 
-Stock reservation (Task 10), promotions (Task 10), order state transitions beyond `PENDING` (Task 10).
+Infinite scroll, lọc theo danh mục, tìm kiếm, yêu thích.
 
-### Evidence
+### Bằng chứng
 
-`apps/api/src/modules/orders/`, `apps/api/src/modules/orders/dto/create-order.dto.ts`. API contract: `docs/architecture/api-contract.md` §`POST /orders`. Spreadsheet rows 22.0, 25.0, 28.0.
+`apps/web/src/app/page.tsx`, `apps/web/src/features/menu/menu-page.tsx`, `apps/web/src/features/menu/ProductCard.tsx`. Wireframe: `docs/design/wireframes.md` (Menu). Dòng bảng tính 16.0, 18.0.
 
-## 10. Task 7 — Register / login (JWT)
+## 7. Nhiệm vụ 4 — Chi tiết sản phẩm và tùy chọn
 
-**Priority:** P0 · **Sprint:** 2 · **Owner:** H.Tài
-
-### User Story
-
-> As a returning customer, I want to register and log in, so that my order history is tied to me and my order is protected.
-
-### Acceptance Criteria
-
-- [ ] `POST /auth/register` creates a user with a bcrypt-hashed password and returns `201`; duplicate email returns `409`.
-- [ ] Registration stores the customer's name and returns it in the authenticated user profile.
-- [ ] `POST /auth/login` verifies the password and returns a JWT; wrong password returns `401` with a generic message (no user enumeration).
-- [ ] `JWT_SECRET` and `JWT_EXPIRES_IN` are read from env per `docs/config.md` §2.1; no hard-coded secret.
-- [ ] `JwtAuthGuard` protects `POST /orders`; an unauthenticated request returns `401`. The guard is applied to exactly the routes named in the API contract.
-- [ ] Frontend has `/auth/register` and `/auth/login` pages; the token is stored client-side and attached to `POST /orders`.
-- [ ] Unit tests cover: valid register, duplicate email, valid login, wrong password, malformed token.
-
-### Out of scope
-
-Refresh tokens, password reset, email verification, OAuth, role-based access (barista is out of MVP scope per PDF §3.2).
-
-### Evidence
-
-`apps/api/src/modules/auth/`, `apps/api/src/common/guards/jwt-auth.guard.ts`, `apps/web/src/features/auth/`, `apps/web/src/app/auth/`. API contract: `docs/architecture/api-contract.md` §`POST /auth/*`. Wireframe: `docs/design/wireframes.md` (auth screens — to be added alongside this task). Spreadsheet rows 24.0, 26.0, 27.0, 30.0, 31.0.
-
-## 11. Task 8 — Mock payment
-
-**Priority:** P0 · **Sprint:** 3 · **Owner:** H.Tài
+**Ưu tiên:** P0 · **Sprint:** 1 · **Người phụ trách:** H.Tài (dự phòng; chính sẽ được xác nhận tại Sprint Planning)
 
 ### User Story
 
-> As a customer, I want to pay with a wallet or card simulation and see the result immediately, so that I know whether my order succeeded.
+> Là một khách hàng, tôi muốn chọn kích cỡ và topping trên trang sản phẩm, để giá phản ánh những gì tôi đang đặt.
 
-### Acceptance Criteria
+### Tiêu chí chấp nhận
 
-- [ ] The checkout page (`/checkout`) shows the total, a Wallet/Card selector, and a confirm button (wireframe: `docs/design/wireframes.md` — Thanh toán).
-- [ ] `POST /payments` accepts an order id and a method, and transitions the order to `PAID` on success or `PAYMENT_FAILED` on failure.
-- [ ] `PAYMENT_MOCK_MODE` in `apps/api/.env` selects `success`, `failure`, or `random`; the mock lives in-process (no separate port, per `docs/config.md` §1.1 and ADR 0004).
-- [ ] On failure, the cart is **not** cleared and the order remains retrievable; the user can retry.
-- [ ] On success, the response includes the order code and status; the frontend navigates to the confirmation route.
-- [ ] Unit tests cover success and failure paths, including "retry after failure succeeds."
+- [ ] Route chi tiết sản phẩm (`/products/[id]`) hiển thị tên, ảnh, giá cơ sở, và bộ chọn kích cỡ S/M/L.
+- [ ] Chọn kích cỡ cập nhật giá hiển thị một cách xác định; quy tắc nằm trong `docs/design/ui-decisions.md` và được phản chiếu trong hàm giá backend.
+- [ ] Chọn topping là chọn nhiều; mỗi topping thêm một khoản cố định; tổng hiển thị cập nhật trên mỗi thay đổi.
+- [ ] "Thêm vào giỏ" bị vô hiệu cho đến khi một kích cỡ được chọn; nhãn nút bao gồm tổng hiện tại.
+- [ ] Tổng của frontend và `lineTotal` được tính bởi backend (Nhiệm vụ 6) khớp nhau cho cùng đầu vào. Điều này được xác minh bằng một fixture dùng chung, không phải bằng mắt.
 
-### Out of scope
+### Ngoài phạm vi
 
-Real gateway integration, partial payments, refunds, saved cards. Idempotency is Task 10, not here — this task may create a duplicate on double-submit, and Task 10's integration test proves the fix.
+Ghi chú theo mục, giảm giá theo số lượng, stock theo kích cỡ.
 
-### Evidence
+### Bằng chứng
 
-`apps/api/src/modules/payments/`, `apps/web/src/app/checkout/page.tsx`, `apps/web/src/features/checkout/`, ADR 0004. Spreadsheet rows 35.0–37.0, 41.0.
+`apps/web/src/app/products/[id]/page.tsx`, `apps/web/src/features/product/`, `docs/design/ui-decisions.md` (quy tắc giá). Wireframe: `docs/design/wireframes.md` (Chi tiết). Dòng bảng tính 13.0, 17.0.
 
-## 12. Task 9 — Confirmation, history, handover
+## 8. Nhiệm vụ 5 — Giỏ hàng
 
-**Priority:** P0 · **Sprint:** 3 · **Owner:** Nghĩa
-
-### User Story
-
-> As a customer, I want to see my order confirmation and my past orders, and the team wants the whole thing runnable from one command, so that the demo is reproducible.
-
-### Acceptance Criteria
-
-- **Confirmation**
-  - [ ] The confirmation route (`/orders/[id]/confirmation`) shows order code, status, and a "back to menu" action.
-  - [ ] The page handles "order not found" and "not your order" with a safe message.
-- **History**
-  - [ ] `GET /orders/me` returns the caller's orders, guarded by JWT, newest first.
-  - [ ] `/orders` (frontend) lists past orders with code, date, total, status; clicking one opens its confirmation/detail view.
-- **Handover**
-  - [ ] `docker-compose.yml` brings up `db`, `api`, `web` with one `docker compose up`; the stack is demo-ready without local Node installs.
-  - [ ] `README.md` has the one-command quickstart and links to `docs/setup.md` for the non-Docker path.
-  - [ ] The Definition of Done checklist (assignment PDF §10) is verified for all 10 tasks and recorded in the Retro note.
-  - [ ] An end-to-end demo script (select → cart → login → pay → confirm → history) runs green on a clean machine.
-
-### Out of scope
-
-Admin order management, refunds, notifications.
-
-### Evidence
-
-`apps/web/src/app/orders/`, `apps/api/src/modules/orders/` (`GET /orders/me`), `docker-compose.yml`, `README.md`. Spreadsheet rows 38.0–40.0, 42.0, 57.0, 59.0–61.0.
-
-## 13. Task 10 — Backend business rules
-
-**Priority:** P0 · **Sprint:** 3 · **Owner:** H.Tài
-
-This is the assignment's "Task 10 – nghiệp vụ backend" (PDF §9), worth 1 point but containing four distinct requirements, each with its own test.
+**Ưu tiên:** P0 · **Sprint:** 2 · **Người phụ trách:** Nghĩa
 
 ### User Story
 
-> As the business, I want the backend to enforce order lifecycle, idempotency, stock correctness, and loyalty, so that the system is correct under real conditions, not just on the happy path.
+> Là một khách hàng, tôi muốn một giỏ hàng tồn tại qua điều hướng, để tôi có thể thêm vài đồ uống và thanh toán một lần.
 
-### Acceptance Criteria (four sub-requirements)
+### Tiêu chí chấp nhận
 
-**10a — Order State Machine**
-- [ ] States: `PENDING → PAID → PREPARING → READY → COMPLETED`; exceptions `PAYMENT_FAILED`, `CANCELLED`. Exactly as PDF §9.1.
-- [ ] `assertTransition(from, to)` throws on any transition not in the diagram. `COMPLETED` and `CANCELLED` are terminal.
-- [ ] Applied in `OrderService` so that no code path can bypass it.
-- [ ] **Unit test (a):** invalid transitions are rejected; valid ones pass. This is one of the three explicitly graded tests (PDF §9).
+- [ ] Một Zustand store giữ các mục giỏ hàng với `productId`, `name`, `size`, `toppings`, `qty`, `lineTotal`.
+- [ ] Thêm cùng sản phẩm với cùng kích cỡ và topping tăng số lượng thay vì tạo dòng trùng lặp.
+- [ ] Trang giỏ hàng (`/cart`) liệt kê các mục với điều khiển số lượng và nút xóa; tổng tính lại trên mỗi thay đổi.
+- [ ] Huy hiệu header phản ánh tổng số lượng, không phải số dòng.
+- [ ] State giỏ hàng tồn tại qua điều hướng phía client nhưng không qua reload trang đầy đủ (lưu trữ ngoài phạm vi).
+- [ ] Tổng giỏ hàng khớp với tổng backend cho cùng giỏ hàng; được xác minh bằng fixture giá dùng chung từ Nhiệm vụ 4.
 
-**10b — Idempotent payment**
-- [ ] `POST /payments` honors an `Idempotency-Key` header; the same key twice creates one payment and returns the same result, not a second charge.
-- [ ] The key is stored with the payment record; a replay with a different body but the same key is rejected with a conflict.
-- [ ] **Integration test (b):** sending the same `Idempotency-Key` twice creates exactly one order/payment. One of the three graded tests.
+### Ngoài phạm vi
 
-**10c — Stock control under concurrency**
-- [ ] Order creation (or payment, per ADR) decrements stock inside a transaction with optimistic locking; `version` field on the stock-bearing row.
-- [ ] When stock is insufficient, the request fails with a specific error, not a generic `500`.
-- [ ] **Integration test (c):** concurrent orders for the same product do not exceed available stock. One of the three graded tests.
+Giỏ hàng phía server, gộp giỏ hàng giữa các thiết bị, giỏ hàng đã lưu, coupon (Nhiệm vụ 10 thêm *áp dụng* giảm giá, không phải lưu trữ giỏ hàng).
 
-**10d — Promotions and loyalty**
-- [ ] A valid promo code reduces the order total; an invalid or expired code returns a specific error.
-- [ ] After an order reaches `PAID`, the user's `loyaltyPoints` increase by the configured rule.
-- [ ] The frontend surfaces the discount and the earned points (wireframe addition noted in `docs/design/wireframes.md`).
-- [ ] Unit tests cover promo validity, discount math, and points accrual.
+### Bằng chứng
 
-### Out of scope
+`apps/web/src/store/cart-store.ts`, `apps/web/src/app/cart/page.tsx`, `apps/web/src/features/cart/`. Wireframe: `docs/design/wireframes.md` (Giỏ hàng). Dòng bảng tính 23.0, 29.0.
 
-Multi-currency, tiered loyalty, referral codes, promo stacking. The state machine does **not** model barista actions beyond `PREPARING`/`READY` transitions (those are triggered by API in the demo, not by a barista UI, which is out of MVP).
+## 9. Nhiệm vụ 6 — API Tạo đơn hàng
 
-### Evidence
+**Ưu tiên:** P0 · **Sprint:** 2 · **Người phụ trách:** H.Tài
 
-`apps/api/src/modules/orders/` (state machine, `assertTransition`), `apps/api/src/modules/payments/` (idempotency), `apps/api/src/modules/promotions/`, `apps/api/src/modules/loyalty/`, `apps/api/prisma/schema.prisma` (version, promo, points). ADR 0004 for the state machine and idempotency decisions. Spreadsheet rows 44.0–55.0.
+### User Story
 
-## 14. Dependencies between tasks
+> Là một khách hàng, tôi muốn giỏ hàng của mình trở thành một đơn hàng trên server, để nó có thể được thanh toán và sau đó tra cứu.
+
+### Tiêu chí chấp nhận
+
+- [ ] `POST /orders` nhận một payload giỏ hàng, validate nó với `class-validator`, và lưu một `Order` với trạng thái `PENDING` cùng các dòng `OrderItem` của nó.
+- [ ] Server tính lại `total` và từng `lineTotal`; giá do client cung cấp bị bỏ qua. Một payload bị giả mạo cho ra giá của server, không phải của client.
+- [ ] Phản hồi bao gồm `id` đơn hàng (mã đơn hàng dễ đọc theo `docs/design/ui-decisions.md`) và `status`.
+- [ ] Payload không hợp lệ trả về `400` với thông điệp cấp trường; phong bì lỗi khớp với `docs/architecture/api-contract.md`.
+- [ ] Unit test bao phủ: giỏ hàng hợp lệ, giỏ hàng trống, kích cỡ không hợp lệ, sản phẩm thiếu, giả mạo giá, tính tổng.
+- [ ] Đơn hàng không được thanh toán ở đây; `PAID` được đặt bởi Nhiệm vụ 8.
+
+### Ngoài phạm vi
+
+Đặt trước stock (Nhiệm vụ 10), khuyến mãi (Nhiệm vụ 10), chuyển trạng thái đơn hàng ngoài `PENDING` (Nhiệm vụ 10).
+
+### Bằng chứng
+
+`apps/api/src/modules/orders/`, `apps/api/src/modules/orders/dto/create-order.dto.ts`. Hợp đồng API: `docs/architecture/api-contract.md` §`POST /orders`. Dòng bảng tính 22.0, 25.0, 28.0.
+
+## 10. Nhiệm vụ 7 — Đăng ký / đăng nhập (JWT)
+
+**Ưu tiên:** P0 · **Sprint:** 2 · **Người phụ trách:** H.Tài
+
+### User Story
+
+> Là một khách hàng quay lại, tôi muốn đăng ký và đăng nhập, để lịch sử đơn hàng của tôi gắn với tôi và đơn hàng của tôi được bảo vệ.
+
+### Tiêu chí chấp nhận
+
+- [ ] `POST /auth/register` tạo một người dùng với mật khẩu được hash bcrypt và trả về `201`; email trùng lặp trả về `409`.
+- [ ] Đăng ký lưu tên khách hàng và trả về nó trong hồ sơ người dùng đã xác thực.
+- [ ] `POST /auth/login` xác minh mật khẩu và trả về một JWT; mật khẩu sai trả về `401` với thông điệp chung (không liệt kê người dùng).
+- [ ] `JWT_SECRET` và `JWT_EXPIRES_IN` được đọc từ env theo `docs/config.md` §2.1; không có bí mật hard-code.
+- [ ] `JwtAuthGuard` bảo vệ `POST /orders`; một yêu cầu chưa xác thực trả về `401`. Guard được áp dụng đúng cho các route được nêu trong hợp đồng API.
+- [ ] Frontend có các trang `/auth/register` và `/auth/login`; token được lưu phía client và đính kèm vào `POST /orders`.
+- [ ] Unit test bao phủ: đăng ký hợp lệ, email trùng lặp, đăng nhập hợp lệ, mật khẩu sai, token sai định dạng.
+
+### Ngoài phạm vi
+
+Refresh token, đặt lại mật khẩu, xác minh email, OAuth, truy cập theo vai trò (barista ngoài phạm vi MVP theo PDF §3.2).
+
+### Bằng chứng
+
+`apps/api/src/modules/auth/`, `apps/api/src/common/guards/jwt-auth.guard.ts`, `apps/web/src/features/auth/`, `apps/web/src/app/auth/`. Hợp đồng API: `docs/architecture/api-contract.md` §`POST /auth/*`. Wireframe: `docs/design/wireframes.md` (màn hình xác thực — sẽ được thêm cùng với nhiệm vụ này). Dòng bảng tính 24.0, 26.0, 27.0, 30.0, 31.0.
+
+## 11. Nhiệm vụ 8 — Thanh toán giả lập
+
+**Ưu tiên:** P0 · **Sprint:** 3 · **Người phụ trách:** H.Tài
+
+### User Story
+
+> Là một khách hàng, tôi muốn thanh toán bằng mô phỏng ví hoặc thẻ và thấy kết quả ngay lập tức, để tôi biết đơn hàng của mình có thành công không.
+
+### Tiêu chí chấp nhận
+
+- [ ] Trang thanh toán (`/checkout`) hiển thị tổng, bộ chọn Wallet/Card, và nút xác nhận (wireframe: `docs/design/wireframes.md` — Thanh toán).
+- [ ] `POST /payments` nhận id đơn hàng và một phương thức, và chuyển đơn hàng sang `PAID` khi thành công hoặc `PAYMENT_FAILED` khi thất bại.
+- [ ] `PAYMENT_MOCK_MODE` trong `apps/api/.env` chọn `success`, `failure`, hoặc `random`; mock sống trong tiến trình (không cổng riêng, theo `docs/config.md` §1.1 và ADR 0004).
+- [ ] Khi thất bại, giỏ hàng **không** bị xóa và đơn hàng vẫn có thể truy xuất; người dùng có thể thử lại.
+- [ ] Khi thành công, phản hồi bao gồm mã đơn hàng và trạng thái; frontend điều hướng đến route xác nhận.
+- [ ] Unit test bao phủ đường thành công và thất bại, bao gồm "thử lại sau thất bại thành công."
+
+### Ngoài phạm vi
+
+Tích hợp cổng thật, thanh toán một phần, hoàn tiền, thẻ đã lưu. Idempotency là Nhiệm vụ 10, không phải ở đây — nhiệm vụ này có thể tạo trùng lặp khi submit hai lần, và integration test của Nhiệm vụ 10 chứng minh cách sửa.
+
+### Bằng chứng
+
+`apps/api/src/modules/payments/`, `apps/web/src/app/checkout/page.tsx`, `apps/web/src/features/checkout/`, ADR 0004. Dòng bảng tính 35.0–37.0, 41.0.
+
+## 12. Nhiệm vụ 9 — Xác nhận, lịch sử, bàn giao
+
+**Ưu tiên:** P0 · **Sprint:** 3 · **Người phụ trách:** Nghĩa
+
+### User Story
+
+> Là một khách hàng, tôi muốn thấy xác nhận đơn hàng và các đơn hàng trước đây của mình, và nhóm muốn toàn bộ thứ chạy được từ một lệnh, để demo có thể tái lập.
+
+### Tiêu chí chấp nhận
+
+- **Xác nhận**
+  - [ ] Route xác nhận (`/orders/[id]/confirmation`) hiển thị mã đơn hàng, trạng thái, và hành động "quay lại menu".
+  - [ ] Trang xử lý "không tìm thấy đơn hàng" và "không phải đơn hàng của bạn" với thông điệp an toàn.
+- **Lịch sử**
+  - [ ] `GET /orders/me` trả về các đơn hàng của người gọi, được bảo vệ bởi JWT, mới nhất trước.
+  - [ ] `/orders` (frontend) liệt kê các đơn hàng trước đây với mã, ngày, tổng, trạng thái; click một cái mở xác nhận/chi tiết của nó.
+- **Bàn giao**
+  - [ ] `docker-compose.yml` khởi động `db`, `api`, `web` với một `docker compose up`; stack sẵn sàng demo mà không cần cài Node cục bộ.
+  - [ ] `README.md` có quickstart một lệnh và liên kết đến `docs/setup.md` cho đường không dùng Docker.
+  - [ ] Checklist Định nghĩa Hoàn thành (PDF bài tập §10) được xác minh cho cả 10 nhiệm vụ và được ghi trong biên bản Retro.
+  - [ ] Một script demo đầu-cuối (chọn → giỏ hàng → đăng nhập → thanh toán → xác nhận → lịch sử) chạy xanh trên máy sạch.
+
+### Ngoài phạm vi
+
+Quản lý đơn hàng admin, hoàn tiền, thông báo.
+
+### Bằng chứng
+
+`apps/web/src/app/orders/`, `apps/api/src/modules/orders/` (`GET /orders/me`), `docker-compose.yml`, `README.md`. Dòng bảng tính 38.0–40.0, 42.0, 57.0, 59.0–61.0.
+
+## 13. Nhiệm vụ 10 — Quy tắc nghiệp vụ backend
+
+**Ưu tiên:** P0 · **Sprint:** 3 · **Người phụ trách:** H.Tài
+
+Đây là "Task 10 – nghiệp vụ backend" của bài tập (PDF §9), trị giá 1 điểm nhưng chứa bốn yêu cầu riêng biệt, mỗi yêu cầu có test riêng.
+
+### User Story
+
+> Là doanh nghiệp, tôi muốn backend thực thi vòng đời đơn hàng, idempotency, tính đúng đắn của stock, và khách hàng trung thành, để hệ thống đúng trong điều kiện thực, không chỉ trên happy path.
+
+### Tiêu chí chấp nhận (bốn yêu cầu con)
+
+**10a — State Machine đơn hàng**
+- [ ] Trạng thái: `PENDING → PAID → PREPARING → READY → COMPLETED`; ngoại lệ `PAYMENT_FAILED`, `CANCELLED`. Đúng như PDF §9.1.
+- [ ] `assertTransition(from, to)` ném lỗi cho bất kỳ chuyển đổi nào không có trong sơ đồ. `COMPLETED` và `CANCELLED` là trạng thái kết thúc.
+- [ ] Được áp dụng trong `OrderService` để không đường code nào có thể vượt qua nó.
+- [ ] **Unit test (a):** các chuyển đổi không hợp lệ bị từ chối; các chuyển đổi hợp lệ pass. Đây là một trong ba test được chấm rõ ràng (PDF §9).
+
+**10b — Thanh toán idempotent**
+- [ ] `POST /payments` tôn trọng header `Idempotency-Key`; cùng key hai lần tạo một thanh toán và trả về cùng kết quả, không phải khoản tính thứ hai.
+- [ ] Key được lưu cùng bản ghi thanh toán; một lần phát lại với body khác nhưng cùng key bị từ chối với xung đột.
+- [ ] **Integration test (b):** gửi cùng `Idempotency-Key` hai lần tạo đúng một đơn hàng/thanh toán. Một trong ba test được chấm.
+
+**10c — Kiểm soát stock dưới đồng thời**
+- [ ] Tạo đơn hàng (hoặc thanh toán, theo ADR) giảm stock trong một transaction với khóa lạc quan; trường `version` trên dòng mang stock.
+- [ ] Khi stock không đủ, yêu cầu thất bại với một lỗi cụ thể, không phải `500` chung chung.
+- [ ] **Integration test (c):** các đơn hàng đồng thời cho cùng sản phẩm không vượt quá stock có sẵn. Một trong ba test được chấm.
+
+**10d — Khuyến mãi và khách hàng trung thành**
+- [ ] Một mã khuyến mãi hợp lệ giảm tổng đơn hàng; một mã không hợp lệ hoặc hết hạn trả về lỗi cụ thể.
+- [ ] Sau khi một đơn hàng đạt `PAID`, `loyaltyPoints` của người dùng tăng theo quy tắc được cấu hình.
+- [ ] Frontend hiển thị giảm giá và điểm kiếm được (bổ sung wireframe được ghi trong `docs/design/wireframes.md`).
+- [ ] Unit test bao phủ tính hợp lệ của promo, toán giảm giá, và tích lũy điểm.
+
+### Ngoài phạm vi
+
+Đa tiền tệ, khách hàng trung thành theo bậc, mã giới thiệu, xếp chồng promo. State machine **không** mô hình hóa hành động barista ngoài các chuyển đổi `PREPARING`/`READY` (những chuyển đổi đó được kích hoạt bởi API trong demo, không phải bởi UI barista, vốn ngoài MVP).
+
+### Bằng chứng
+
+`apps/api/src/modules/orders/` (state machine, `assertTransition`), `apps/api/src/modules/payments/` (idempotency), `apps/api/src/modules/promotions/`, `apps/api/src/modules/loyalty/`, `apps/api/prisma/schema.prisma` (version, promo, points). ADR 0004 cho state machine và quyết định idempotency. Dòng bảng tính 44.0–55.0.
+
+## 14. Phụ thuộc giữa các nhiệm vụ
 
 ```text
 Task 1 ──► Task 2 ──► Task 3 ──► Task 5 ──► Task 6 ──► Task 8 ──► Task 9
@@ -355,67 +355,67 @@ Task 7 ────────────────────────�
 Task 6, 8 ──► Task 10 (state machine, idempotency, stock)
 ```
 
-- Task 4 and Task 2 are independent and can run in parallel.
-- Task 7 must land before Task 6's guard can be enforced end-to-end; Task 6 can merge before Task 7 with the guard stubbed, but the Task 6 `● Xong` note must say so.
-- Task 10 depends on Task 6 and Task 8 being merged; its tests exercise both.
-- Task 9's handover portion depends on Tasks 1–8.
+- Task 4 và Task 2 độc lập và có thể chạy song song.
+- Task 7 phải hoàn thành trước khi guard của Task 6 có thể được thực thi đầu-cuối; Task 6 có thể merge trước Task 7 với guard được stub, nhưng ghi chú `● Xong` của Task 6 phải nói rõ điều đó.
+- Task 10 phụ thuộc vào Task 6 và Task 8 đã được merge; các test của nó thực thi cả hai.
+- Phần bàn giao của Task 9 phụ thuộc vào Task 1–8.
 
-This graph matches the "Làm sau STT X" column in the spreadsheet; if they disagree, the spreadsheet is authoritative for schedule and this doc is updated to match.
+Đồ thị này khớp với cột "Làm sau STT X" trong bảng tính; nếu chúng không khớp, bảng tính có thẩm quyền về lịch trình và tài liệu này được cập nhật để khớp.
 
-## 15. Spreadsheet cross-reference
+## 15. Tham chiếu chéo bảng tính
 
-| Backlog task | PDF task | Spreadsheet STT (rows)           | Phase |
-| ------------ | -------- | -------------------------------- | ----- |
-| Task 1       | 1        | 10.0–12.0                        | 2     |
-| Task 2       | 2        | 14.0–15.0, 19.0                  | 2     |
-| Task 3       | 3        | 16.0, 18.0                       | 2     |
-| Task 4       | 4        | 13.0, 17.0                       | 2     |
-| Task 5       | 5        | 23.0, 29.0                       | 3     |
-| Task 6       | 6        | 22.0, 25.0, 28.0                 | 3     |
-| Task 7       | 7        | 24.0, 26.0, 27.0, 30.0, 31.0     | 3     |
-| Task 8       | 8        | 35.0–37.0, 41.0                  | 4     |
-| Task 9       | 9        | 38.0–40.0, 42.0, 57.0, 59.0–61.0 | 4, 6  |
-| Task 10      | 10       | 44.0–55.0                        | 5     |
+| Nhiệm vụ backlog | Nhiệm vụ PDF | STT bảng tính (dòng)             | Giai đoạn |
+| ---------------- | ------------ | -------------------------------- | --------- |
+| Task 1           | 1            | 10.0–12.0                        | 2         |
+| Task 2           | 2            | 14.0–15.0, 19.0                  | 2         |
+| Task 3           | 3            | 16.0, 18.0                       | 2         |
+| Task 4           | 4            | 13.0, 17.0                       | 2         |
+| Task 5           | 5            | 23.0, 29.0                       | 3         |
+| Task 6           | 6            | 22.0, 25.0, 28.0                 | 3         |
+| Task 7           | 7            | 24.0, 26.0, 27.0, 30.0, 31.0     | 3         |
+| Task 8           | 8            | 35.0–37.0, 41.0                  | 4         |
+| Task 9           | 9            | 38.0–40.0, 42.0, 57.0, 59.0–61.0 | 4, 6      |
+| Task 10          | 10           | 44.0–55.0                        | 5         |
 
-Rows **1.0–9.0** (Phase 1) are not backlog tasks; they are analysis and setup work that precedes the product backlog items. They are tracked in the spreadsheet and evidenced in `docs/requirements/`, `docs/architecture/`, and `docs/design/`, but they do not score against the 10-task rubric.
+Các dòng **1.0–9.0** (Giai đoạn 1) không phải nhiệm vụ backlog; chúng là công việc phân tích và cài đặt trước các mục backlog sản phẩm. Chúng được theo dõi trong bảng tính và có bằng chứng trong `docs/requirements/`, `docs/architecture/`, và `docs/design/`, nhưng chúng không được chấm theo rubric 10 nhiệm vụ.
 
-## 16. Out of scope (explicit)
+## 16. Ngoài phạm vi (rõ ràng)
 
-Recorded so the team can say "no" without debate:
+Được ghi lại để nhóm có thể nói "không" mà không tranh luận:
 
-- Barista / kitchen display, order acceptance UI (PDF §3.2: out of MVP).
-- Real payment gateway (Stripe/VNPay/MoMo); mock only.
-- Admin product CRUD.
-- Notifications (email/SMS/push).
-- Multi-language UI.
-- Offline mode / PWA.
-- Analytics, dashboards.
-- Loyalty redemption (accrual is in Task 10; spending points is not).
+- Barista / kitchen display, UI chấp nhận đơn hàng (PDF §3.2: ngoài MVP).
+- Cổng thanh toán thật (Stripe/VNPay/MoMo); chỉ mock.
+- CRUD sản phẩm admin.
+- Thông báo (email/SMS/push).
+- UI đa ngôn ngữ.
+- Chế độ offline / PWA.
+- Phân tích, dashboard.
+- Đổi điểm trung thành (tích lũy có trong Nhiệm vụ 10; tiêu điểm thì không).
 
-## 17. Open items
+## 17. Mục còn mở
 
-| Item                                                                                                            | Owner | Closes when                           |
-| --------------------------------------------------------------------------------------------------------------- | ----- | ------------------------------------- |
-| Confirm primary owners for Task 3 and Task 4                                                                    | H.Tài | Sprint 1 Planning                     |
-| Confirm role assignment (PO = Nghĩa, SM = H.Tài) is reflected in `working-agreement.md` §1 and the kickoff note | H.Tài | Task 3.0 `● Xong` (closed 2026-10-22) |
-| Add auth screens to `docs/design/wireframes.md`                                                                 | Luân  | Task 7.0 `● Xong`                     |
-| Ratify state-machine and idempotency decisions in ADR 0004                                                      | H.Tài | ADR 0004 accepted                     |
-| Add promo/points row to the wireframe index                                                                     | -     | Task 49.0 / 53.0 `● Xong`             |
+| Mục                                                                                                                     | Người phụ trách | Đóng khi                                   |
+| ----------------------------------------------------------------------------------------------------------------------- | --------------- | ------------------------------------------ |
+| Xác nhận người phụ trách chính cho Task 3 và Task 4                                                                     | H.Tài           | Sprint 1 Planning                          |
+| Xác nhận phân công vai trò (PO = Nghĩa, SM = H.Tài) được phản chiếu trong `working-agreement.md` §1 và biên bản kickoff | H.Tài           | Nhiệm vụ 3.0 `● Xong` (đã đóng 2026-10-22) |
+| Thêm màn hình xác thực vào `docs/design/wireframes.md`                                                                  | Luân            | Nhiệm vụ 7.0 `● Xong`                      |
+| Phê chuẩn quyết định state-machine và idempotency trong ADR 0004                                                        | H.Tài           | ADR 0004 được chấp nhận                    |
+| Thêm dòng promo/points vào chỉ mục wireframe                                                                            | -               | Nhiệm vụ 49.0 / 53.0 `● Xong`              |
 
 ---
 
-## Notes on choices I made (so you can accept or override)
+## Ghi chú về các lựa chọn tôi đã đưa ra (để bạn chấp nhận hoặc ghi đè)
 
-1. **Two numbering systems, reconciled by a table.** The PDF numbers tasks 1–10; the spreadsheet numbers rows `1.0`–`64.0`. They look similar enough that a reader will conflate them (e.g. "Task 10" the PDF task vs. `10.0` the scaffold row). I kept the PDF numbering as the section headers (§4–§13) and used "spreadsheet row" everywhere else, with §15 as the single mapping. If you rename sections to use the spreadsheet numbering, the doc stops matching the assignment rubric — which is the thing the grader checks.
+1. **Hai hệ thống đánh số, được dung hòa bằng một bảng.** PDF đánh số nhiệm vụ 1–10; bảng tính đánh số dòng `1.0`–`64.0`. Chúng trông đủ giống để người đọc nhầm lẫn (ví dụ "Task 10" nhiệm vụ PDF vs. `10.0` dòng scaffold). Tôi giữ cách đánh số PDF làm tiêu đề phần (§4–§13) và dùng "dòng bảng tính" ở mọi nơi khác, với §15 là ánh xạ duy nhất. Nếu bạn đổi tên phần để dùng cách đánh số bảng tính, tài liệu ngừng khớp với rubric bài tập — đó là thứ giảng viên kiểm tra.
 
-2. **Task 10 is one section with four lettered sub-requirements (10a–10d), not four tasks.** It's worth 1 point in the rubric, but it has four distinct acceptance-criteria blocks and three explicitly graded tests. Splitting it into four backlog items would misrepresent the scoring; flattening it into one bullet list would hide that each sub-requirement has its own test. The lettered subsections are the compromise, and 10a/10b/10c are labeled as "one of the three graded tests" so nobody forgets which tests the grader looks for.
+2. **Task 10 là một phần với bốn yêu cầu con có chữ cái (10a–10d), không phải bốn nhiệm vụ.** Nó trị giá 1 điểm trong rubric, nhưng có bốn khối tiêu chí chấp nhận riêng biệt và ba test được chấm rõ ràng. Tách nó thành bốn mục backlog sẽ xuyên tạc cách chấm điểm; làm phẳng nó thành một danh sách bullet sẽ che giấu rằng mỗi yêu cầu con có test riêng. Các tiểu mục có chữ cái là thỏa hiệp, và 10a/10b/10c được gắn nhãn "một trong ba test được chấm" để không ai quên giảng viên tìm test nào.
 
-3. **I made the price-agreement between Task 4 and Task 6 an explicit acceptance criterion** ("the frontend total and the backend-computed `lineTotal` agree ... verified by a shared fixture"). This is the single most likely integration defect in this MVP — the frontend computes a total, the backend recomputes it, and they drift. Making it a criterion with a fixture as the proof mechanism is stronger than "they should match."
+3. **Tôi biến sự đồng ý về giá giữa Task 4 và Task 6 thành một tiêu chí chấp nhận rõ ràng** ("tổng của frontend và `lineTotal` được tính bởi backend khớp nhau ... được xác minh bằng một fixture dùng chung"). Đây là lỗi tích hợp có khả năng xảy ra nhất trong MVP này — frontend tính một tổng, backend tính lại, và chúng trôi dạt. Biến nó thành một tiêu chí với fixture là cơ chế chứng minh mạnh hơn "chúng nên khớp nhau."
 
-4. **Task 8 explicitly says idempotency is *not* here.** It's tempting to fold idempotency into the payment task, but the assignment puts it in Task 10 and grades it with a specific test (PDF §9). Task 8's criteria say the duplicate-on-double-submit is a known gap that Task 10 fixes — this makes the demo honest and gives Task 10's test something to prove.
+4. **Task 8 nói rõ idempotency *không* ở đây.** Thật hấp dẫn khi gộp idempotency vào nhiệm vụ thanh toán, nhưng bài tập đặt nó trong Task 10 và chấm nó bằng một test cụ thể (PDF §9). Tiêu chí của Task 8 nói rằng trùng lặp khi submit hai lần là một lỗ hổng đã biết mà Task 10 sửa — điều này làm cho demo trung thực và cho test của Task 10 một thứ để chứng minh.
 
-5. **§16 (Out of scope) is the section that prevents scope creep in Sprint Planning.** The PDF's stakeholder section (§3.2) says barista functions are out of MVP, but nothing in the team's docs said it until now. Listing the "no"s explicitly means a Sprint Planning conversation can point at it instead of relitigating.
+5. **§16 (Ngoài phạm vi) là phần ngăn scope creep trong Sprint Planning.** Phần bên liên quan của PDF (§3.2) nói chức năng barista ngoài MVP, nhưng không có gì trong tài liệu nhóm nói điều đó cho đến bây giờ. Liệt kê các "không" rõ ràng có nghĩa là một cuộc trò chuyện Sprint Planning có thể trỏ đến nó thay vì tranh luận lại.
 
-6. **§14's dependency graph and §15's cross-reference table are the two things that make this doc useful during Sprints, not just at Task 2.0 close.** The graph is how you decide what can run in parallel; the table is how you find the spreadsheet rows when you mark something `● Xong`. Without both, this doc is a one-time artifact.
+6. **Đồ thị phụ thuộc của §14 và bảng tham chiếu chéo của §15 là hai thứ làm cho tài liệu này hữu ích trong các Sprint, không chỉ lúc đóng Task 2.0.** Đồ thị là cách bạn quyết định cái gì có thể chạy song song; bảng là cách bạn tìm các dòng bảng tính khi bạn đánh dấu một cái gì đó `● Xong`. Không có cả hai, tài liệu này là một sản phẩm một lần.
 
-7. **One forward reference to watch:** §17 says "add auth screens to `docs/design/wireframes.md`" — that doc (Task 5.0) is next in Phase 1 order, and the PDF's 5 wireframes don't include auth screens. Either the wireframes doc adds a 6th/7th screen for login/register, or Task 7's frontend acceptance criteria are weakened. I put it in the open items rather than silently expanding the wireframe scope — your call at Task 5.0 time.
+7. **Một tham chiếu chuyển tiếp cần chú ý:** §17 nói "thêm màn hình xác thực vào `docs/design/wireframes.md`" — tài liệu đó (Task 5.0) là tiếp theo trong thứ tự Giai đoạn 1, và 5 wireframe của PDF không bao gồm màn hình xác thực. Hoặc tài liệu wireframe thêm màn hình thứ 6/7 cho login/register, hoặc tiêu chí chấp nhận frontend của Task 7 bị yếu đi. Tôi đặt nó trong mục còn mở thay vì âm thầm mở rộng phạm vi wireframe — quyết định của bạn vào lúc Task 5.0.

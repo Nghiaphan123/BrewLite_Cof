@@ -1,0 +1,37 @@
+@startuml admin-update-order-status-sequence-diagram
+title BrewLite – Admin cập nhật trạng thái đơn
+skinparam shadowing false
+skinparam backgroundColor #FFFFFF
+skinparam sequenceMessageAlign left
+autonumber
+
+actor "Quản trị viên" as QT
+participant "Web (Next.js)" as UI
+participant "API (NestJS)" as API
+database "PostgreSQL" as DB
+
+QT -> UI: Mở /admin, tab Đơn hàng
+UI -> API: GET /admin/orders
+API -> API: JwtAuthGuard + AdminGuard (role = ADMIN)
+alt không phải admin
+  API --> UI: 403 FORBIDDEN
+else admin
+  API --> UI: 200 danh sách đơn
+  UI --> QT: Mỗi đơn chỉ hiện các trạng thái kế tiếp hợp lệ\n(nextManualStatuses)
+  QT -> UI: Chọn trạng thái mới (vd PAID → PREPARING)
+  UI -> API: PATCH /admin/orders/:id/status {status}
+  API -> DB: BEGIN transaction; đọc order
+  API -> API: assertManualTransition(from, to):\nchặn PENDING / PAID / PAYMENT_FAILED bằng tay
+  alt chuyển trạng thái sai
+    API --> UI: 409 INVALID_STATE_TRANSITION
+    UI --> QT: "Không thể thực hiện thao tác với\ntrạng thái hiện tại của đơn hàng."
+  else PAID → CANCELLED
+    API -> DB: Trả lại tồn kho món + topping,\ntrừ lại điểm loyalty; status = CANCELLED
+    API --> UI: 200 {id, code, status}
+  else hợp lệ (PAID → PREPARING → READY → COMPLETED)
+    API -> DB: UPDATE orders SET status; COMMIT
+    API --> UI: 200 {id, code, status, updatedAt}
+    UI --> QT: Cập nhật dòng đơn trong bảng
+  end
+end
+@enduml

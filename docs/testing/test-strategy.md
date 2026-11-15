@@ -100,7 +100,7 @@ This is the testing slice of `traceability-matrix.md`. Every graded test has two
 | **Graded (a)** state machine    | `assertTransition`             | service-level rejection                    | —                         | `order-state-machine`     |
 | **Graded (b)** idempotency      | payment service replay         | **integration replay (primary proof)**     | —                         | `payment-idempotency`     |
 | **Graded (c)** concurrent stock | —                              | **concurrent integration (primary proof)** | —                         | `orders-concurrent-stock` |
-| NFR < 500ms                     | —                              | —                                          | —                         | Phase 2+ `tests/nfr/`     |
+| NFR < 500ms                     | —                              | timing script (manual run), see [`nfr-response-time.md`](nfr-response-time.md) | —                         | —                         |
 
 **Rule:** for the three graded tests, the **integration** level is the primary proof (the grader runs the API, not the unit test). The unit test is a faster, narrower guard. Both must pass. If they disagree, the integration test wins and the unit test is fixed.
 
@@ -176,7 +176,7 @@ Test names describe behavior, not implementation: `rejects COMPLETED -> PAID`, n
 | Limitation                                            | Risk                                                                                              | Mitigation                                                               |
 | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
 | No e2e in Phase 1                                     | The demo script is manual; a regression between Sprint Review and handover isn't caught by a test | Run the demo script at every Sprint end; e2e in Phase 2+                 |
-| No load/performance tests                             | NFR "< 500ms" is unverified until Phase 2+                                                        | Manual curl timing in Task 2 evidence; `tests/nfr/` in Phase 2+          |
+| No load/performance tests                             | NFR "< 500ms" is measured for one user only, not under concurrent load                            | `apps/api/scripts/measure-response-time.mjs`, results in [`nfr-response-time.md`](nfr-response-time.md) |
 | No automated accessibility tests                      | WCAG AA is manual (`ui-decisions.md` §7)                                                          | Manual keyboard pass in demo script step 2–7                             |
 | Integration tests need Docker running                 | A teammate without Docker can't run the full suite                                                | Unit + component tests run without Docker; document in `setup.md` §9     |
 | Concurrency test is slow and flaky-prone              | A flaky graded test is worse than no test                                                         | Retry once on failure in CI; if it flakes twice, investigate, don't skip |

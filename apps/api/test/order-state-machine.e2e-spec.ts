@@ -138,6 +138,22 @@ describe('Order state machine (graded test a)', () => {
     expect(after?.status).toBe('COMPLETED');
   });
 
+  it('a malformed order id answers 404 ORDER_NOT_FOUND, not 500', async () => {
+    const admin = await request(app.getHttpServer())
+      .patch('/api/v1/admin/orders/not-a-uuid/status')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ status: 'PREPARING' });
+    const internal = await request(app.getHttpServer())
+      .post('/api/v1/orders/not-a-uuid/transition')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ next: 'PREPARING' });
+
+    for (const res of [admin, internal]) {
+      expect(res.status).toBe(404);
+      expect(res.body.code).toBe('ORDER_NOT_FOUND');
+    }
+  });
+
   it('PAID -> CANCELLED gives back the stock and the loyalty points (PDF §9.1 "hủy")', async () => {
     const product = await seedProduct(prisma, { stock: 5 });
     const order = await seedOrder(prisma, customer.id, product.id, { qty: 2, total: 70000 });
