@@ -1,16 +1,16 @@
-# Task 8 — Kế hoạch 3 Sprint + Sprint Backlog + Burndown chart mẫu
+# Task 8 — Kế hoạch 3 Sprint + Sprint Backlog + Burndown chart
 
 **Dự án BrewLite — Sprint 0**
 
 > **Liên kết tài liệu liên quan trong kho lưu trữ (`docs/`):**
-> - **Bản vẽ Wireframe 5 màn hình (HTML tương tác — Mục 7 PDF):** [../design/wireframe-5.html](../design/wireframe-5.html)
-> - **Đặc tả giao diện Wireframe (Markdown):** [../design/wireframe.md](../design/wireframe.md)
+> - **Bản vẽ Wireframe 5 màn hình (HTML tương tác — Mục 7 PDF):** [../design/Wireframe-5.html](../design/Wireframe-5.html)
+> - **Đặc tả giao diện Wireframe (Markdown):** [../design/wireframes.md](../design/wireframes.md)
 
 ---
 
 ## 1. Mục đích
 
-Tài liệu này chia 10 task của Product Backlog (Mục 2.3 và Mục 8 trong đề bài `BrewLite-CongNghePhanMem.pdf`) thành 3 Sprint, lập Sprint Backlog chi tiết cho từng Sprint, và đưa ra một Burndown chart mẫu (Mục 2.4 trong đề bài) để nhóm theo dõi tiến độ hằng ngày.
+Tài liệu này chia 10 task của Product Backlog (Mục 2.3 và Mục 8 trong đề bài `BrewLite-CongNghePhanMem.pdf`) thành 3 Sprint, lập Sprint Backlog chi tiết cho từng Sprint, và Burndown chart (Mục 2.4 trong đề bài) để nhóm theo dõi tiến độ hằng ngày. Ban đầu mục 4 là biểu đồ mẫu; từ ngày 10/11/2026 mục 4 là số liệu thực tế.
 
 ---
 
@@ -35,14 +35,14 @@ Mỗi Sprint dự kiến kéo dài 1–2 tuần, kết thúc bằng buổi **Spr
 | :--------- | :---------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------- | :----------: | :-------: | :--------- |
 | **Task 1** | Khởi tạo dự án và cấu trúc    | Tạo monorepo/2 thư mục frontend (Next.js) + backend (NestJS), chạy được "Hello", có `README`, Git, `.env.example`.                            |      3       |     —     | Chưa làm   |
 | **Task 2** | API danh sách sản phẩm        | NestJS `GET /products` trả về JSON menu (`id`, `name`, `price`, `imageUrl`) từ dữ liệu mẫu/CSDL.                                              |      5       |     —     | Chưa làm   |
-| **Task 3** | Trang Menu (Frontend)         | Next.js gọi `/products`, render lưới sản phẩm, có trạng thái `loading` / `empty state` ([Màn hình 1](../design/wireframe-5.html)).            |      5       |     —     | Chưa làm   |
-| **Task 4** | Chi tiết và tùy chọn sản phẩm | Màn hình chi tiết: chọn size (`S`/`M`/`L`) và topping (`Trân châu`/`Kem`); tính giá theo tùy chọn ([Màn hình 2](../design/wireframe-5.html)). |      5       |     —     | Chưa làm   |
+| **Task 3** | Trang Menu (Frontend)         | Next.js gọi `/products`, render lưới sản phẩm, có trạng thái `loading` / `empty state` ([Màn hình 1](../design/Wireframe-5.html)).            |      5       |     —     | Chưa làm   |
+| **Task 4** | Chi tiết và tùy chọn sản phẩm | Màn hình chi tiết: chọn size (`S`/`M`/`L`) và topping (`Trân châu`/`Kem`); tính giá theo tùy chọn ([Màn hình 2](../design/Wireframe-5.html)). |      5       |     —     | Chưa làm   |
 
 ### Sprint 2 — Giỏ hàng & đặt đơn & đăng nhập (18 Story Points)
 
 | Task       | Tên Task (Story)          | Yêu cầu / Tiêu chí chấp nhận chính (Theo PDF)                                                                                     | Story Points | Người làm | Trạng thái |
 | :--------- | :------------------------ | :-------------------------------------------------------------------------------------------------------------------------------- | :----------: | :-------: | :--------- |
-| **Task 5** | Giỏ hàng (Cart)           | Thêm/sửa số lượng/xóa; lưu state (Zustand/Context); tự tính tổng tiền; badge số lượng ([Màn hình 3](../design/wireframe-5.html)). |      5       |     —     | Chưa làm   |
+| **Task 5** | Giỏ hàng (Cart)           | Thêm/sửa số lượng/xóa; lưu state (Zustand/Context); tự tính tổng tiền; badge số lượng ([Màn hình 3](../design/Wireframe-5.html)). |      5       |     —     | Chưa làm   |
 | **Task 6** | API tạo đơn hàng          | NestJS `POST /orders` nhận giỏ hàng, validate (`class-validator`), lưu đơn trạng thái `PENDING`, trả mã đơn.                      |      5       |     —     | Chưa làm   |
 | **Task 7** | Đăng ký / Đăng nhập (JWT) | `POST /auth/register`, `/auth/login`: băm mật khẩu (`bcrypt`); phát JWT; guard bảo vệ route đặt đơn.                              |      8       |     —     | Chưa làm   |
 
@@ -50,8 +50,8 @@ Mỗi Sprint dự kiến kéo dài 1–2 tuần, kết thúc bằng buổi **Spr
 
 | Task        | Tên Task (Story)                 | Yêu cầu / Tiêu chí chấp nhận chính (Theo PDF)                                                                                                                                                                                                                                        | Story Points | Người làm | Trạng thái |
 | :---------- | :------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------: | :-------: | :--------- |
-| **Task 8**  | Thanh toán không tiền mặt        | Tích hợp mock payment: chọn Ví/Thẻ, gọi `POST /payments`; đơn chuyển `PAID` khi thành công, `PAYMENT_FAILED` khi lỗi ([Màn hình 4](../design/wireframe-5.html)).                                                                                                                     |      5       |     —     | Chưa làm   |
-| **Task 9**  | Xác nhận, lịch sử đơn & bàn giao | Màn hình xác nhận (mã đơn, trạng thái) ([Màn hình 5](../design/wireframe-5.html)) và `GET /orders/me` (lịch sử đơn); `docker-compose` chạy cả 3 (FE, BE, DB); `README`; demo end-to-end.                                                                                             |      5       |     —     | Chưa làm   |
+| **Task 8**  | Thanh toán không tiền mặt        | Tích hợp mock payment: chọn Ví/Thẻ, gọi `POST /payments`; đơn chuyển `PAID` khi thành công, `PAYMENT_FAILED` khi lỗi ([Màn hình 4](../design/Wireframe-5.html)).                                                                                                                     |      5       |     —     | Chưa làm   |
+| **Task 9**  | Xác nhận, lịch sử đơn & bàn giao | Màn hình xác nhận (mã đơn, trạng thái) ([Màn hình 5](../design/Wireframe-5.html)) và `GET /orders/me` (lịch sử đơn); `docker-compose` chạy cả 3 (FE, BE, DB); `README`; demo end-to-end.                                                                                             |      5       |     —     | Chưa làm   |
 | **Task 10** | Nghiệp vụ backend                | Order State Machine (`PENDING` $\rightarrow$ `PAID` $\rightarrow$ `PREPARING` $\rightarrow$ `READY` $\rightarrow$ `COMPLETED`), thanh toán idempotent (`Idempotency-Key`), kiểm soát tồn kho khi đặt đồng thời (transaction + optimistic locking), khuyến mãi/điểm thưởng (loyalty). |      8       |     —     | Chưa làm   |
 
 > **Ghi chú:**
@@ -60,29 +60,69 @@ Mỗi Sprint dự kiến kéo dài 1–2 tuần, kết thúc bằng buổi **Spr
 
 ---
 
-## 4. Burndown chart mẫu (Sprint 1 — 18 điểm, 10 ngày làm việc)
+## 4. Burndown chart thực tế
 
-Biểu đồ dưới đây minh họa cách theo dõi khối lượng công việc còn lại (story points) giảm dần theo từng ngày trong Sprint 1 (2 tuần = 10 ngày làm việc), so sánh đường **Lý tưởng (Ideal)** (mục tiêu giảm đều) với đường **Thực tế (Actual)** (do nhóm cập nhật cuối mỗi ngày).
+Biểu đồ mẫu ban đầu (số liệu minh họa) đã được thay bằng số liệu thật, cập nhật ngày 10/11/2026.
 
-> **Note về hình ảnh biểu đồ:** Biểu đồ dưới đây được render trực tiếp bằng Mermaid.js trên GitHub/GitLab để không phụ thuộc vào file ảnh rời. Nếu nhóm xuất thêm file ảnh tĩnh từ Google Sheets/Word, file ảnh sẽ được lưu tại đường dẫn `docs/diagrams/burndown-sprint-1.png`.
+**Nguồn số liệu:** cột "Ngày" hoàn thành của từng dòng trong file danh sách task (`BrewLite-DanhSachTask`), do nhóm ghi. Một task của Product Backlog được tính **xong** vào ngày dòng **cuối cùng** thuộc task đó được ghi xong; khi đó toàn bộ story points của task được trừ khỏi sprint. Số liệu đối chiếu thêm với lịch sử commit và Pull Request ở mục 4.3.
+
+### 4.1 Burndown theo story points của từng Sprint (18 điểm/Sprint)
+
+| Task (story points) | Các dòng trong file task | Ngày xong |
+| :------------------ | :----------------------- | :-------: |
+| Task 1 (3)          | #10, #11, #12            | 23/10     |
+| Task 2 (5)          | #14, #15, #19            | 27/10     |
+| Task 3 (5)          | #16, #18                 | 26/10     |
+| Task 4 (5)          | #13, #17                 | 27/10     |
+| Task 5 (5)          | #23, #29                 | 27/10     |
+| Task 6 (5)          | #22, #25, #28            | 30/10     |
+| Task 7 (8)          | #24, #26, #27, #30, #31  | 28/10     |
+| Task 8 (5)          | #35, #36, #37, #41       | 27/10     |
+| Task 9 (5)          | #38, #39, #40, #42, #57, #59, #60 (docker-compose, README) | 04/11 |
+| Task 10 (8)         | #44 – #54                | 02/11     |
+
+Story points còn lại cuối mỗi ngày (đường **Lý tưởng** giảm đều 18 điểm trong khoảng 22/10 – 04/11):
+
+| Ngày             | 22/10 | 23/10 | 24/10 | 25/10 | 26/10 | 27/10 | 28/10 | 29/10 | 30/10 | 31/10 | 01/11 | 02/11 | 03/11 | 04/11 |
+| :--------------- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Lý tưởng**     | 18    | 16,6  | 15,2  | 13,8  | 12,5  | 11,1  | 9,7   | 8,3   | 6,9   | 5,5   | 4,2   | 2,8   | 1,4   | 0     |
+| **Sprint 1**     | 18    | 15    | 15    | 15    | 10    | 0     | 0     | 0     | 0     | 0     | 0     | 0     | 0     | 0     |
+| **Sprint 2**     | 18    | 18    | 18    | 18    | 18    | 13    | 5     | 5     | 0     | 0     | 0     | 0     | 0     | 0     |
+| **Sprint 3**     | 18    | 18    | 18    | 18    | 18    | 13    | 13    | 13    | 13    | 13    | 13    | 5     | 5     | 0     |
 
 ```mermaid
 xychart-beta
-    title "Burndown Sprint 1 — về 0/18 điểm sau 10 ngày"
-    x-axis "Ngày làm việc" [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    title "Burndown thực tế 3 Sprint (story points còn lại)"
+    x-axis ["22/10", "23/10", "24/10", "25/10", "26/10", "27/10", "28/10", "29/10", "30/10", "31/10", "01/11", "02/11", "03/11", "04/11"]
     y-axis "Story points còn lại" 0 --> 18
-    line "Lý tưởng (Ideal)" [18, 16.2, 14.4, 12.6, 10.8, 9.0, 7.2, 5.4, 3.6, 1.8, 0]
-    line "Thực tế (Actual)" [18, 18, 16, 16, 13, 13, 10, 8, 4, 2, 0]
+    line "Lý tưởng" [18, 16.6, 15.2, 13.8, 12.5, 11.1, 9.7, 8.3, 6.9, 5.5, 4.2, 2.8, 1.4, 0]
+    line "Sprint 1" [18, 15, 15, 15, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    line "Sprint 2" [18, 18, 18, 18, 18, 13, 5, 5, 0, 0, 0, 0, 0, 0]
+    line "Sprint 3" [18, 18, 18, 18, 18, 13, 13, 13, 13, 13, 13, 5, 5, 0]
 ```
 
-### Bảng dữ liệu minh họa theo ngày
+### 4.2 Burndown theo số nhiệm vụ của cả dự án (78 dòng trong file task)
 
-| Ngày làm việc        | Ngày 0 | Ngày 1 | Ngày 2 | Ngày 3 | Ngày 4 | Ngày 5 | Ngày 6 | Ngày 7 | Ngày 8 | Ngày 9 | Ngày 10 |
-| :------------------- | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :-----: |
-| **Lý tưởng (Ideal)** |  18.0  |  16.2  |  14.4  |  12.6  |  10.8  |  9.0   |  7.2   |  5.4   |  3.6   |  1.8   |   0.0   |
-| **Thực tế (Actual)** |   18   |   18   |   16   |   16   |   13   |   13   |   10   |   8    |   4    |   2    |    0    |
+| Ngày            | 21/10 | 22/10 | 23/10 | 24/10 | 25/10 | 26/10 | 27/10 | 28/10 | 29/10 | 30/10 | 31/10 | 02/11 | 03/11 | 04/11 | 07/11 |
+| :-------------- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| Xong trong ngày | 1     | 6     | 16    | 5     | 3     | 1     | 14    | 1     | 2     | 2     | 3     | 2     | 1     | 1     | 9     |
+| **Còn lại**     | 77    | 71    | 55    | 50    | 47    | 46    | 32    | 31    | 29    | 27    | 24    | 22    | 21    | 20    | 11    |
 
-*(Số liệu minh họa cho Sprint 0, không phải dữ liệu thực tế)*
+```mermaid
+xychart-beta
+    title "Nhiệm vụ còn lại của cả dự án (78 dòng)"
+    x-axis ["21/10", "22/10", "23/10", "24/10", "25/10", "26/10", "27/10", "28/10", "29/10", "30/10", "31/10", "02/11", "03/11", "04/11", "07/11"]
+    y-axis "Nhiệm vụ còn lại" 0 --> 78
+    line [77, 71, 55, 50, 47, 46, 32, 31, 29, 27, 24, 22, 21, 20, 11]
+```
+
+### 4.3 Nhận xét và đối chiếu với Git
+
+- **Ba sprint chạy song song, không nối tiếp.** Kế hoạch ở mục 2 là 3 sprint lần lượt, nhưng cả 3 đường thực tế đều bắt đầu giảm trong tuần 23/10 – 27/10. Riêng ngày 23/10, file task ghi xong 16 dòng, gồm cả khởi tạo dự án (Sprint 1) lẫn 9 việc của Task 10 (Sprint 3).
+- **Sprint 1 và 2 về 0 sớm hơn đường lý tưởng** (27/10 và 30/10); Sprint 3 bám gần đường lý tưởng và về 0 ngày 04/11. Buổi demo bàn giao (#64) chưa diễn ra.
+- **Việc làm lại sau khi "xong" không hiện trên burndown:** state machine của Task 10 được sửa lại cho đúng sơ đồ §9.1 ngày 08/11 (PR #12); nút Thanh toán của Task 5 sửa theo US-05 ngày 08/11 (PR #13); mười lỗi frontend của Task 4, 7, 8, 9 sửa ngày 07–08/11 (PR #10).
+- **Số commit theo giai đoạn** (126 commit trên `main`, không tính commit merge): đến 22/10: 37; 23/10 – 27/10: 35; 28/10 – 03/11: 19; 04/11 – 10/11: 35. Chi tiết theo người ở [retro Sprint 3](../plans/retro-sprint-3.md).
+- File task chưa ghi các việc xong sau 07/11 (#78 xong 08/11; phần admin mở rộng PR #14, #15 xong 09/11).
 
 **Cách đọc (Theo Mục 2.4 Đề bài):**
 - Nếu đường **Thực tế (Actual)** nằm **trên** đường **Lý tưởng (Ideal)** $\rightarrow$ nhóm đang **chậm tiến độ**.
