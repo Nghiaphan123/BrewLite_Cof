@@ -1,6 +1,9 @@
 import { expect, test, type Page } from '@playwright/test';
 
-const apiBase = (process.env.API_URL ?? 'http://localhost:3001/api/v1').replace(/\/+$/, '');
+const apiUrl = (globalThis as typeof globalThis & {
+  process?: { env?: Record<string, string | undefined> };
+}).process?.env?.API_URL;
+const apiBase = (apiUrl ?? 'http://localhost:3001/api/v1').replace(/\/+$/, '');
 
 async function expectNoHorizontalOverflow(page: Page) {
   await expect
@@ -32,6 +35,12 @@ test('menu to confirmation with mock Wallet', async ({ page, request }) => {
   await page.getByTestId('size-M').click();
   await page.getByTestId('add-to-cart-btn').click();
 
+  await expect(page).toHaveURL(/\/menu$/);
+  const cartLink = page.getByRole('link', { name: /Giỏ hàng, hiện có 1 sản phẩm/ });
+  await expect(cartLink).toBeVisible();
+  await cartLink.click();
+
+  await expect(page).toHaveURL(/\/cart$/);
   await expect(page.getByTestId('proceed-checkout-btn')).toBeVisible();
   await expectNoHorizontalOverflow(page);
   await page.getByTestId('proceed-checkout-btn').click();

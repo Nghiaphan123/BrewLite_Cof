@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { AppFeedback } from "@/components/AppFeedback";
 import { CartStoreHydration } from "@/components/CartStoreHydration";
 import { CartSync } from "@/components/CartSync";
+import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import "./globals.css";
 
 const geistSans = Geist({
