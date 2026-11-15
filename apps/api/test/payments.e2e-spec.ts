@@ -131,6 +131,24 @@ describe('POST /api/v1/payments idempotency (graded test b)', () => {
   });
 
   /**
+  * Input validation (DoD §10): orderId must be a UUID. A malformed id is a
+  * 400 from ValidationPipe, not a 500 from the database, and no payment row
+  * is written for the key.
+  */
+  it('orderId that is not a UUID -> 400, no payment written', async () => {
+    const key = randomUUID();
+    const res = await request(app.getHttpServer())
+      .post('/api/v1/payments')
+      .set('Authorization', `Bearer ${token}`)
+      .set('Idempotency-Key', key)
+      .send({ orderId: 'not-a-uuid', method: 'WALLET' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.statusCode).toBe(400);
+    expect(await prisma.payment.count({ where: { idempotencyKey: key } })).toBe(0);
+  });
+
+  /**
   * Supporting test (ADR 0004 D2):
   * A payment failure is not an HTTP error. The response is 200 with
   * body.status = PAYMENT_FAILED. The order moves to PAYMENT_FAILED, stock is
