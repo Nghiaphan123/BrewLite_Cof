@@ -7,7 +7,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { apiClient } from '@/lib/api';
 import { Product, SizeOption, Topping } from '@/types';
 import {
-  SIZE_SURCHARGE,
+  calculateUnitPrice,
   calculateLineTotal,
 } from '@/features/product/pricing';
 import { isOutOfStock, isToppingSoldOut, remainingForCart, remainingForToppings } from '@/features/product/stock';
@@ -90,6 +90,7 @@ function ProductDetailContent() {
   const canAdd = remaining > 0;
   // Giỏ có thể đổi sau khi chọn số lượng, nên luôn kẹp lại trong khoảng 1..remaining.
   const effectiveQty = Math.max(1, Math.min(qty, remaining || 1));
+  const unitPrice = calculateUnitPrice(product.price, size);
   const totalPrice = calculateLineTotal(product.price, size, selectedToppings, effectiveQty);
 
   const handleAddToCart = () => {
@@ -137,7 +138,7 @@ function ProductDetailContent() {
         <div className="p-6">
           <h1 className="text-2xl font-bold text-stone-900">{product.name}</h1>
           <p className="mt-1 text-stone-600">
-            Giá gốc: <span className="font-semibold">{product.price.toLocaleString('vi-VN')}₫</span>
+            Giá: <span data-testid="detail-unit-price" className="font-semibold">{unitPrice.toLocaleString('vi-VN')}₫</span>
           </p>
           {outOfStock ? (
             <p role="status" data-testid="stock-notice" className="mt-3 rounded-lg bg-stone-100 px-3 py-2 text-sm font-medium text-stone-700">
@@ -171,7 +172,7 @@ function ProductDetailContent() {
                       : 'border-stone-200 bg-stone-50 text-stone-800 hover:bg-stone-100'
                   }`}
                 >
-                  {s} {SIZE_SURCHARGE[s] > 0 ? `(+${SIZE_SURCHARGE[s] / 1000}k)` : ''}
+                  {s}
                 </button>
               ))}
             </div>

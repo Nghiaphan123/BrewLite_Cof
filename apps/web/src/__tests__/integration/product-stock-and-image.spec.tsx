@@ -41,6 +41,24 @@ describe('Trang chi tiết sản phẩm: ảnh món (mục 6) và tồn kho (m�
     expect(screen.getByTestId('product-detail-image')).toBeInTheDocument();
   });
 
+  it('chỉ hiện chữ size và cập nhật giá theo size được chọn', async () => {
+    mockProduct(10);
+    render(<ProductDetailPage />);
+
+    expect(await screen.findByTestId('detail-unit-price')).toHaveTextContent('50.000₫');
+    expect(screen.getByTestId('size-S')).toHaveTextContent(/^S$/);
+    expect(screen.getByTestId('size-M')).toHaveTextContent(/^M$/);
+    expect(screen.getByTestId('size-L')).toHaveTextContent(/^L$/);
+
+    fireEvent.click(screen.getByTestId('size-L'));
+    expect(screen.getByTestId('detail-unit-price')).toHaveTextContent('55.000₫');
+    expect(screen.getByTestId('detail-total-price')).toHaveTextContent('55.000₫');
+
+    fireEvent.click(screen.getByTestId('size-S'));
+    expect(screen.getByTestId('detail-unit-price')).toHaveTextContent('45.000₫');
+    expect(screen.getByTestId('detail-total-price')).toHaveTextContent('45.000₫');
+  });
+
   it('món hết hàng: báo hết hàng và khoá nút thêm vào giỏ', async () => {
     mockProduct(0);
     render(<ProductDetailPage />);
