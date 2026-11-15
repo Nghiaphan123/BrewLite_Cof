@@ -1,11 +1,11 @@
 # BrewLite – Checklist đối chiếu đề bài
 
-Đối chiếu đề bài `BrewLite-CongNghePhanMem.pdf` với code trên `main` (commit `bd43f56`, ngày 09/11/2026, gồm cả PR #14 sửa tồn kho ở trang admin).
+Đối chiếu đề bài `BrewLite-CongNghePhanMem.pdf` với code trên `main` (commit `bd43f56`, ngày 09/11/2026, gồm cả PR #14 sửa tồn kho ở trang admin). Phần quy trình Scrum và bàn giao (mục 8, 10) cập nhật ngày 15/11/2026.
 
 - `[x]` đã có trong project (kèm bằng chứng)
 - `[ ]` chưa có / mới có một phần (ghi rõ còn thiếu gì)
 
-**Tóm tắt:** 10/10 task trong Product Backlog đều có code và test. Phần còn thiếu chủ yếu là **bằng chứng quy trình** (retro, review PR, burndown thực tế) và **kiểm chứng phi chức năng** (< 500ms, trình duyệt).
+**Tóm tắt:** 10/10 task trong Product Backlog đều có code và test. Phần còn thiếu chủ yếu là **bằng chứng quy trình** (review PR, buổi demo, ý kiến thành viên trong retro) và **kiểm chứng phi chức năng** (trình duyệt; bài đo < 500ms nhóm quyết định bỏ qua).
 
 ---
 
@@ -60,7 +60,7 @@
 - [x] `GET /orders/me` + trang lịch sử `app/orders/page.tsx`
 - [x] `docker-compose.yml` chạy cả 3: `db`, `api`, `web`
 - [x] README hướng dẫn chạy
-- [ ] Demo end-to-end trước lớp (sự kiện – chưa có biên bản / video demo trong repo)
+- [ ] Demo end-to-end trước lớp (sự kiện – kịch bản đã có ở `docs/demo-script.md`, chưa diễn ra)
 
 ### Task 10 – Nghiệp vụ backend (Mục 9)
 - [x] Order State Machine + chặn chuyển sai – `orders/order-state-machine.ts` (`assertTransition`)
@@ -82,7 +82,7 @@
 - [x] 6. Xác nhận đơn (mã, trạng thái) và lịch sử đơn
 
 ## 3. Yêu cầu phi chức năng (Mục 4.2)
-- [ ] API phản hồi < 500ms với dữ liệu mẫu – **chưa đo**; `docs/testing/test-strategy.md` và `traceability-matrix.md` (N1) vẫn ghi "TBD / Phase 2+"
+- [ ] API phản hồi < 500ms với dữ liệu mẫu – **chưa đo**, nhóm quyết định bỏ qua bài đo này (ghi ở `docs/plans/retro-sprint-3.md`); `docs/testing/test-strategy.md` và `traceability-matrix.md` (N1) vẫn ghi "TBD / Phase 2+"
 - [x] Mật khẩu băm, JWT, validate đầu vào (`ValidationPipe` whitelist + DTO)
 - [ ] Chạy tốt trên các trình duyệt – **chưa có kiểm chứng** (chưa có test Playwright / bảng thử Chrome, Edge, Firefox, mobile)
 
@@ -123,30 +123,30 @@
 - [x] Product Backlog + User Story + Acceptance Criteria – `docs/requirements/product-backlog.md`
 - [x] Kế hoạch 3 Sprint + Sprint Backlog – `docs/diagrams/sprint-plan.md`
 - [x] Burndown chart mẫu – `docs/diagrams/sprint-plan.md` §4
-- [ ] Burndown **thực tế** cập nhật cuối mỗi ngày – hiện chỉ có biểu đồ mẫu
+- [x] Burndown **thực tế** – `docs/diagrams/sprint-plan.md` §4 (lập ngày 10/11 từ file danh sách task và lịch sử Git, không cập nhật hằng ngày trong lúc làm)
 - [ ] Biên bản Daily Scrum / Sprint Review – chưa có trong `docs/plans/`
-- [ ] Biên bản Sprint Retrospective – `working-agreement.md` hẹn `docs/plans/retro-<sprint>.md` nhưng **chưa có file nào**
+- [x] Biên bản Sprint Retrospective – `docs/plans/retro-sprint-1.md`, `retro-sprint-2.md`, `retro-sprint-3.md` (Sprint 1, 2 lập bổ sung; ô ý kiến thành viên điền trong buổi họp)
 
 ## 9. Definition of Done (Mục 10)
 - [x] Code chạy được, build không lỗi (web: tsc + lint + build; api: unit + e2e)
 - [x] Commit Git mô tả rõ ràng (Conventional Commits)
-- [ ] **Được review trong nhóm** – các PR đã merge (#1, #3, #4, #6, #7, #10–#13) đều **0 lượt review** trên GitHub; cần approve PR trước khi merge
+- [ ] **Được review trong nhóm** – các PR đã merge (#1, #3, #4, #6, #7, #10–#15) đều **0 lượt review** trên GitHub; cần approve PR trước khi merge
 - [x] API validate đầu vào; UI có loading/lỗi cơ bản
 - [x] Hướng dẫn chạy trong README
 
 ## 10. Bàn giao (Mục 11)
 - [ ] Trình diễn luồng end-to-end (buổi Demo)
 - [x] Bàn giao mã nguồn Git, `docker-compose` chạy được, README
-- [ ] Trình bày Sprint Retrospective (điều làm tốt / cần cải thiện)
-- [ ] Ghi nhận phản hồi khách hàng thành backlog phiên bản sau
+- [ ] Trình bày Sprint Retrospective (điều làm tốt / cần cải thiện) – biên bản đã có, chờ buổi trình bày
+- [ ] Ghi nhận phản hồi khách hàng thành backlog phiên bản sau – bảng ghi ở `docs/plans/retro-sprint-3.md` §5
 
 ---
 
 ## Việc nên làm tiếp (theo thứ tự ưu tiên)
-1. [ ] Viết `docs/plans/retro-sprint-1.md`, `retro-sprint-2.md`, `retro-sprint-3.md` (làm tốt / cần cải thiện / 1 hành động)
+1. [x] Viết `docs/plans/retro-sprint-1.md`, `retro-sprint-2.md`, `retro-sprint-3.md` (làm tốt / cần cải thiện / 1 hành động) – còn điền ý kiến thành viên và chốt hành động trong buổi họp
 2. [ ] Từ giờ mỗi PR cần ít nhất 1 thành viên **Approve** trước khi merge (đúng DoD và `CONTRIBUTING.md`)
-3. [ ] Đo thời gian phản hồi API (vd `autocannon` hoặc test e2e đo `GET /products` < 500ms) và cập nhật N1 trong `traceability-matrix.md`
-4. [ ] Cập nhật burndown thực tế từ lịch sử commit/PR vào `sprint-plan.md`
+3. [-] Đo thời gian phản hồi API < 500ms – nhóm quyết định bỏ qua
+4. [x] Cập nhật burndown thực tế từ lịch sử commit/PR vào `sprint-plan.md`
 5. [ ] Thử giao diện trên Chrome, Edge, Firefox và điện thoại; ghi kết quả vào `docs/testing/`
-6. [ ] Chuẩn bị kịch bản demo + ghi lại phản hồi sau buổi Sprint Review
+6. [ ] Chuẩn bị kịch bản demo + ghi lại phản hồi sau buổi Sprint Review – kịch bản đã có (`docs/demo-script.md`), còn ghi phản hồi
 7. [ ] (Tuỳ chọn) Ghi chú vì sao dùng `@nestjs/jwt` thay vì Passport

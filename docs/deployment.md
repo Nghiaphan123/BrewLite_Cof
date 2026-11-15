@@ -54,7 +54,7 @@ docker compose ps
 docker compose logs -f api
 ```
 
-Container API áp dụng các migration đang chờ (`prisma migrate deploy`) mỗi lần khởi động. Nạp dữ liệu mẫu một lần (30 sản phẩm, 5 topping, 10 người dùng demo, khuyến mãi `BREW10` và `WELCOME20K`); seed an toàn khi chạy lại:
+Container API áp dụng các migration đang chờ (`prisma migrate deploy`) mỗi lần khởi động. Nạp dữ liệu mẫu một lần (30 sản phẩm, 5 topping, 10 khách hàng demo, tài khoản admin `admin@brewlite.vn`, khuyến mãi `BREW10` và `WELCOME20K`); seed an toàn khi chạy lại:
 
 ```powershell
 docker compose exec api npm run db:seed
@@ -106,7 +106,7 @@ docker compose up --build -d
 ## 7. Manifest Compose
 
 - `db` có health check `pg_isready` và giữ dữ liệu trong volume có tên `db-data`.
-- `api` chỉ khởi động sau khi `db` khỏe mạnh, chạy `prisma migrate deploy`, rồi khởi động NestJS. Health check của nó gọi `GET /health`, được thêm trong `C-04`; cho đến lúc đó `docker compose ps` hiển thị API là unhealthy mặc dù nó trả lời trên cổng 3001.
+- `api` chỉ khởi động sau khi `db` khỏe mạnh, chạy `prisma migrate deploy`, rồi khởi động NestJS. Health check của nó gọi `GET /api/v1` bên trong container. Trong lúc chạy migration, `docker compose ps` hiển thị `health: starting` (máy chậm có thể hiện `unhealthy` vài phút); khi NestJS đã khởi động xong thì chuyển sang `healthy`.
 - `web` được build với `NEXT_PUBLIC_API_URL` như một build argument, vì Next.js nhúng nó tại thời điểm build. Build lại image web sau khi thay đổi nó.
 - Tất cả dịch vụ chia sẻ mạng Compose riêng mặc định; chỉ cổng 3000, 3001, và cổng cơ sở dữ liệu được publish cho sử dụng cục bộ.
 - Nhà cung cấp thanh toán là mock (`PAYMENT_PROVIDER=mock`); thông tin đăng nhập cục bộ là placeholder.
