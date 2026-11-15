@@ -2,7 +2,7 @@
 
 **Status:** Phase 1 deliverable  
 **Owner:** Luân (Task 3.0 / Task 4.0), reviewed by Nghĩa (Task 5.0)  
-**Related:** [Project Structure](../project-structure.md) §"Documentation conventions", [Wireframes](../design/wireframes.md) §2, [Scenarios](../requirements/scenarios.md), [API Contract](../architecture/api-contract.md), [ADR 0001](../architecture/adr/0001-record-architecture-decisions.md)
+**Related:** [Project Structure](../architecture/architecture.md) §"Documentation conventions", [Wireframes](../../../docs/design/wireframes.md) §2, [Scenarios](../../../docs/requirements/scenarios.md), [API Contract](../../../docs/architecture/api-contract.md), [ADR 0001](../../../docs/architecture/adr/0001-record-architecture-decisions.md)
 
 This directory holds BrewLite's diagrams. This README is the rule sheet: what belongs here, what format each diagram type uses, how files are named, and what "done" means for a diagram. Follow it before drawing; the rules exist so the folder doesn't become an unindexed pile of exports.
 
@@ -16,7 +16,7 @@ This directory holds BrewLite's diagrams. This README is the rule sheet: what be
 | `flows/`      | Business flow diagrams: main path, error/cancel branches, state machine | Mermaid `flowchart` or `stateDiagram-v2` (`.mmd`) + `.svg` | `docs/requirements/scenarios.md`, Task 4.0                         |
 | `wireframes/` | Exported screen wireframes                                              | `.png` (2× scale, white background)                        | `docs/design/wireframes.md`, Task 5.0                              |
 | `raw/`        | Whiteboard photos, sketches, scratch exports                            | Anything, but **not referenced** from deliverables         | —                                                                  |
-| `*.puml` at this folder root | Assignment 2 UML: use case, activity, sequence, class, deployment | PlantUML (`.puml`) + `.svg` export | [task2-modeling.md](task2-modeling.md), or the owning file in `docs/requirements/` or `docs/architecture/` |
+| `*.puml` at this folder root | Assignment 2 UML: use case, activity, sequence, class, deployment | PlantUML (`.puml`) + `.svg` export | [task2-modeling.md](../../../docs/diagrams/task2-modeling.md), or the owning file in `docs/requirements/` or `docs/architecture/` |
 
 **What does not belong here:**
 - Screenshots of the running app (those go in PR descriptions, not the repo).
@@ -146,11 +146,11 @@ When a diagram is committed, flip its status to ✅ and, if the filename changed
 
 ## 9. References
 
-- [Project Structure](../project-structure.md) §"Documentation conventions" — the repo-wide diagram naming rule this README expands.
-- [Wireframes](../design/wireframes.md) §2 — the wireframe export rules (a specialization of this README).
-- [Scenarios](../requirements/scenarios.md) — the flows the `flows/` diagrams must match.
-- [ADR 0003](../architecture/adr/0003-database-postgres-prisma.md) — the schema the ERD must match.
-- [ADR 0004](../architecture/adr/0004-payment-mock-and-order-lifecycle.md) — the state machine edges the state diagram must match.
+- [Project Structure](../architecture/architecture.md) §"Documentation conventions" — the repo-wide diagram naming rule this README expands.
+- [Wireframes](../../../docs/design/wireframes.md) §2 — the wireframe export rules (a specialization of this README).
+- [Scenarios](../../../docs/requirements/scenarios.md) — the flows the `flows/` diagrams must match.
+- [ADR 0003](../../../docs/architecture/adr/0003-database-postgres-prisma.md) — the schema the ERD must match.
+- [ADR 0004](../../../docs/architecture/adr/0004-payment-mock-and-order-lifecycle.md) — the state machine edges the state diagram must match.
 - [Working Agreement](../working-agreement.md) §6 (naming), §4 (evidence notes cite diagram paths).
 - Mermaid docs: https://mermaid.js.org/ (syntax reference for `erDiagram`, `flowchart`, `stateDiagram-v2`).
 

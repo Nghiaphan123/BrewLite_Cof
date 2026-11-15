@@ -2,7 +2,7 @@
 
 **Version:** 1.0  
 **Status:** Draft baseline  
-**Related:** [Requirements](requirements.md), [Traceability matrix](traceability-matrix.md), [Deployment](deployment.md)
+**Related:** [Requirements](requirements-initial.md), [Traceability matrix](traceability-matrix-initial.md), [Deployment](deployment-initial.md)
 
 ## 1. Architectural goals
 
@@ -73,7 +73,7 @@ flowchart TB
 ### 3.3 Persistence
 
 - PostgreSQL with Prisma or TypeORM (assignment allows either; **decision pending**).
-- Minimum entities and fields are defined in [Requirements](requirements.md#6-business-rules-and-data).
+- Minimum entities and fields are defined in [Requirements](requirements-initial.md#6-business-rules-and-data).
 - Use database transactions for order creation, stock updates, and payment state changes where they must commit atomically.
 - Optimistic locking/version check guards stock writes; on conflict, retry safely or return an insufficient-stock/conflict response.
 - Store unique idempotency key scoped appropriately (recommended: user plus key) and enforce uniqueness in the database.
@@ -140,7 +140,7 @@ flowchart LR
     Backend --> Mock[Mock payment logic\nin backend]
 ```
 
-Docker Compose runs frontend, backend, and PostgreSQL, with persistent database volume and health/dependency checks. See [Deployment](deployment.md) for the runbook.
+Docker Compose runs frontend, backend, and PostgreSQL, with persistent database volume and health/dependency checks. See [Deployment](deployment-initial.md) for the runbook.
 
 ## 8. Technology decisions
 

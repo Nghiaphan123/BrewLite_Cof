@@ -3,7 +3,7 @@
 - **Status:** Accepted (2026-10-22; accepted when Task 7.0 API contract closed)
 - **Date:** 2026-10-22
 - **Deciders:** H.Tài, Nghĩa
-- **Related:** [ADR 0001](0001-record-architecture-decisions.md), [ADR 0003](0003-database-postgres-prisma.md), [ADR 0004](0004-payment-mock-and-order-lifecycle.md), [API Contract](../api-contract.md), [Configuration](../../config.md) §3, §7, [Scenarios](../../requirements/scenarios.md) §13
+- **Related:** [ADR 0001](0001-record-architecture-decisions.md), [ADR 0003](0003-database-postgres-prisma.md), [ADR 0004](0004-payment-mock-and-order-lifecycle.md), [API Contract](../api-contract.md), [Configuration](../../../archive/docs/config.md) §3, §7, [Scenarios](../../requirements/scenarios.md) §13
 
 ## Context
 
@@ -201,7 +201,7 @@ Reopen this ADR (new ADR superseding 0005) if any of the following becomes true:
 - [ADR 0001](0001-record-architecture-decisions.md) — the ADR process this follows.
 - [ADR 0003](0003-database-postgres-prisma.md) — Prisma types that shape the responses (integer `price`, `DateTime` timestamps).
 - [ADR 0004](0004-payment-mock-and-order-lifecycle.md) — D2 (`200 + status`), D3 (order `code`), D4 (idempotency scope and key).
-- [Configuration](../../config.md) §2.1 (`JWT_EXPIRES_IN`), §3 (`Idempotency-Key`, currency), §7 (open items closed here).
+- [Configuration](../../../archive/docs/config.md) §2.1 (`JWT_EXPIRES_IN`), §3 (`Idempotency-Key`, currency), §7 (open items closed here).
 - [Scenarios](../../requirements/scenarios.md) §13 (D2 closed here).
 - [UI Decisions](../../design/ui-decisions.md) §4.1 (money), §4.3 (formatting), §5.2 (token storage).
 - [API Contract](../api-contract.md) — endpoint-specific shapes; this ADR is the conventions layer.

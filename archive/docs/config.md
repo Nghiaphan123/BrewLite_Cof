@@ -2,7 +2,7 @@
 
 **Status:** Phase 1 deliverable  
 **Owner:** Nghĩa (Task 1.0, Task 11.0, Task 12.0)  
-**Related:** [Setup](setup.md), [Project Structure](project-structure.md), [ADR 0003 Database](architecture/adr/0003-database-postgres-prisma.md), [ADR 0004 Payment Mock](architecture/adr/0004-payment-mock-method.md), [Working Agreement](working-agreement.md)
+**Related:** [Setup](setup.md), [Project Structure](architecture/architecture.md), [ADR 0003 Database](../../docs/architecture/adr/0003-database-postgres-prisma.md), [ADR 0004 Payment Mock](../../docs/architecture/adr/0004-payment-mock-and-order-lifecycle.md), [Working Agreement](working-agreement.md)
 
 This document is the written contract for every environment variable, port, and project constant in BrewLite. If a value here disagrees with `.env.example`, this document wins; if this document disagrees with a running app, one of them is wrong and must be fixed in the same PR.
 

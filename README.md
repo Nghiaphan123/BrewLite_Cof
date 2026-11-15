@@ -32,7 +32,7 @@ BrewLite/
 `-- README.md
 ```
 
-This is the monorepo layout. The architecture and current repository structure are described in [architecture.md](docs/architecture/architecture.md); the Assignment 2 requirements and planned work are in the [product backlog](docs/requirements/product-backlog.md).
+This is the monorepo layout. Assignment 2 architecture is described in the [architecture overview](docs/architecture/overview.md); the older project-structure reference is in the [archive](archive/docs/architecture/architecture.md). Assignment 2 requirements and planned work are in the [product backlog](docs/requirements/product-backlog.md).
 
 ## Prerequisites
 
@@ -185,7 +185,7 @@ Rollback, once a SHA has been deployed, is "deploy the previous image SHA" for b
 | Decisions                    | [architecture overview](docs/architecture/overview.md), [ADRs](docs/architecture/)                                                                           |
 | Context, scope, requirements | [context-and-scope.md](docs/requirements/context-and-scope.md), [srs.md](docs/requirements/srs.md), [UC-01](docs/requirements/use-case-uc01-place-and-pay.md) |
 | Diagrams                     | [docs/diagrams/](docs/diagrams/)                                                                                                                              |
-| Architecture                 | [overview](docs/architecture/overview.md), [repository structure](docs/architecture/architecture.md)                                                          |
+| Architecture                 | [overview](docs/architecture/overview.md), [ADRs](docs/architecture/)                                                                                               |
 | Testing                      | [docs/testing/test-strategy.md](docs/testing/test-strategy.md), [CI evidence](docs/delivery/ci-evidence.md)                                                   |
 | Traceability                 | [docs/traceability-matrix.md](docs/traceability-matrix.md)                                                                                                    |
 | Deployment                   | [docs/deployment.md](docs/deployment.md), [ADR 0007](docs/architecture/adr/0007-hosting-platform.md)                                                          |

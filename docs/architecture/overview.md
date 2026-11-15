@@ -4,7 +4,7 @@
 **Owner:** team  
 **Related:** [ADR 0002](adr/0002-monorepo-two-apps.md), [ADR 0003](adr/0003-database-postgres-prisma.md), [ADR 0004](adr/0004-payment-mock-and-order-lifecycle.md), [ADR 0005](adr/0005-api-contract-conventions.md), [ADR 0007](adr/0007-hosting-platform.md), [deployment diagram](../diagrams/deployment-production.puml), [SRS](../requirements/srs.md)
 
-This is the architecture description for Assignment 2. It is a container view plus the decisions a reviewer needs. `architecture.md` in this folder is the repository tree, not this document.
+This is the architecture description for Assignment 2. It is a container view plus the decisions a reviewer needs. The older project-structure reference is retained in the [archive](../../archive/docs/architecture/architecture.md).
 
 The production drawing is [deployment-production.puml](../diagrams/deployment-production.puml). It describes Render as chosen in ADR 0007. It is the intended layout. The services are not created yet, and this file does not invent a live URL.
 

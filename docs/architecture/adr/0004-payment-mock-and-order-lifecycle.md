@@ -3,7 +3,7 @@
 - **Status:** Proposed → Accepted when Tasks 8 and 10 close
 - **Date:** 2026-10-22
 - **Deciders:** H.Tài, Nghĩa
-- **Related:** [ADR 0001](0001-record-architecture-decisions.md), [ADR 0003](0003-database-postgres-prisma.md), [Configuration](../../config.md) §2.1, §3, [Scenarios](../../requirements/scenarios.md) §7, §9, §10, §13, [Product Backlog](../../requirements/product-backlog.md) Task 8, Task 10, [API Contract](../api-contract.md)
+- **Related:** [ADR 0001](0001-record-architecture-decisions.md), [ADR 0003](0003-database-postgres-prisma.md), [Configuration](../../../archive/docs/config.md) §2.1, §3, [Scenarios](../../requirements/scenarios.md) §7, §9, §10, §13, [Product Backlog](../../requirements/product-backlog.md) Task 8, Task 10, [API Contract](../api-contract.md)
 
 ## Context
 
@@ -207,7 +207,7 @@ D1 (stock timing) is the load-bearing decision. If it changes, D4 and D5 must be
 - Assignment PDF §9 (Task 10: state machine, idempotency, concurrency, loyalty), §9.1 (state diagram), §4.3 (US-05), §6 (mock payment).
 - [ADR 0001](0001-record-architecture-decisions.md) — the ADR process this follows.
 - [ADR 0003](0003-database-postgres-prisma.md) — the Prisma transaction and `version` field this ADR uses.
-- [Configuration](../../config.md) §2.1 (`PAYMENT_MOCK_MODE`), §3 (`Idempotency-Key`, order states).
+- [Configuration](../../../archive/docs/config.md) §2.1 (`PAYMENT_MOCK_MODE`), §3 (`Idempotency-Key`, order states).
 - [Scenarios](../../requirements/scenarios.md) §7 (payment flows), §9 (state machine), §10 (concurrent stock), §13 (D1–D6 closed here).
 - [Product Backlog](../../requirements/product-backlog.md) Task 8 (mock payment), Task 10 (business rules, graded tests).
 - [API Contract](../api-contract.md) — the endpoint shapes for `POST /payments` and `GET /orders/:code`.

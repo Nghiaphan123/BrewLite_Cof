@@ -3,7 +3,7 @@
 - **Status:** Accepted (2026-10-22; accepted when Task 1.0 ERD closed — see D-ERD-scope)
 - **Date:** 2026-10-22
 - **Deciders:** H.Tài
-- **Related:** [ADR 0001](0001-record-architecture-decisions.md), [ADR 0002](0002-monorepo-two-apps.md), [Configuration](../../config.md) §2.1, §3, [Product Backlog](../../requirements/product-backlog.md) Task 1, Task 10c, [Scenarios](../../requirements/scenarios.md) S-ORD-6
+- **Related:** [ADR 0001](0001-record-architecture-decisions.md), [ADR 0002](0002-monorepo-two-apps.md), [Configuration](../../../archive/docs/config.md) §2.1, §3, [Product Backlog](../../requirements/product-backlog.md) Task 1, Task 10c, [Scenarios](../../requirements/scenarios.md) S-ORD-6
 
 ## Context
 
@@ -159,8 +159,8 @@ A switch to TypeORM after Phase 2 would require re-writing the schema, migration
 - Assignment PDF §6 (technology: "PostgreSQL qua Prisma/TypeORM"), §9.3 (transaction + optimistic locking), §12.2 (entities).
 - [ADR 0001](0001-record-architecture-decisions.md) — the ADR process this follows.
 - [ADR 0002](0002-monorepo-two-apps.md) — the per-app install rule that puts Prisma in `apps/api`.
-- [Configuration](../../config.md) §2.1 (`DATABASE_URL`), §1.3 (host-port remap), §3 (VND integer rule that shapes `price Int`).
-- [Setup](../../setup.md) §3 (DB container), §6 (migrate + seed), §8 (Prisma Studio check), Troubleshooting (`P1001`, `P3005`, `prisma generate`).
+- [Configuration](../../../archive/docs/config.md) §2.1 (`DATABASE_URL`), §1.3 (host-port remap), §3 (VND integer rule that shapes `price Int`).
+- [Setup](../../../archive/docs/setup.md) §3 (DB container), §6 (migrate + seed), §8 (Prisma Studio check), Troubleshooting (`P1001`, `P3005`, `prisma generate`).
 - [Product Backlog](../../requirements/product-backlog.md) Task 1 (ERD), Task 2 (products schema), Task 10c (stock locking).
 - [Scenarios](../../requirements/scenarios.md) S-ORD-6 (concurrent stock).
 - - ERD: [erd-core-v1.mmd](../../diagrams/erd/erd-core-v1.mmd) — the five-entity design this ADR validates against Prisma.

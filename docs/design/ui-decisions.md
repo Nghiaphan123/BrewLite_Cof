@@ -2,7 +2,7 @@
 
 **Status:** Phase 1 deliverable  
 **Owner:** Nghĩa (Task 5.0)  
-**Related:** [Wireframes](wireframes.md), [Product Backlog](../requirements/product-backlog.md), [Scenarios](../requirements/scenarios.md), [Configuration](../config.md), [Project Structure](../project-structure.md), assignment PDF §6, §7
+**Related:** [Wireframes](wireframes.md), [Product Backlog](../requirements/product-backlog.md), [Scenarios](../requirements/scenarios.md), [Configuration](../../archive/docs/config.md), [Project Structure](../../archive/docs/architecture/architecture.md), assignment PDF §6, §7
 
 This document records the UI decisions that shape every screen in the BrewLite MVP. It is not a design system and not a component library — it is the set of choices that must be consistent across the five MVP screens and that a reviewer can cite when a PR violates one.
 

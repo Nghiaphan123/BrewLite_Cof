@@ -2,7 +2,7 @@
 
 **Status:** Core customer-MVP API contract; health and deployment references updated for Assignment 2
 **Owner:** H.Tài (Task 7.0)  
-**Related:** [ADR 0005 (conventions)](adr/0005-api-contract-conventions.md), [ADR 0004 (payment/lifecycle)](adr/0004-payment-mock-and-order-lifecycle.md), [ADR 0003 (database)](adr/0003-database-postgres-prisma.md), [Scenarios](../requirements/scenarios.md), [Product Backlog](../requirements/product-backlog.md), [Configuration](../config.md), [UI Decisions](../design/ui-decisions.md), [Wireframes](../design/wireframes.md)
+**Related:** [ADR 0005 (conventions)](adr/0005-api-contract-conventions.md), [ADR 0004 (payment/lifecycle)](adr/0004-payment-mock-and-order-lifecycle.md), [ADR 0003 (database)](adr/0003-database-postgres-prisma.md), [Scenarios](../requirements/scenarios.md), [Product Backlog](../requirements/product-backlog.md), [Configuration](../../archive/docs/config.md), [UI Decisions](../design/ui-decisions.md), [Wireframes](../design/wireframes.md)
 
 This document specifies every HTTP endpoint in the BrewLite MVP. It is the contract between `apps/api` and `apps/web`: the API implements it, the web client consumes it, and the e2e tests in `scenarios.md` §12 assert it. Endpoints not listed here are not part of the MVP.
 
@@ -573,7 +573,7 @@ These are conventions from ADR 0005 that apply to every endpoint; listed here fo
 - [ADR 0005](adr/0005-api-contract-conventions.md) — C1–C10 conventions this doc references.
 - [ADR 0004](adr/0004-payment-mock-and-order-lifecycle.md) — D1 (stock at `PAID`), D2 (`200 + status`), D3 (order `code`), D4 (idempotency), D5 (retry), D7 (loyalty).
 - [ADR 0003](adr/0003-database-postgres-prisma.md) — `price Int`, `version` for locking.
-- [Configuration](../config.md) §2.1 (`JWT_EXPIRES_IN`, `PAYMENT_MOCK_MODE`), §2.2 (`NEXT_PUBLIC_API_URL`), §3 (currency, states, `Idempotency-Key`).
+- [Configuration](../../archive/docs/config.md) §2.1 (`JWT_EXPIRES_IN`, `PAYMENT_MOCK_MODE`), §2.2 (`NEXT_PUBLIC_API_URL`), §3 (currency, states, `Idempotency-Key`).
 - [Scenarios](../requirements/scenarios.md) §3–§10 (flows this contract serves), §13 (D2, D3 closed here).
 - [Product Backlog](../requirements/product-backlog.md) Task 6, 7, 8, 9, 10 (acceptance criteria).
 - [UI Decisions](../design/ui-decisions.md) §2 (routes), §4 (money), §5 (auth).

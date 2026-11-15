@@ -1,6 +1,6 @@
 # BrewLite - Requirements Traceability Matrix
 
-**Status:** Working skeleton for Assignment 2 format. Requirement IDs are from [Requirements](requirements.md); use-case and test IDs are proposed in [T-01 Test Strategy](testing/test-strategy.md). Design/code references are conceptual until implementation files exist.
+**Status:** Working skeleton for Assignment 2 format. Requirement IDs are from [Requirements](requirements-initial.md); use-case and test IDs are proposed in [T-01 Test Strategy](test-strategy-initial.md). Design/code references are conceptual until implementation files exist.
 
 | Requirement | Use-case / User Story | Design / Diagram | Code / API | Test |
 |---|---|---|---|---|
@@ -30,7 +30,7 @@
 - **UC-02:** View order history (proposed).
 - **UC-03:** Advance an order through internal preparation states for the backend state-machine exercise (proposed; not a customer MVP use case).
 - **D-07:** Activity diagram; **D-08:** sequence diagram; **D-09:** class/data model; **D-10:** architecture description; **D-12:** production deployment diagram. These IDs follow the shared planning conversation and need alignment with the actual document index.
-- **TST-*** IDs are defined in [T-01 Test Strategy](testing/test-strategy.md). A test ID marked TBD is a known coverage gap, not evidence of a passing test.
+- **TST-*** IDs are defined in [T-01 Test Strategy](test-strategy-initial.md). A test ID marked TBD is a known coverage gap, not evidence of a passing test.
 
 ## Update rules
 

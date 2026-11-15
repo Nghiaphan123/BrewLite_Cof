@@ -2,7 +2,7 @@
 
 **Status:** Phase 1 deliverable  
 **Owner:** Nghĩa, H.Tài (Task 1.0, Task 12.0)  
-**Related:** [Project Structure](project-structure.md), [Configuration](config.md), [Working Agreement](working-agreement.md), [README](../README.md)
+**Related:** [Project Structure](architecture/architecture.md), [Configuration](config.md), [Working Agreement](working-agreement.md), [README](../README.md)
 
 This guide takes a teammate from a clean machine to a running BrewLite stack: web app, API, and database, with seed data loaded. Follow it top to bottom the first time. If a step fails, check the [Troubleshooting](#troubleshooting) section before asking in the team channel.
 
@@ -197,10 +197,10 @@ Switch to Node 22 or 24 LTS (`nvm use 22` or `fnm use 22`). Check with `node --v
 
 ## References
 
-- [Project Structure](project-structure.md) — where files live and why.
+- [Project Structure](architecture/architecture.md) — where files live and why.
 - [Configuration](config.md) — every env var, port, and planning assumption.
 - [Working Agreement](working-agreement.md) — task evidence notes, naming, commit/PR rules.
-- [API Contract](architecture/api-contract.md) — endpoints and payload shapes.
+- [API Contract](../../docs/architecture/api-contract.md) — endpoints and payload shapes.
 - Root `README.md` — project summary and the quickstart that points here.
 
 ---

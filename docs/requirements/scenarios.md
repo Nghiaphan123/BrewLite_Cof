@@ -2,7 +2,7 @@
 
 **Status:** Phase 1 deliverable, closed 2026-10-22  
 **Owner:** H.Tài (Task 4.0)  
-**Related:** [Product Backlog](product-backlog.md), [Wireframes](../design/wireframes.md), [API Contract](../architecture/api-contract.md), [ADR 0004](../architecture/adr/0004-payment-mock-and-order-lifecycle.md), [Configuration](../config.md), assignment PDF §5
+**Related:** [Product Backlog](product-backlog.md), [Wireframes](../design/wireframes.md), [API Contract](../architecture/api-contract.md), [ADR 0004](../architecture/adr/0004-payment-mock-and-order-lifecycle.md), [Configuration](../../archive/docs/config.md), assignment PDF §5
 
 This document specifies the business flows BrewLite must support. It is the bridge between the Product Backlog (what to build) and the API Contract (how it is called): each scenario names the actors, the trigger, the step sequence, and the observable outcome. Scenarios are the source for manual test scripts (Sprint reviews) and for the Playwright journeys in `tests/e2e/` (Phase 2+).
 

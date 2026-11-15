@@ -2,7 +2,7 @@
 
 **Status:** Phase 1 deliverable  
 **Owner:** H.Tài (Scrum Master role, Task 3.0)  
-**Related:** [Setup](setup.md), [Configuration](config.md), [Project Structure](project-structure.md), [Product Backlog](requirements/product-backlog.md)
+**Related:** [Setup](setup.md), [Configuration](config.md), [Project Structure](architecture/architecture.md), [Product Backlog](../../docs/requirements/product-backlog.md)
 
 This document is the team's process contract. It defines how we track work, what evidence closes a task, how we name files and commits, and what happens when something goes wrong. Every rule here is enforceable in code review. If a rule is not worth enforcing, it should not be in this document.
 
