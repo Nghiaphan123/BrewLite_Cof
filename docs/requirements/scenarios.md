@@ -1,409 +1,409 @@
-# BrewLite - Business Scenarios
+# BrewLite - Các Kịch bản Nghiệp vụ
 
-**Status:** Phase 1 deliverable, closed 2026-10-22  
-**Owner:** H.Tài (Task 4.0)  
-**Related:** [Product Backlog](product-backlog.md), [Wireframes](../design/wireframes.md), [API Contract](../architecture/api-contract.md), [ADR 0004](../architecture/adr/0004-payment-mock-and-order-lifecycle.md), [Configuration](../config.md), assignment PDF §5
+**Trạng thái:** Sản phẩm bàn giao Giai đoạn 1, đóng 2026-10-22
+**Người phụ trách:** H.Tài (Nhiệm vụ 4.0)
+**Liên quan:** [Product Backlog](product-backlog.md), [Wireframes](../design/wireframes.md), [Hợp đồng API](../architecture/api-contract.md), [ADR 0004](../architecture/adr/0004-payment-mock-and-order-lifecycle.md), [Cấu hình](../config.md), PDF bài tập §5
 
-This document specifies the business flows BrewLite must support. It is the bridge between the Product Backlog (what to build) and the API Contract (how it is called): each scenario names the actors, the trigger, the step sequence, and the observable outcome. Scenarios are the source for manual test scripts (Sprint reviews) and for the Playwright journeys in `tests/e2e/` (Phase 2+).
+Tài liệu này quy định các luồng nghiệp vụ mà BrewLite phải hỗ trợ. Nó là cầu nối giữa Product Backlog (xây cái gì) và Hợp đồng API (gọi như thế nào): mỗi kịch bản nêu các tác nhân, điều kiện kích hoạt, trình tự bước, và kết quả quan sát được. Kịch bản là nguồn cho các script test thủ công (Sprint review) và cho các hành trình Playwright trong `tests/e2e/` (Giai đoạn 2+).
 
-> **Scope:** flows from app open to order confirmation and history, plus the error and cancel branches. Out of scope: barista-side flows, refunds, and anything listed in `product-backlog.md` §16.
+> **Phạm vi:** các luồng từ mở ứng dụng đến xác nhận đơn hàng và lịch sử, cộng với các nhánh lỗi và hủy. Ngoài phạm vi: luồng phía barista, hoàn tiền, và bất cứ thứ gì được liệt kê trong `product-backlog.md` §16.
 
-## 1. How to read this document
+## 1. Cách đọc tài liệu này
 
-- **Scenario ID:** `S-<area><n>` — `S-MAIN`, `S-PAY`, `S-AUTH`, `S-CART`, `S-ORD`, `S-EDGE`. Stable; never reused.
-- **Type:** `Main` (happy path), `Alternative` (valid but non-default path), `Error` (expected failure with a specific outcome), `Cancel` (user aborts).
-- **Precondition:** system state required before step 1.
-- **Steps:** what the actor does and what the system does, in order.
-- **Outcome:** the observable end state — HTTP status, order status, cart state, UI route. This is what the test asserts on.
-- **Traces to:** the acceptance criterion in `product-backlog.md` that this scenario proves.
+- **ID kịch bản:** `S-<area><n>` — `S-MAIN`, `S-PAY`, `S-AUTH`, `S-CART`, `S-ORD`, `S-EDGE`. Ổn định; không bao giờ tái sử dụng.
+- **Loại:** `Main` (happy path), `Alternative` (hợp lệ nhưng không mặc định), `Error` (thất bại kỳ vọng với kết quả cụ thể), `Cancel` (người dùng hủy).
+- **Tiền điều kiện:** trạng thái hệ thống yêu cầu trước bước 1.
+- **Các bước:** tác nhân làm gì và hệ thống làm gì, theo thứ tự.
+- **Kết quả:** trạng thái cuối quan sát được — HTTP status, trạng thái đơn hàng, trạng thái giỏ hàng, route UI. Đây là thứ test khẳng định.
+- **Traces to:** tiêu chí chấp nhận trong `product-backlog.md` mà kịch bản này chứng minh.
 
-A scenario without a testable outcome is not a scenario; it is a wish. If a flow is specified in prose but has no assertion, it is flagged in §13.
+Một kịch bản không có kết quả kiểm thử được không phải là kịch bản; nó là một điều ước. Nếu một luồng được quy định bằng văn xuôi nhưng không có khẳng định, nó được gắn cờ trong §13.
 
-## 2. Actors and preconditions glossary
+## 2. Bảng thuật ngữ tác nhân và tiền điều kiện
 
-| Actor         | Description                                 |
-| ------------- | ------------------------------------------- |
-| Customer      | Anonymous or logged-in user of the web app. |
-| Anonymous     | Not logged in; has no JWT.                  |
-| Authenticated | Has a valid JWT from `POST /auth/login`.    |
-| System        | The API + DB + mock payment service.        |
+| Tác nhân    | Mô tả                                                  |
+| ----------- | ------------------------------------------------------ |
+| Khách hàng  | Người dùng ẩn danh hoặc đã đăng nhập của ứng dụng web. |
+| Ẩn danh     | Chưa đăng nhập; không có JWT.                          |
+| Đã xác thực | Có JWT hợp lệ từ `POST /auth/login`.                   |
+| Hệ thống    | API + DB + dịch vụ thanh toán giả lập.                 |
 
-| State           | Meaning                             |
-| --------------- | ----------------------------------- |
-| Empty cart      | Zustand cart has zero items.        |
-| Stock available | Product's stock row `quantity > 0`. |
-| Stock exhausted | Product's stock row `quantity = 0`. |
+| Trạng thái     | Ý nghĩa                                 |
+| -------------- | --------------------------------------- |
+| Giỏ hàng trống | Zustand cart có 0 mục.                  |
+| Còn stock      | Dòng stock của sản phẩm `quantity > 0`. |
+| Hết stock      | Dòng stock của sản phẩm `quantity = 0`. |
 
-## 3. Main flow — S-MAIN-1: Select, cart, pay, confirm
+## 3. Luồng chính — S-MAIN-1: Chọn, giỏ hàng, thanh toán, xác nhận
 
-**Type:** Main  
-**Traces to:** PDF §5 happy path; product-backlog Tasks 3, 4, 5, 6, 7, 8, 9.  
-**Diagram:** `docs/diagrams/flows/flow-main-v1.mmd`.
+**Loại:** Main
+**Traces to:** PDF §5 happy path; product-backlog Tasks 3, 4, 5, 6, 7, 8, 9.
+**Sơ đồ:** `docs/diagrams/flows/flow-main-v1.mmd`.
 
-**Precondition:** Authenticated customer. Menu loaded. Stock available for all chosen products.
+**Tiền điều kiện:** Khách hàng đã xác thực. Menu đã tải. Còn stock cho mọi sản phẩm được chọn.
 
-| #   | Actor    | Action / System response                                                                                                                                                           |
-| --- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Customer | Opens `/`. System renders the menu grid from `GET /api/v1/products`.                                                                                                               |
-| 2   | Customer | Clicks a product. System navigates to `/products/[id]` and shows name, image, base price.                                                                                          |
-| 3   | Customer | Selects size M and two toppings. System updates the displayed price deterministically (Task 4 rule, `ui-decisions.md` §4.2).                                                       |
-| 4   | Customer | Clicks "Thêm vào giỏ". System adds the line to the Zustand cart and increments the header badge.                                                                                   |
-| 5   | Customer | Repeats steps 2–4 for a second product. System shows two lines in the cart.                                                                                                        |
-| 6   | Customer | Opens `/cart`. System lists both lines with quantities and the total; the total matches the sum of `lineTotal`.                                                                    |
-| 7   | Customer | Clicks "Thanh toán". System routes to `/checkout`, showing the same total and the Wallet/Card selector.                                                                            |
-| 8   | Customer | Selects Wallet, confirms. Frontend calls `POST /api/v1/orders` with the cart, then `POST /api/v1/payments` with the order id, method, and an `Idempotency-Key`.                    |
-| 9   | System   | Order created `PENDING`; payment mock returns success; order transitions `PENDING → PAID`; stock decremented and `loyaltyPoints` accrue in the same transaction (ADR 0004 D1, D7). |
-| 10  | Customer | System navigates to `/orders/[code]/confirmation`, showing order code and status `PAID` (route keyed by `code`, ADR 0004 D3).                                                      |
-| 11  | Customer | Opens `/orders`. System lists the order with code, date, total, status.                                                                                                            |
+| #   | Tác nhân   | Hành động / Phản hồi hệ thống                                                                                                                                                      |
+| --- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Khách hàng | Mở `/`. Hệ thống render lưới menu từ `GET /api/v1/products`.                                                                                                                       |
+| 2   | Khách hàng | Click một sản phẩm. Hệ thống điều hướng đến `/products/[id]` và hiển thị tên, ảnh, giá cơ sở.                                                                                      |
+| 3   | Khách hàng | Chọn size M và hai topping. Hệ thống cập nhật giá hiển thị một cách xác định (quy tắc Task 4, `ui-decisions.md` §4.2).                                                             |
+| 4   | Khách hàng | Click "Thêm vào giỏ". Hệ thống thêm dòng vào Zustand cart và tăng huy hiệu header.                                                                                                 |
+| 5   | Khách hàng | Lặp lại bước 2–4 cho sản phẩm thứ hai. Hệ thống hiển thị hai dòng trong giỏ hàng.                                                                                                  |
+| 6   | Khách hàng | Mở `/cart`. Hệ thống liệt kê cả hai dòng với số lượng và tổng; tổng khớp với tổng các `lineTotal`.                                                                                 |
+| 7   | Khách hàng | Click "Thanh toán". Hệ thống route đến `/checkout`, hiển thị cùng tổng và bộ chọn Wallet/Card.                                                                                     |
+| 8   | Khách hàng | Chọn Wallet, xác nhận. Frontend gọi `POST /api/v1/orders` với giỏ hàng, rồi `POST /api/v1/payments` với id đơn hàng, phương thức, và một `Idempotency-Key`.                        |
+| 9   | Hệ thống   | Đơn hàng được tạo `PENDING`; mock thanh toán trả về thành công; đơn hàng chuyển `PENDING → PAID`; stock giảm và `loyaltyPoints` tích lũy trong cùng transaction (ADR 0004 D1, D7). |
+| 10  | Khách hàng | Hệ thống điều hướng đến `/orders/[code]/confirmation`, hiển thị mã đơn hàng và trạng thái `PAID` (route khóa bằng `code`, ADR 0004 D3).                                            |
+| 11  | Khách hàng | Mở `/orders`. Hệ thống liệt kê đơn hàng với mã, ngày, tổng, trạng thái.                                                                                                            |
 
-**Outcome:** Order persisted with status `PAID`; confirmation page shows the code; history lists it; cart is empty.
+**Kết quả:** Đơn hàng được lưu với trạng thái `PAID`; trang xác nhận hiển thị mã; lịch sử liệt kê nó; giỏ hàng trống.
 
-**Assertions for the e2e test:**
-- `POST /api/v1/orders` returns `201` with an order `id`, `code`, and `status: "PENDING"`.
-- `POST /api/v1/payments` returns `200` with `status: "PAID"` and a `paymentId`.
-- Confirmation route contains the order `code` string.
-- `GET /api/v1/orders/me` includes the new order.
-- Cart store is empty after success.
-- `User.loyaltyPoints` increased by `floor(order.total / 1000)` (ADR 0004 D7).
+**Khẳng định cho test e2e:**
+- `POST /api/v1/orders` trả về `201` với `id`, `code`, và `status: "PENDING"` của đơn hàng.
+- `POST /api/v1/payments` trả về `200` với `status: "PAID"` và một `paymentId`.
+- Route xác nhận chứa chuỗi `code` của đơn hàng.
+- `GET /api/v1/orders/me` bao gồm đơn hàng mới.
+- Cart store trống sau khi thành công.
+- `User.loyaltyPoints` tăng thêm `floor(order.total / 1000)` (ADR 0004 D7).
 
-## 4. Authentication flows — S-AUTH-*
+## 4. Luồng xác thực — S-AUTH-*
 
-### S-AUTH-1: Register then log in
+### S-AUTH-1: Đăng ký rồi đăng nhập
 
-**Type:** Alternative  
+**Loại:** Alternative
 **Traces to:** Task 7 AC; `api-contract.md` §6–§7.
 
-**Precondition:** Anonymous. Email not yet registered.
+**Tiền điều kiện:** Ẩn danh. Email chưa được đăng ký.
 
-| #   | Actor    | Action / System response                                                                 |
-| --- | -------- | ---------------------------------------------------------------------------------------- |
-| 1   | Customer | Opens `/auth/register`, submits name, email, and password meeting the policy.            |
-| 2   | System   | Hashes password with bcrypt, creates user, returns `201`.                                |
-| 3   | Customer | Submits the same email on `/auth/login` with the correct password.                       |
-| 4   | System   | Verifies hash, returns JWT. Frontend stores token, attaches it to `POST /api/v1/orders`. |
+| #   | Tác nhân   | Hành động / Phản hồi hệ thống                                                      |
+| --- | ---------- | ---------------------------------------------------------------------------------- |
+| 1   | Khách hàng | Mở `/auth/register`, submit tên, email, và mật khẩu đáp ứng chính sách.            |
+| 2   | Hệ thống   | Hash mật khẩu với bcrypt, tạo người dùng, trả về `201`.                            |
+| 3   | Khách hàng | Submit cùng email trên `/auth/login` với mật khẩu đúng.                            |
+| 4   | Hệ thống   | Xác minh hash, trả về JWT. Frontend lưu token, đính kèm vào `POST /api/v1/orders`. |
 
-**Outcome:** Authenticated session; subsequent `POST /api/v1/orders` succeeds.
+**Kết quả:** Phiên đã xác thực; `POST /api/v1/orders` tiếp theo thành công.
 
-**Assertions:** `201` on register; `200` + `accessToken` on login; `POST /api/v1/orders` without token returns `401`, with token returns `201`.
+**Khẳng định:** `201` khi đăng ký; `200` + `accessToken` khi đăng nhập; `POST /api/v1/orders` không token trả về `401`, có token trả về `201`.
 
-### S-AUTH-2: Duplicate email
+### S-AUTH-2: Email trùng lặp
 
-**Type:** Error  
-**Traces to:** Task 7 AC ("duplicate email returns 409").
+**Loại:** Error
+**Traces to:** Task 7 AC ("email trùng lặp trả về 409").
 
-| #   | Actor    | Action / System response                                                                                                                                  |
-| --- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Customer | Registers with an email that already exists.                                                                                                              |
-| 2   | System   | Returns `409` with `code: "EMAIL_TAKEN"` (`api-contract.md` §6). The message does not enable enumeration beyond the email the requester already supplied. |
+| #   | Tác nhân   | Hành động / Phản hồi hệ thống                                                                                                              |
+| --- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | Khách hàng | Đăng ký với email đã tồn tại.                                                                                                              |
+| 2   | Hệ thống   | Trả về `409` với `code: "EMAIL_TAKEN"` (`api-contract.md` §6). Thông điệp không cho phép liệt kê ngoài email mà người yêu cầu đã cung cấp. |
 
-**Outcome:** No new user; the existing user is untouched.
+**Kết quả:** Không có người dùng mới; người dùng hiện có không bị ảnh hưởng.
 
-**Assertion:** `409` with `code: "EMAIL_TAKEN"`; user count unchanged.
+**Khẳng định:** `409` với `code: "EMAIL_TAKEN"`; số lượng người dùng không đổi.
 
-### S-AUTH-3: Wrong password
+### S-AUTH-3: Sai mật khẩu
 
-**Type:** Error  
-**Traces to:** Task 7 AC ("wrong password returns 401 with a generic message").
+**Loại:** Error
+**Traces to:** Task 7 AC ("sai mật khẩu trả về 401 với thông điệp chung").
 
-| #   | Actor    | Action / System response                                                               |
-| --- | -------- | -------------------------------------------------------------------------------------- |
-| 1   | Customer | Submits a valid email with a wrong password.                                           |
-| 2   | System   | Returns `401` with `code: "AUTH_INVALID"` and a generic "Invalid credentials" message. |
+| #   | Tác nhân   | Hành động / Phản hồi hệ thống                                                      |
+| --- | ---------- | ---------------------------------------------------------------------------------- |
+| 1   | Khách hàng | Submit email hợp lệ với mật khẩu sai.                                              |
+| 2   | Hệ thống   | Trả về `401` với `code: "AUTH_INVALID"` và thông điệp chung "Invalid credentials". |
 
-**Outcome:** No token issued. The error does not distinguish "email not found" from "wrong password."
+**Kết quả:** Không cấp token. Lỗi không phân biệt "email không tìm thấy" với "sai mật khẩu."
 
-**Assertion:** `401`; response body identical for "wrong password" and "unknown email."
+**Khẳng định:** `401`; body phản hồi giống hệt cho "sai mật khẩu" và "email không tồn tại."
 
-## 5. Cart flows — S-CART-*
+## 5. Luồng giỏ hàng — S-CART-*
 
-### S-CART-1: Add, change quantity, remove
+### S-CART-1: Thêm, đổi số lượng, xóa
 
-**Type:** Alternative  
+**Loại:** Alternative
 **Traces to:** Task 5 AC.
 
-**Precondition:** Cart has one line, qty 1.
+**Tiền điều kiện:** Giỏ hàng có một dòng, qty 1.
 
-| #   | Actor    | Action / System response                                                                                                                              |
-| --- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Customer | Adds the same product with the same size and toppings again. System increments qty to 2 (no duplicate line; identity rule in `ui-decisions.md` §5.1). |
-| 2   | Customer | Increases qty to 3 via the cart control. System updates `lineTotal` and total.                                                                        |
-| 3   | Customer | Removes the line. System removes it, badge drops to 0, total is 0.                                                                                    |
+| #   | Tác nhân   | Hành động / Phản hồi hệ thống                                                                                                                    |
+| --- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | Khách hàng | Thêm lại cùng sản phẩm với cùng size và topping. Hệ thống tăng qty lên 2 (không tạo dòng trùng; quy tắc nhận dạng trong `ui-decisions.md` §5.1). |
+| 2   | Khách hàng | Tăng qty lên 3 qua điều khiển giỏ hàng. Hệ thống cập nhật `lineTotal` và tổng.                                                                   |
+| 3   | Khách hàng | Xóa dòng. Hệ thống xóa nó, huy hiệu về 0, tổng là 0.                                                                                             |
 
-**Outcome:** Cart reflects each change immediately; totals recompute on every mutation.
+**Kết quả:** Giỏ hàng phản ánh mỗi thay đổi ngay lập tức; tổng tính lại trên mọi mutation.
 
-**Assertions:** line count after step 1 is 1; `lineTotal = unitPrice × 3` after step 2; cart empty after step 3.
+**Khẳng định:** số dòng sau bước 1 là 1; `lineTotal = unitPrice × 3` sau bước 2; giỏ hàng trống sau bước 3.
 
-### S-CART-2: Cart survives navigation
+### S-CART-2: Giỏ hàng tồn tại qua điều hướng
 
-**Type:** Alternative  
-**Traces to:** Task 5 AC ("survives client-side navigation").
+**Loại:** Alternative
+**Traces to:** Task 5 AC ("tồn tại qua điều hướng phía client").
 
-**Precondition:** Cart has items.
+**Tiền điều kiện:** Giỏ hàng có mục.
 
-| #   | Actor    | Action / System response                           |
-| --- | -------- | -------------------------------------------------- |
-| 1   | Customer | Navigates from `/cart` to `/` to `/products/[id]`. |
-| 2   | System   | Cart badge and `/cart` contents are unchanged.     |
+| #   | Tác nhân   | Hành động / Phản hồi hệ thống                       |
+| --- | ---------- | --------------------------------------------------- |
+| 1   | Khách hàng | Điều hướng từ `/cart` đến `/` rồi `/products/[id]`. |
+| 2   | Hệ thống   | Huy hiệu giỏ hàng và nội dung `/cart` không đổi.    |
 
-**Outcome:** State persists across client-side navigation. **Not** across full reload — a reload with a non-empty cart shows the empty state; this is a known Phase 1 limitation (`ui-decisions.md` §5.1).
+**Kết quả:** State tồn tại qua điều hướng phía client. **Không** qua reload đầy đủ — reload với giỏ hàng không trống hiển thị trạng thái trống; đây là hạn chế đã biết của Giai đoạn 1 (`ui-decisions.md` §5.1).
 
-**Assertion:** after navigation, cart store `items.length` unchanged.
+**Khẳng định:** sau khi điều hướng, `items.length` của cart store không đổi.
 
-## 6. Order creation flows — S-ORD-*
+## 6. Luồng tạo đơn hàng — S-ORD-*
 
-### S-ORD-1: Server recomputes price (tamper protection)
+### S-ORD-1: Server tính lại giá (chống giả mạo)
 
-**Type:** Error (security)  
-**Traces to:** Task 6 AC ("server recomputes total; client prices ignored").
+**Loại:** Error (bảo mật)
+**Traces to:** Task 6 AC ("server tính lại tổng; giá client bị bỏ qua").
 
-**Precondition:** Authenticated. Valid cart.
+**Tiền điều kiện:** Đã xác thực. Giỏ hàng hợp lệ.
 
-| #   | Actor    | Action / System response                                                                                                               |
-| --- | -------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Attacker | Sends `POST /api/v1/orders` with `lineTotal` and `total` lower than the real prices.                                                   |
-| 2   | System   | Recomputes from product prices; persists the server total; response reflects the server total, not the payload (`api-contract.md` §8). |
+| #   | Tác nhân    | Hành động / Phản hồi hệ thống                                                                                                |
+| --- | ----------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Kẻ tấn công | Gửi `POST /api/v1/orders` với `lineTotal` và `total` thấp hơn giá thật.                                                      |
+| 2   | Hệ thống    | Tính lại từ giá sản phẩm; lưu tổng của server; phản hồi phản ánh tổng của server, không phải payload (`api-contract.md` §8). |
 
-**Outcome:** Order total equals the server-computed price. The tampered payload has no effect.
+**Kết quả:** Tổng đơn hàng bằng giá do server tính. Payload bị giả mạo không có tác dụng.
 
-**Assertion:** persisted `order.total` equals the fixture-computed value (`ui-decisions.md` §4.2); not the attacker's value.
+**Khẳng định:** `order.total` được lưu bằng giá trị do fixture tính (`ui-decisions.md` §4.2); không phải giá trị của kẻ tấn công.
 
-### S-ORD-2: Empty cart
+### S-ORD-2: Giỏ hàng trống
 
-**Type:** Error  
-**Traces to:** Task 6 AC ("empty cart → 400").
+**Loại:** Error
+**Traces to:** Task 6 AC ("giỏ hàng trống → 400").
 
-| #   | Actor    | Action / System response                                        |
-| --- | -------- | --------------------------------------------------------------- |
-| 1   | Customer | `POST /api/v1/orders` with `items: []`.                         |
-| 2   | System   | Returns `400` with `code: "CART_EMPTY"` (`api-contract.md` §8). |
+| #   | Tác nhân   | Hành động / Phản hồi hệ thống                                 |
+| --- | ---------- | ------------------------------------------------------------- |
+| 1   | Khách hàng | `POST /api/v1/orders` với `items: []`.                        |
+| 2   | Hệ thống   | Trả về `400` với `code: "CART_EMPTY"` (`api-contract.md` §8). |
 
-**Outcome:** No order created.
+**Kết quả:** Không có đơn hàng được tạo.
 
-**Assertion:** `400` with `code: "CART_EMPTY"`; order count unchanged.
+**Khẳng định:** `400` với `code: "CART_EMPTY"`; số lượng đơn hàng không đổi.
 
-### S-ORD-3: Invalid size or unknown product
+### S-ORD-3: Size không hợp lệ hoặc sản phẩm không tồn tại
 
-**Type:** Error  
+**Loại:** Error
 **Traces to:** Task 6 AC.
 
-| #   | Actor    | Action / System response                                                         |
-| --- | -------- | -------------------------------------------------------------------------------- |
-| 1   | Customer | `POST /api/v1/orders` with `size: "XL"` or a `productId` not in the DB.          |
-| 2   | System   | Returns `400` with `code: "INVALID_SIZE"` or `"PRODUCT_NOT_FOUND"`, never `500`. |
+| #   | Tác nhân   | Hành động / Phản hồi hệ thống                                                            |
+| --- | ---------- | ---------------------------------------------------------------------------------------- |
+| 1   | Khách hàng | `POST /api/v1/orders` với `size: "XL"` hoặc một `productId` không có trong DB.           |
+| 2   | Hệ thống   | Trả về `400` với `code: "INVALID_SIZE"` hoặc `"PRODUCT_NOT_FOUND"`, không bao giờ `500`. |
 
-**Outcome:** No order created; error envelope matches `api-contract.md` §8.
+**Kết quả:** Không có đơn hàng được tạo; phong bì lỗi khớp với `api-contract.md` §8.
 
-**Assertion:** status code and `code` match the contract; no `500`.
+**Khẳng định:** mã trạng thái và `code` khớp với hợp đồng; không có `500`.
 
-## 7. Payment flows — S-PAY-*
+## 7. Luồng thanh toán — S-PAY-*
 
-### S-PAY-1: Payment succeeds
+### S-PAY-1: Thanh toán thành công
 
-**Type:** Main (covered inside S-MAIN-1 steps 8–9; listed separately for test targeting)  
+**Loại:** Main (được bao trong S-MAIN-1 bước 8–9; được liệt kê riêng để nhắm mục tiêu test)
 **Traces to:** Task 8 AC; ADR 0004 D1.
 
-**Precondition:** Order in `PENDING`. `PAYMENT_MOCK_MODE=success`.
+**Tiền điều kiện:** Đơn hàng `PENDING`. `PAYMENT_MOCK_MODE=success`.
 
-**Outcome:** `POST /api/v1/payments` → `200` with `status: "PAID"`; stock decremented; loyalty points accrued; confirmation shown.
+**Kết quả:** `POST /api/v1/payments` → `200` với `status: "PAID"`; stock giảm; điểm trung thành tích lũy; xác nhận được hiển thị.
 
-**Assertion:** order status `PAID`; `loyaltyPointsEarned = floor(amount / 1000)` (ADR 0004 D7).
+**Khẳng định:** trạng thái đơn hàng `PAID`; `loyaltyPointsEarned = floor(amount / 1000)` (ADR 0004 D7).
 
-### S-PAY-2: Payment fails — cart preserved
+### S-PAY-2: Thanh toán thất bại — giỏ hàng được bảo toàn
 
-**Type:** Error  
+**Loại:** Error
 **Traces to:** Task 8 AC; PDF US-05 acceptance criteria; ADR 0004 D2.
 
-**Precondition:** Order in `PENDING`. `PAYMENT_MOCK_MODE=failure`.
+**Tiền điều kiện:** Đơn hàng `PENDING`. `PAYMENT_MOCK_MODE=failure`.
 
-| #   | Actor    | Action / System response                                                                                                                           |
-| --- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Customer | Confirms payment. System calls `POST /api/v1/payments`; mock returns failure.                                                                      |
-| 2   | System   | Order → `PAYMENT_FAILED`; returns **`200`** with body `{ status: "PAYMENT_FAILED", reason, retryable: true }` (ADR 0004 D2, `api-contract.md` §9). |
-| 3   | Customer | System keeps the cart intact and shows a retry affordance.                                                                                         |
+| #   | Tác nhân   | Hành động / Phản hồi hệ thống                                                                                                                       |
+| --- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Khách hàng | Xác nhận thanh toán. Hệ thống gọi `POST /api/v1/payments`; mock trả về thất bại.                                                                    |
+| 2   | Hệ thống   | Đơn hàng → `PAYMENT_FAILED`; trả về **`200`** với body `{ status: "PAYMENT_FAILED", reason, retryable: true }` (ADR 0004 D2, `api-contract.md` §9). |
+| 3   | Khách hàng | Hệ thống giữ nguyên giỏ hàng và hiển thị khả năng thử lại.                                                                                          |
 
-**Outcome:** Order `PAYMENT_FAILED`; cart unchanged; user can retry. No stock change, no points.
+**Kết quả:** Đơn hàng `PAYMENT_FAILED`; giỏ hàng không đổi; người dùng có thể thử lại. Không thay đổi stock, không có điểm.
 
-**Assertion:** cart `items.length` unchanged; order status `PAYMENT_FAILED`; stock unchanged; `loyaltyPoints` unchanged. The frontend must check the body `status`, not `res.ok` (`api-contract.md` §14).
+**Khẳng định:** `items.length` của giỏ hàng không đổi; trạng thái đơn hàng `PAYMENT_FAILED`; stock không đổi; `loyaltyPoints` không đổi. Frontend phải kiểm tra `status` trong body, không phải `res.ok` (`api-contract.md` §14).
 
-### S-PAY-3: Retry after failure succeeds
+### S-PAY-3: Thử lại sau thất bại thành công
 
-**Type:** Alternative  
-**Traces to:** Task 8 AC ("retry after failure succeeds"); ADR 0004 D5.
+**Loại:** Alternative
+**Traces to:** Task 8 AC ("thử lại sau thất bại thành công"); ADR 0004 D5.
 
-**Precondition:** Prior order in `PAYMENT_FAILED`. `PAYMENT_MOCK_MODE` switched to `success` (or the mock's failure rule is exhausted, per ADR 0004).
+**Tiền điều kiện:** Đơn hàng trước đó ở `PAYMENT_FAILED`. `PAYMENT_MOCK_MODE` được chuyển sang `success` (hoặc quy tắc thất bại của mock đã cạn, theo ADR 0004).
 
-| #   | Actor    | Action / System response                                                                                                                                         |
-| --- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Customer | Clicks "retry" on the failed order.                                                                                                                              |
-| 2   | System   | Creates a **new** payment attempt against the same order, with a **new** `Idempotency-Key` (ADR 0004 D5). The order goes back through `PENDING` (PDF §9.1): on success `PAYMENT_FAILED → PENDING → PAID`. |
+| #   | Tác nhân   | Hành động / Phản hồi hệ thống                                                                                                                                                                      |
+| --- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Khách hàng | Click "thử lại" trên đơn hàng thất bại.                                                                                                                                                            |
+| 2   | Hệ thống   | Tạo một **lần thử thanh toán mới** cho cùng đơn hàng, với một `Idempotency-Key` **mới** (ADR 0004 D5). Đơn hàng đi lại qua `PENDING` (PDF §9.1): khi thành công `PAYMENT_FAILED → PENDING → PAID`. |
 
-**Outcome:** Order `PAID`. The history shows one order, not two.
+**Kết quả:** Đơn hàng `PAID`. Lịch sử hiển thị một đơn hàng, không phải hai.
 
-**Assertion:** one order row; status `PAID`; two payment rows (one `FAILED`, one `SUCCESS`).
+**Khẳng định:** một dòng đơn hàng; trạng thái `PAID`; hai dòng thanh toán (một `FAILED`, một `SUCCESS`).
 
-### S-PAY-4: Double-submit before Task 10b
+### S-PAY-4: Submit hai lần trước Task 10b
 
-**Type:** Error (known gap)  
-**Traces to:** Task 8 out-of-scope note; Task 10b fixes it.
+**Loại:** Error (lỗ hổng đã biết)
+**Traces to:** Ghi chú ngoài phạm vi Task 8; Task 10b sửa nó.
 
-**Precondition:** No idempotency key enforcement yet (Task 10b not merged).
+**Tiền điều kiện:** Chưa có thực thi idempotency key (Task 10b chưa merge).
 
-| #   | Actor    | Action / System response                       |
-| --- | -------- | ---------------------------------------------- |
-| 1   | Customer | Double-clicks "confirm payment."               |
-| 2   | System   | May create two payment attempts / two charges. |
+| #   | Tác nhân   | Hành động / Phản hồi hệ thống                       |
+| --- | ---------- | --------------------------------------------------- |
+| 1   | Khách hàng | Double-click "xác nhận thanh toán."                 |
+| 2   | Hệ thống   | Có thể tạo hai lần thử thanh toán / hai khoản tính. |
 
-**Outcome:** This is a **known defect** until Task 10b lands. The demo script must not double-click. Recorded here so the demo is honest and so Task 10b's test has a documented "before" state.
+**Kết quả:** Đây là một **lỗi đã biết** cho đến khi Task 10b hoàn thành. Script demo không được double-click. Được ghi ở đây để demo trung thực và để test của Task 10b có một trạng thái "trước" được ghi lại.
 
-**Assertion (pre-fix):** documented, not asserted. **Post-fix (Task 10b):** S-PAY-5.
+**Khẳng định (trước sửa):** được ghi lại, không được khẳng định. **Sau sửa (Task 10b):** S-PAY-5.
 
-### S-PAY-5: Idempotent payment (post-Task 10b)
+### S-PAY-5: Thanh toán idempotent (sau Task 10b)
 
-**Type:** Error (concurrency)  
+**Loại:** Error (đồng thời)
 **Traces to:** Task 10b AC; PDF §9 test (b); ADR 0004 D4.
 
-**Precondition:** Order `PENDING`. Task 10b merged.
+**Tiền điều kiện:** Đơn hàng `PENDING`. Task 10b đã merge.
 
-| #   | Actor  | Action / System response                                                                                                       |
-| --- | ------ | ------------------------------------------------------------------------------------------------------------------------------ |
-| 1   | Client | Sends `POST /api/v1/payments` twice with the **same** `Idempotency-Key` and the same body.                                     |
-| 2   | System | First request creates a payment; second returns the **same** response (same `paymentId`), does not charge twice (ADR 0004 D4). |
+| #   | Tác nhân | Hành động / Phản hồi hệ thống                                                                                                  |
+| --- | -------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | Client   | Gửi `POST /api/v1/payments` hai lần với **cùng** `Idempotency-Key` và cùng body.                                               |
+| 2   | Hệ thống | Yêu cầu đầu tạo một thanh toán; yêu cầu thứ hai trả về **cùng** phản hồi (cùng `paymentId`), không tính hai lần (ADR 0004 D4). |
 
-**Outcome:** One payment, one charge, one order state transition.
+**Kết quả:** Một thanh toán, một khoản tính, một lần chuyển trạng thái đơn hàng.
 
-**Assertion:** payment count for the order is 1; both responses carry the same `paymentId`; order status `PAID` exactly once.
+**Khẳng định:** số lượng thanh toán cho đơn hàng là 1; cả hai phản hồi mang cùng `paymentId`; trạng thái đơn hàng `PAID` đúng một lần.
 
-### S-PAY-6: Idempotency key reused with different body
+### S-PAY-6: Idempotency key được dùng lại với body khác
 
-**Type:** Error  
-**Traces to:** Task 10b AC ("replay with different body but same key is rejected"); ADR 0004 D4.
+**Loại:** Error
+**Traces to:** Task 10b AC ("phát lại với body khác nhưng cùng key bị từ chối"); ADR 0004 D4.
 
-| #   | Actor  | Action / System response                                                             |
-| --- | ------ | ------------------------------------------------------------------------------------ |
-| 1   | Client | Reuses an `Idempotency-Key` with a different `orderId` or `amount`.                  |
-| 2   | System | Returns `409` with `code: "IDEMPOTENCY_CONFLICT"`; does not create a second payment. |
+| #   | Tác nhân | Hành động / Phản hồi hệ thống                                                  |
+| --- | -------- | ------------------------------------------------------------------------------ |
+| 1   | Client   | Dùng lại một `Idempotency-Key` với `orderId` hoặc `amount` khác.               |
+| 2   | Hệ thống | Trả về `409` với `code: "IDEMPOTENCY_CONFLICT"`; không tạo thanh toán thứ hai. |
 
-**Outcome:** No side effects.
+**Kết quả:** Không có tác dụng phụ.
 
-**Assertion:** `409` with `code: "IDEMPOTENCY_CONFLICT"`; payment count unchanged.
+**Khẳng định:** `409` với `code: "IDEMPOTENCY_CONFLICT"`; số lượng thanh toán không đổi.
 
-## 8. Order history flows — S-ORD-4
+## 8. Luồng lịch sử đơn hàng — S-ORD-4
 
-### S-ORD-4: History and access control
+### S-ORD-4: Lịch sử và kiểm soát truy cập
 
-**Type:** Main + Error  
+**Loại:** Main + Error
 **Traces to:** Task 9 AC; Task 7 guard AC; ADR 0004 D3.
 
-**Precondition:** Two users A and B, each with at least one order.
+**Tiền điều kiện:** Hai người dùng A và B, mỗi người có ít nhất một đơn hàng.
 
-| #   | Actor             | Action / System response                                                                                                                                                                                      |
-| --- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | A (authenticated) | `GET /api/v1/orders/me` returns A's orders, newest first.                                                                                                                                                     |
-| 2   | A                 | Tries to open B's confirmation route `/orders/[code]/confirmation` directly. System returns `404` with `code: "ORDER_NOT_FOUND"` — same response as a nonexistent code, so B's order existence is not leaked. |
-| 3   | Anonymous         | `GET /api/v1/orders/me` → `401`.                                                                                                                                                                              |
+| #   | Tác nhân        | Hành động / Phản hồi hệ thống                                                                                                                                                                                    |
+| --- | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | A (đã xác thực) | `GET /api/v1/orders/me` trả về các đơn hàng của A, mới nhất trước.                                                                                                                                               |
+| 2   | A               | Cố mở trực tiếp route xác nhận của B `/orders/[code]/confirmation`. Hệ thống trả về `404` với `code: "ORDER_NOT_FOUND"` — cùng phản hồi như một code không tồn tại, để sự tồn tại đơn hàng của B không bị rò rỉ. |
+| 3   | Ẩn danh         | `GET /api/v1/orders/me` → `401`.                                                                                                                                                                                 |
 
-**Outcome:** A sees only A's orders; cross-user access is denied without information leakage.
+**Kết quả:** A chỉ thấy đơn hàng của A; truy cập chéo người dùng bị từ chối không rò rỉ thông tin.
 
-**Assertion:** A's response set excludes B's order codes; anonymous request `401`; cross-user route renders the same safe "not found" message (`wireframes.md` §8).
+**Khẳng định:** tập phản hồi của A loại trừ mã đơn hàng của B; yêu cầu ẩn danh `401`; route chéo người dùng render cùng thông điệp "không tìm thấy" an toàn (`wireframes.md` §8).
 
-## 9. State machine flows — S-ORD-5 (post-Task 10a)
+## 9. Luồng state machine — S-ORD-5 (sau Task 10a)
 
-### S-ORD-5: Invalid transition rejected
+### S-ORD-5: Chuyển đổi không hợp lệ bị từ chối
 
-**Type:** Error  
+**Loại:** Error
 **Traces to:** Task 10a AC; PDF §9 test (a); ADR 0004 D1, D5.
 
-**Precondition:** Order `COMPLETED` (terminal).
+**Tiền điều kiện:** Đơn hàng `COMPLETED` (kết thúc).
 
-| #   | Actor  | Action / System response                                                                                                                   |
-| --- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| 1   | Client | Requests a transition `COMPLETED → PAID` (or any non-diagram edge).                                                                        |
-| 2   | System | `assertTransition` throws; API returns `409` with `code: "INVALID_STATE_TRANSITION"` and the offending `from`/`to`. Order state unchanged. |
+| #   | Tác nhân | Hành động / Phản hồi hệ thống                                                                                                              |
+| --- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | Client   | Yêu cầu chuyển đổi `COMPLETED → PAID` (hoặc bất kỳ cạnh nào không có trong sơ đồ).                                                         |
+| 2   | Hệ thống | `assertTransition` ném lỗi; API trả về `409` với `code: "INVALID_STATE_TRANSITION"` và `from`/`to` vi phạm. Trạng thái đơn hàng không đổi. |
 
-**Outcome:** Order remains `COMPLETED`; error is specific, not a generic `500`.
+**Kết quả:** Đơn hàng vẫn `COMPLETED`; lỗi cụ thể, không phải `500` chung chung.
 
-**Assertion:** order status unchanged; response body names the transition. Diagram: `docs/diagrams/flows/flow-order-state-v1.mmd`.
+**Khẳng định:** trạng thái đơn hàng không đổi; body phản hồi nêu tên chuyển đổi. Sơ đồ: `docs/diagrams/flows/flow-order-state-v1.mmd`.
 
-## 10. Concurrent stock — S-ORD-6 (post-Task 10c)
+## 10. Stock đồng thời — S-ORD-6 (sau Task 10c)
 
-### S-ORD-6: Concurrent orders do not oversell
+### S-ORD-6: Đơn hàng đồng thời không bán quá
 
-**Type:** Error (concurrency)  
+**Loại:** Error (đồng thời)
 **Traces to:** Task 10c AC; PDF §9 test (c); ADR 0004 D1.
 
-**Precondition:** Product stock = 1.
+**Tiền điều kiện:** Stock sản phẩm = 1.
 
-| #   | Actor                 | Action / System response                                                                                                                    |
-| --- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Client A and Client B | Both submit payments for the same product, near-simultaneously.                                                                             |
-| 2   | System                | Transaction + optimistic locking on `Product.version`: exactly one succeeds; the other fails with `409` `code: "OUT_OF_STOCK"` (not `500`). |
-| 3   | System                | Final stock = 0.                                                                                                                            |
+| #   | Tác nhân             | Hành động / Phản hồi hệ thống                                                                                                                      |
+| --- | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Client A và Client B | Cả hai submit thanh toán cho cùng sản phẩm, gần như đồng thời.                                                                                     |
+| 2   | Hệ thống             | Transaction + khóa lạc quan trên `Product.version`: đúng một cái thành công; cái kia thất bại với `409` `code: "OUT_OF_STOCK"` (không phải `500`). |
+| 3   | Hệ thống             | Stock cuối cùng = 0.                                                                                                                               |
 
-**Outcome:** One order `PAID`; one payment rejected; stock never negative.
+**Kết quả:** Một đơn hàng `PAID`; một thanh toán bị từ chối; stock không bao giờ âm.
 
-**Assertion:** successful payments for that product = 1; final stock = 0; rejected request status is `409` with `code: "OUT_OF_STOCK"`.
+**Khẳng định:** số thanh toán thành công cho sản phẩm đó = 1; stock cuối cùng = 0; trạng thái yêu cầu bị từ chối là `409` với `code: "OUT_OF_STOCK"`.
 
-## 11. Cancel flow — S-CANCEL-1
+## 11. Luồng hủy — S-CANCEL-1
 
-**Type:** Cancel  
+**Loại:** Cancel
 **Traces to:** PDF §5 flowchart ("Hủy / thanh toán lỗi"); ADR 0004 D1, D6.
 
-**Precondition:** Order `PENDING`.
+**Tiền điều kiện:** Đơn hàng `PENDING`.
 
-| #   | Actor    | Action / System response                                                                         |
-| --- | -------- | ------------------------------------------------------------------------------------------------ |
-| 1   | Customer | Abandons checkout (navigates away) without paying.                                               |
-| 2   | System   | The `PENDING` order remains; **no stock is reserved** (stock decrements at `PAID`, ADR 0004 D1). |
-| 3   | System   | No TTL cleanup in Phase 1 (ADR 0004 D6); the order stays `PENDING` indefinitely.                 |
+| #   | Tác nhân   | Hành động / Phản hồi hệ thống                                                                           |
+| --- | ---------- | ------------------------------------------------------------------------------------------------------- |
+| 1   | Khách hàng | Bỏ checkout (điều hướng đi) mà không thanh toán.                                                        |
+| 2   | Hệ thống   | Đơn hàng `PENDING` vẫn còn; **không có stock nào được đặt trước** (stock giảm tại `PAID`, ADR 0004 D1). |
+| 3   | Hệ thống   | Không có dọn dẹp TTL trong Giai đoạn 1 (ADR 0004 D6); đơn hàng ở `PENDING` vô thời hạn.                 |
 
-**Outcome:** No payment, no stock effect, no points. The order is visible in history as `PENDING`.
+**Kết quả:** Không thanh toán, không ảnh hưởng stock, không điểm. Đơn hàng hiển thị trong lịch sử là `PENDING`.
 
-**Assertion:** order status `PENDING`; no payment row; stock unchanged.
+**Khẳng định:** trạng thái đơn hàng `PENDING`; không có dòng thanh toán; stock không đổi.
 
-## 12. Traceability matrix (scenario → backlog → test)
+## 12. Ma trận truy nguyên (kịch bản → backlog → test)
 
-| Scenario   | Backlog task  | Graded test? | Playwright spec (Phase 2+)             | Manual (Phase 1 demo) |
-| ---------- | ------------- | ------------ | -------------------------------------- | --------------------- |
-| S-MAIN-1   | 3,4,5,6,7,8,9 | —            | `checkout-journey.spec.ts`             | ✅                     |
-| S-AUTH-1   | 7             | —            | `auth-register-login.spec.ts`          | ✅                     |
-| S-AUTH-2   | 7             | —            | `auth-duplicate-email.spec.ts`         | —                     |
-| S-AUTH-3   | 7             | —            | `auth-wrong-password.spec.ts`          | —                     |
-| S-CART-1   | 5             | —            | `cart-mutations.spec.ts`               | ✅                     |
-| S-CART-2   | 5             | —            | `cart-persistence.spec.ts`             | —                     |
-| S-ORD-1    | 6             | —            | `orders-price-tamper.spec.ts`          | —                     |
-| S-ORD-2    | 6             | —            | `orders-empty-cart.spec.ts`            | —                     |
-| S-ORD-3    | 6             | —            | `orders-invalid-input.spec.ts`         | —                     |
-| S-PAY-1    | 8             | —            | (inside `checkout-journey`)            | ✅                     |
-| S-PAY-2    | 8             | —            | `payment-failure.spec.ts`              | ✅                     |
-| S-PAY-3    | 8             | —            | `payment-retry.spec.ts`                | —                     |
-| S-PAY-4    | 8             | —            | *documented gap*                       | —                     |
-| S-PAY-5    | 10b           | **yes (b)**  | `payment-idempotency.spec.ts`          | ✅                     |
-| S-PAY-6    | 10b           | —            | `payment-idempotency-conflict.spec.ts` | —                     |
-| S-ORD-4    | 7,9           | —            | `orders-history-acl.spec.ts`           | ✅                     |
-| S-ORD-5    | 10a           | **yes (a)**  | `order-state-machine.spec.ts`          | ✅                     |
-| S-ORD-6    | 10c           | **yes (c)**  | `orders-concurrent-stock.spec.ts`      | ✅                     |
-| S-CANCEL-1 | 10a           | —            | `order-abandon.spec.ts`                | —                     |
+| Kịch bản   | Nhiệm vụ backlog | Test được chấm? | Playwright spec (Giai đoạn 2+)         | Thủ công (demo Giai đoạn 1) |
+| ---------- | ---------------- | --------------- | -------------------------------------- | --------------------------- |
+| S-MAIN-1   | 3,4,5,6,7,8,9    | —               | `checkout-journey.spec.ts`             | ✅                           |
+| S-AUTH-1   | 7                | —               | `auth-register-login.spec.ts`          | ✅                           |
+| S-AUTH-2   | 7                | —               | `auth-duplicate-email.spec.ts`         | —                           |
+| S-AUTH-3   | 7                | —               | `auth-wrong-password.spec.ts`          | —                           |
+| S-CART-1   | 5                | —               | `cart-mutations.spec.ts`               | ✅                           |
+| S-CART-2   | 5                | —               | `cart-persistence.spec.ts`             | —                           |
+| S-ORD-1    | 6                | —               | `orders-price-tamper.spec.ts`          | —                           |
+| S-ORD-2    | 6                | —               | `orders-empty-cart.spec.ts`            | —                           |
+| S-ORD-3    | 6                | —               | `orders-invalid-input.spec.ts`         | —                           |
+| S-PAY-1    | 8                | —               | (bên trong `checkout-journey`)         | ✅                           |
+| S-PAY-2    | 8                | —               | `payment-failure.spec.ts`              | ✅                           |
+| S-PAY-3    | 8                | —               | `payment-retry.spec.ts`                | —                           |
+| S-PAY-4    | 8                | —               | *lỗ hổng đã ghi*                       | —                           |
+| S-PAY-5    | 10b              | **có (b)**      | `payment-idempotency.spec.ts`          | ✅                           |
+| S-PAY-6    | 10b              | —               | `payment-idempotency-conflict.spec.ts` | —                           |
+| S-ORD-4    | 7,9              | —               | `orders-history-acl.spec.ts`           | ✅                           |
+| S-ORD-5    | 10a              | **có (a)**      | `order-state-machine.spec.ts`          | ✅                           |
+| S-ORD-6    | 10c              | **có (c)**      | `orders-concurrent-stock.spec.ts`      | ✅                           |
+| S-CANCEL-1 | 10a              | —               | `order-abandon.spec.ts`                | —                           |
 
-The three graded tests (PDF §9) are S-PAY-5, S-ORD-5, S-ORD-6. They must pass in CI and be demonstrated at Sprint Review. See `test-strategy.md` §4 for the level at which each is proven.
+Ba test được chấm (PDF §9) là S-PAY-5, S-ORD-5, S-ORD-6. Chúng phải pass trong CI và được trình diễn tại Sprint Review. Xem `test-strategy.md` §4 để biết cấp độ mà mỗi cái được chứng minh.
 
-## 13. Decisions closed by ADR 0004
+## 13. Các quyết định được đóng bởi ADR 0004
 
-When this document was first drafted, six decisions were open. They are now closed by ADR 0004 and the API contract. This table records the closure so a future reader does not re-open them.
+Khi tài liệu này lần đầu được soạn, sáu quyết định còn mở. Chúng hiện đã được đóng bởi ADR 0004 và hợp đồng API. Bảng này ghi lại việc đóng để người đọc tương lai không mở lại chúng.
 
-| #   | Decision                                                      | Closed by   | Current answer                                                               |
-| --- | ------------------------------------------------------------- | ----------- | ---------------------------------------------------------------------------- |
-| D1  | Does stock decrement at order creation or payment success?    | ADR 0004 D1                        | At payment success (`PAID`), under optimistic lock on `Product.version`.     |
-| D2  | Does `POST /payments` failure return `402` or `200 + status`? | ADR 0004 D2; `api-contract.md` §9  | `200` with body `status: "PAYMENT_FAILED"`.                                  |
-| D3  | Is the confirmation route keyed by order `id` or `code`?      | ADR 0004 D3; `api-contract.md` §11 | By `code`: `/orders/[code]/confirmation`.                                    |
-| D4  | What is the loyalty accrual rule?                             | ADR 0004 D7                        | `floor(order.total / 1000)` points per paid order; no redemption in Phase 1. |
-| D5  | Does retry create a new payment or reuse the failed one?      | ADR 0004 D5 | A new payment attempt with a new `Idempotency-Key`; order stays the same.    |
-| D6  | Are stale `PENDING` orders auto-cancelled?                    | ADR 0004 D6 | No TTL in Phase 1; the order stays `PENDING`.                                |
+| #   | Quyết định                                                 | Đóng bởi                           | Câu trả lời hiện tại                                                                           |
+| --- | ---------------------------------------------------------- | ---------------------------------- | ---------------------------------------------------------------------------------------------- |
+| D1  | Stock giảm khi tạo đơn hàng hay khi thanh toán thành công? | ADR 0004 D1                        | Khi thanh toán thành công (`PAID`), dưới khóa lạc quan trên `Product.version`.                 |
+| D2  | `POST /payments` thất bại trả về `402` hay `200 + status`? | ADR 0004 D2; `api-contract.md` §9  | `200` với body `status: "PAYMENT_FAILED"`.                                                     |
+| D3  | Route xác nhận khóa bằng `id` hay `code` của đơn hàng?     | ADR 0004 D3; `api-contract.md` §11 | Bằng `code`: `/orders/[code]/confirmation`.                                                    |
+| D4  | Quy tắc tích lũy điểm trung thành là gì?                   | ADR 0004 D7                        | `floor(order.total / 1000)` điểm mỗi đơn hàng đã thanh toán; không đổi điểm trong Giai đoạn 1. |
+| D5  | Thử lại tạo thanh toán mới hay dùng lại cái thất bại?      | ADR 0004 D5                        | Một lần thử thanh toán mới với `Idempotency-Key` mới; đơn hàng giữ nguyên.                     |
+| D6  | Đơn hàng `PENDING` cũ có bị tự động hủy không?             | ADR 0004 D6                        | Không có TTL trong Giai đoạn 1; đơn hàng vẫn `PENDING`.                                        |
 
-Any new decision that arises from a scenario must be recorded in the relevant ADR (per ADR 0001 rule 5) and this table updated in the same PR.
+Bất kỳ quyết định mới nào phát sinh từ một kịch bản phải được ghi trong ADR liên quan (theo quy tắc 5 của ADR 0001) và bảng này được cập nhật trong cùng PR.
 
-## 14. What this document does not cover
+## 14. Những gì tài liệu này không bao gồm
 
-- **UI visual behavior** (animations, exact copy) — `docs/design/ui-decisions.md`.
-- **API request/response shapes** — `docs/architecture/api-contract.md`; scenarios reference it, not duplicate it.
-- **Non-functional scenarios** (load, latency) — Phase 2+ `docs/testing/`.
-- **Barista/back-office flows** — out of MVP, `product-backlog.md` §16.
+- **Hành vi thị giác UI** (animation, copy chính xác) — `docs/design/ui-decisions.md`.
+- **Hình dạng yêu cầu/phản hồi API** — `docs/architecture/api-contract.md`; kịch bản tham chiếu nó, không sao chép.
+- **Kịch bản phi chức năng** (tải, độ trễ) — Giai đoạn 2+ `docs/testing/`.
+- **Luồng barista/back-office** — ngoài MVP, `product-backlog.md` §16.

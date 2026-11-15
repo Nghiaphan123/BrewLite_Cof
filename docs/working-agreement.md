@@ -1,173 +1,169 @@
-# BrewLite - Working Agreement
+# BrewLite - Thỏa thuận làm việc
 
-**Status:** Phase 1 deliverable  
-**Owner:** H.Tài (Scrum Master role, Task 3.0)  
-**Related:** [Setup](setup.md), [Configuration](config.md), [Project Structure](project-structure.md), [Product Backlog](requirements/product-backlog.md)
+**Trạng thái:** Sản phẩm bàn giao Giai đoạn 1
+**Người phụ trách:** H.Tài (Vai trò Scrum Master, Nhiệm vụ 3.0)
+**Liên quan:** [Cài đặt](setup.md), [Cấu hình](config.md), [Cấu trúc dự án](project-structure.md), [Product Backlog](requirements/product-backlog.md)
 
-This document is the team's process contract. It defines how we track work, what evidence closes a task, how we name files and commits, and what happens when something goes wrong. Every rule here is enforceable in code review. If a rule is not worth enforcing, it should not be in this document.
+Tài liệu này là hợp đồng quy trình của nhóm. Nó định nghĩa cách chúng ta theo dõi công việc, bằng chứng nào để đóng một nhiệm vụ, cách đặt tên tệp và commit, và điều gì xảy ra khi có sự cố. Mọi quy tắc ở đây đều có thể được thực thi trong quá trình review code. Nếu một quy tắc không đáng để thực thi, nó không nên nằm trong tài liệu này.
 
-> **Authority:** the task spreadsheet (`BrewLite-DanhSachTask.xlsx`) is the tracking artifact. This document is the evidence and process contract that the spreadsheet points to. Where they conflict, this document wins for *process* and the spreadsheet wins for *status*.
+> **Thẩm quyền:** bảng tính nhiệm vụ (`BrewLite-DanhSachTask.xlsx`) là công cụ theo dõi. Tài liệu này là hợp đồng về bằng chứng và quy trình mà bảng tính trỏ tới. Khi chúng xung đột, tài liệu này thắng về *quy trình* và bảng tính thắng về *trạng thái*.
 
-## 1. Roles
+## 1. Vai trò
 
-Assigned at kickoff (Task 3.0, 2026-10-22). The kickoff note is `docs/plans/kickoff-2026-10-22.md`.
+Được phân công tại buổi kickoff (Nhiệm vụ 3.0, 2026-10-22). Biên bản kickoff là `docs/plans/kickoff-2026-10-22.md`.
 
-| Role                | Responsibility                                                             | Holder       |
-| ------------------- | -------------------------------------------------------------------------- | ------------ |
-| Product Owner (PO)  | Owns the Product Backlog, prioritizes, accepts increments at Sprint Review | **Nghĩa**    |
-| Scrum Master (SM)   | Owns process, runs ceremonies, unblocks, guards this document              | **H.Tài**    |
-| Development Team    | Builds, tests, reviews; all five members                                   | All          |
-| Reviewer (rotating) | Reviews the PR of the member whose task is being merged                    | Named per PR |
+| Vai trò               | Trách nhiệm                                                                 | Người đảm nhận   |
+| --------------------- | --------------------------------------------------------------------------- | ---------------- |
+| Product Owner (PO)    | Sở hữu Product Backlog, ưu tiên hóa, nghiệm thu increment tại Sprint Review | **Nghĩa**        |
+| Scrum Master (SM)     | Sở hữu quy trình, điều hành các nghi lễ, gỡ chặn, bảo vệ tài liệu này       | **H.Tài**        |
+| Nhóm Phát triển       | Xây dựng, kiểm thử, review; cả năm thành viên                               | Tất cả           |
+| Reviewer (luân phiên) | Review PR của thành viên có nhiệm vụ đang được merge                        | Ghi theo từng PR |
 
-**PO and SM are different people.** Nghĩa owns the Product Backlog and accepts increments; H.Tài runs the process and unblocks. This separation keeps the two checks independent — "is this the right thing?" (PO) and "are we doing it well?" (SM) — and matches the team's informal structure (Nghĩa is the team leader, H.Tài is the assistant; per `config.md` §8's `Cấu hình` sheet).
+**PO và SM là hai người khác nhau.** Nghĩa sở hữu Product Backlog và nghiệm thu increment; H.Tài điều hành quy trình và gỡ chặn. Sự tách biệt này giữ cho hai phép kiểm tra độc lập — "đây có phải là thứ đúng không?" (PO) và "chúng ta có đang làm đúng cách không?" (SM) — và khớp với cấu trúc không chính thức của nhóm (Nghĩa là trưởng nhóm, H.Tài là trợ lý; theo `config.md` §8 sheet `Cấu hình`).
 
-**Backup arrangement:** if the PO is unavailable at a Sprint Review, the SM accepts against the written acceptance criteria in `product-backlog.md` §4–§13 and records it in the retro note. If the SM is unavailable, the PO runs the ceremony. Recorded here so neither role silently lapses.
+**Phương án dự phòng:** nếu PO không có mặt tại Sprint Review, SM nghiệm thu dựa trên tiêu chí chấp nhận bằng văn bản trong `product-backlog.md` §4–§13 và ghi lại trong biên bản retro. Nếu SM không có mặt, PO điều hành nghi lễ. Ghi ở đây để không vai trò nào âm thầm bị bỏ trống.
 
-**Rule:** no one merges their own PR. If the team is down to one available reviewer, the PR waits. This is not negotiable — it is the only thing that makes the `● Xong` evidence note meaningful. When the author is the only available reviewer's peer, the SM (H.Tài) reviews; when the author is the SM, the PO (Nghĩa) reviews.
+**Quy tắc:** không ai được tự merge PR của mình. Nếu nhóm chỉ còn một reviewer khả dụng, PR phải chờ. Điều này không thương lượng được — đây là thứ duy nhất làm cho ghi chú bằng chứng `● Xong` có ý nghĩa. Khi tác giả là người duy nhất có thể review ngang hàng, SM (H.Tài) review; khi tác giả là SM, PO (Nghĩa) review.
 
-## 2. Ceremonies and working hours
+## 2. Các nghi lễ và giờ làm việc
 
-### 2.1 Working window
+### 2.1 Khung giờ làm việc
 
-The team's working window is **09:00–22:00 HCM city (vietnam)**. Work may happen anywhere in that window; no one is expected to be online at a specific time except for the ceremonies in §2.3.
+Khung giờ làm việc của nhóm là **09:00–22:00 giờ TP.HCM (Việt Nam)**. Công việc có thể diễn ra bất kỳ lúc nào trong khung đó; không ai bắt buộc phải online vào một thời điểm cụ thể trừ các nghi lễ ở §2.3.
 
-### 2.2 Daily Scrum (async)
+### 2.2 Daily Scrum (bất đồng bộ)
 
-- **Format:** async, in the team channel. Each member posts their three answers (what I did, what I will do, what blocks me) by **12:00 ICT** each working day.
-- **Duration:** the thread is read-only for the day after 12:00; the SM summarises blockers by 13:00.
-- **Who runs it:** the SM (§1). If the SM is unavailable, the SM names a substitute for that day.
-- **Escalation:** if a blocker cannot be resolved in the thread, the SM schedules a synchronous call that day. The thread is not a substitute for a call when a call is needed.
-- **Why async:** the team's schedules do not overlap for a reliable 15-minute sync. The 12:00 deadline keeps the standup timely without requiring simultaneity.
+- **Hình thức:** bất đồng bộ, trong kênh của nhóm. Mỗi thành viên đăng ba câu trả lời (đã làm gì, sẽ làm gì, đang bị chặn gì) trước **12:00 ICT** mỗi ngày làm việc.
+- **Thời lượng:** luồng thảo luận chỉ đọc trong ngày sau 12:00; SM tóm tắt các điểm chặn trước 13:00.
+- **Ai điều hành:** SM (§1). Nếu SM không có mặt, SM chỉ định người thay thế cho ngày đó.
+- **Leo thang:** nếu một điểm chặn không thể giải quyết trong luồng thảo luận, SM lên lịch một cuộc gọi đồng bộ trong ngày. Luồng thảo luận không thay thế cho cuộc gọi khi cần gọi.
+- **Tại sao bất đồng bộ:** lịch của nhóm không trùng nhau đủ để có một buổi đồng bộ 15 phút đáng tin cậy. Hạn 12:00 giữ cho standup kịp thời mà không cần đồng thời.
 
-### 2.3 Sprint ceremonies (synchronous)
+### 2.3 Các nghi lễ Sprint (đồng bộ)
 
-| Ceremony             | When                         | Duration | Output                                              |
-| -------------------- | ---------------------------- | -------- | --------------------------------------------------- |
-| Sprint Planning      | Start of each Sprint (Phase) | 30 min   | Sprint Backlog, updated spreadsheet                 |
-| Sprint Review        | End of each Sprint           | 20 min   | Demo, PO acceptance, backlog updated                |
-| Sprint Retrospective | After Review                 | 20 min   | Retro note in `docs/plans/`, one improvement action |
+| Nghi lễ              | Khi nào                    | Thời lượng | Đầu ra                                                     |
+| -------------------- | -------------------------- | ---------- | ---------------------------------------------------------- |
+| Sprint Planning      | Đầu mỗi Sprint (Giai đoạn) | 30 phút    | Sprint Backlog, bảng tính được cập nhật                    |
+| Sprint Review        | Cuối mỗi Sprint            | 20 phút    | Demo, PO nghiệm thu, backlog được cập nhật                 |
+| Sprint Retrospective | Sau Review                 | 20 phút    | Biên bản retro trong `docs/plans/`, một hành động cải tiến |
 
-If a synchronous ceremony cannot be held (e.g. a member is unavailable), it is rescheduled within 2 working days, not converted to async. The Review needs a demo; the Retro needs discussion.
+Nếu một nghi lễ đồng bộ không thể tổ chức (ví dụ: một thành viên không có mặt), nó được lên lịch lại trong vòng 2 ngày làm việc, không chuyển sang bất đồng bộ. Review cần demo; Retro cần thảo luận.
 
-### 2.4 Sprint boundary rule
+### 2.4 Quy tắc ranh giới Sprint
 
-A Sprint ends only when every task in it is `● Xong` with an evidence note, or explicitly moved to the next Sprint by the PO with a reason recorded. "Almost done" is not a Sprint state.
+Một Sprint chỉ kết thúc khi mọi nhiệm vụ trong đó đều `● Xong` với ghi chú bằng chứng, hoặc được PO chuyển rõ ràng sang Sprint tiếp theo kèm lý do được ghi lại. "Gần xong" không phải là trạng thái Sprint.
 
-## 3. Task status vocabulary
+## 3. Từ vựng trạng thái nhiệm vụ
 
-The spreadsheet's status column uses exactly three values. Copy the glyph; do not retype it.
+Cột trạng thái của bảng tính dùng đúng ba giá trị. Hãy sao chép ký tự; không gõ lại.
 
-| Glyph        | Meaning                           | Who sets it | When                                   |
-| ------------ | --------------------------------- | ----------- | -------------------------------------- |
-| `○ Chưa làm` | Not started                       | Task owner  | Default state                          |
-| `◐ Đang làm` | In progress                       | Task owner  | When work begins (branch created)      |
-| `● Xong`     | Done — DoD met, evidence recorded | Task owner  | Only when §4 evidence note is complete |
+| Ký tự        | Ý nghĩa                           | Ai đặt       | Khi nào                                  |
+| ------------ | --------------------------------- | ------------ | ---------------------------------------- |
+| `○ Chưa làm` | Chưa bắt đầu                      | Chủ nhiệm vụ | Trạng thái mặc định                      |
+| `◐ Đang làm` | Đang thực hiện                    | Chủ nhiệm vụ | Khi bắt đầu công việc (tạo branch)       |
+| `● Xong`     | Xong — đạt DoD, đã ghi bằng chứng | Chủ nhiệm vụ | Chỉ khi ghi chú bằng chứng §4 hoàn chỉnh |
 
-**Why the glyph matters:** the progress formula is `COUNTIF(E5:E74,"● Xong")`. It matches on the exact string. Retyping `● Xong` with a different bullet character, a trailing space, or a different space width silently breaks the count. Copy from an existing cell.
+## 4. Ghi chú bằng chứng nhiệm vụ (hợp đồng `● Xong`)
 
-**Do not add new statuses.** "Blocked," "In review," "Waiting on X" are not statuses — they are comments in the evidence note or blockers raised at standup. The three-glyph vocabulary is a feature, not a limitation.
-
-## 4. Task evidence notes (the `● Xong` contract)
-
-A task is `● Xong` only when its row carries an evidence note in this exact form:
+Một nhiệm vụ chỉ là `● Xong` khi dòng của nó có ghi chú bằng chứng đúng định dạng này:
 
 ```text
 [DoD] PR #<n> | commit <short-sha> | files: <path>, <path> | doc: <path> | demo: <date>
 ```
 
-**Field rules:**
+**Quy tắc trường:**
 
-| Field                | Required                          | Format                              | Notes                                                                                                             |
-| -------------------- | --------------------------------- | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `PR #<n>`            | yes                               | `PR #42`                            | The merged PR. An unmerged PR is not evidence.                                                                    |
-| `commit <short-sha>` | yes                               | 7–12 hex chars                      | The merge commit or the last commit on the branch. Must exist in `main`.                                          |
-| `files:`             | yes                               | comma-separated repo-relative paths | Every file the task produced or changed that matters. Not every file in the PR — the ones a reviewer would check. |
-| `doc:`               | if the task produced a doc        | one path                            | Required for any task whose acceptance criteria mention a document.                                               |
-| `demo:`              | if the task has a runnable output | `YYYY-MM-DD` or a link              | Date the demo was shown, or a link to a recording.                                                                |
+| Trường               | Bắt buộc                         | Định dạng                                         | Ghi chú                                                                                                                |
+| -------------------- | -------------------------------- | ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `PR #<n>`            | có                               | `PR #42`                                          | PR đã merge. PR chưa merge không phải bằng chứng.                                                                      |
+| `commit <short-sha>` | có                               | 7–12 ký tự hex                                    | Commit merge hoặc commit cuối trên branch. Phải tồn tại trong `main`.                                                  |
+| `files:`             | có                               | đường dẫn tương đối repo, phân tách bằng dấu phẩy | Mọi tệp nhiệm vụ tạo ra hoặc thay đổi mà quan trọng. Không phải mọi tệp trong PR — chỉ những tệp reviewer sẽ kiểm tra. |
+| `doc:`               | nếu nhiệm vụ tạo ra tài liệu     | một đường dẫn                                     | Bắt buộc cho mọi nhiệm vụ có tiêu chí chấp nhận đề cập đến tài liệu.                                                   |
+| `demo:`              | nếu nhiệm vụ có đầu ra chạy được | `YYYY-MM-DD` hoặc một liên kết                    | Ngày demo được trình bày, hoặc liên kết đến bản ghi.                                                                   |
 
-**Where the note goes:** the spreadsheet's `Ghi chú` cell (column D) currently holds mixed planning content (proposal, difficulty, estimate). **Decision:** append the evidence note to that cell after a ` | EVIDENCE: ` separator, e.g.:
+**Ghi chú nằm ở đâu:** ô `Ghi chú` của bảng tính (cột D) hiện chứa nội dung lập kế hoạch hỗn hợp (đề xuất, độ khó, ước lượng). **Quyết định:** nối ghi chú bằng chứng vào ô đó sau dấu phân cách ` | EVIDENCE: `, ví dụ:
 
 ```text
 Đề xuất: Nghĩa | Dự phòng: H.Tài | Độ khó: Trung bình | ... | EVIDENCE: [DoD] PR #12 | commit a1b2c3d | files: apps/api/src/modules/products/products.module.ts, apps/api/src/modules/products/products.service.ts | demo: 2026-11-02
 ```
 
-This keeps the `COUNTIF` formulas intact and avoids adding a column that would shift the hidden `G–H` columns (which the date formulas depend on). **Do not** insert or reorder columns in `Danh sách task` without updating every formula that references `$E`, `$G`, `$H` — that is a spreadsheet-wide change, not a per-task edit.
+Điều này giữ nguyên các công thức `COUNTIF` và tránh thêm cột làm dịch chuyển các cột ẩn `G–H` (mà các công thức ngày phụ thuộc vào). **Không** chèn hoặc sắp xếp lại cột trong `Danh sách task` mà không cập nhật mọi công thức tham chiếu `$E`, `$G`, `$H` — đó là thay đổi toàn bảng tính, không phải chỉnh sửa từng nhiệm vụ.
 
-**Example — Task 6.0 (already `● Xong`):**
+**Ví dụ — Nhiệm vụ 6.0 (đã `● Xong`):**
 
 ```text
 [DoD] PR #3 | commit 7f2e9a1 | files: CONTRIBUTING.md, .github/PULL_REQUEST_TEMPLATE.md, docs/working-agreement.md | doc: docs/working-agreement.md | demo: 2026-10-21
 ```
 
-**Example — Task 2.0 (when it closes):**
+**Ví dụ — Nhiệm vụ 2.0 (khi đóng):**
 
 ```text
 [DoD] PR #9 | commit 4c1d8f2 | files: docs/requirements/product-backlog.md | doc: docs/requirements/product-backlog.md | demo: 2026-10-28
 ```
 
-**Reviewer's job:** before approving a PR whose task will be marked `● Xong`, verify the evidence note matches the PR. Mismatched evidence is a blocking comment. The SM spot-checks one note per Sprint at Review.
+**Việc của reviewer:** trước khi phê duyệt một PR mà nhiệm vụ của nó sẽ được đánh dấu `● Xong`, hãy xác minh ghi chú bằng chứng khớp với PR. Bằng chứng không khớp là bình luận chặn. SM kiểm tra ngẫu nhiên một ghi chú mỗi Sprint tại Review.
 
-## 5. Definition of Done
+## 5. Định nghĩa Hoàn thành (Definition of Done)
 
-From the assignment PDF §10. A task meets DoD when **all** of these hold:
+Từ PDF bài tập §10. Một nhiệm vụ đạt DoD khi **tất cả** các điều sau đúng:
 
-1. Code builds and runs; acceptance criteria for the task are met.
-2. There is a commit on Git with a clear message; the PR was reviewed by a teammate (not the author).
-3. API input is validated; UI handles loading and error states.
-4. The README (or the relevant doc) explains how to run/use what was built.
+1. Code build và chạy; tiêu chí chấp nhận của nhiệm vụ được đáp ứng.
+2. Có commit trên Git với thông điệp rõ ràng; PR được một thành viên khác (không phải tác giả) review.
+3. Đầu vào API được validate; UI xử lý trạng thái loading và lỗi.
+4. README (hoặc tài liệu liên quan) giải thích cách chạy/sử dụng thứ đã xây dựng.
 
-This document's §4 evidence note is how DoD is *proven*. A task can meet DoD and still fail review if the evidence note does not demonstrate it.
+Ghi chú bằng chứng §4 của tài liệu này là cách DoD được *chứng minh*. Một nhiệm vụ có thể đạt DoD và vẫn trượt review nếu ghi chú bằng chứng không chứng minh được điều đó.
 
-## 6. Naming conventions
+## 6. Quy ước đặt tên
 
-All filenames are `kebab-case`. No spaces, no Vietnamese diacritics, no mixed case, no `final`, `v2`, `new`, `copy`, `(1)`.
+Mọi tên tệp đều là `kebab-case`. Không dấu cách, không dấu tiếng Việt, không viết hoa lẫn, không `final`, `v2`, `new`, `copy`, `(1)`.
 
-| Artifact                | Pattern                                                                   | Example                                               |
-| ----------------------- | ------------------------------------------------------------------------- | ----------------------------------------------------- |
-| API feature files       | `apps/api/src/modules/<feature>/<feature>.{module,controller,service}.ts` | `apps/api/src/modules/products/products.service.ts`   |
-| API DTOs                | `.../dto/<verb>-<noun>.dto.ts`                                            | `apps/api/src/modules/orders/dto/create-order.dto.ts` |
-| API unit tests          | co-located `*.spec.ts`                                                    | `products.service.spec.ts`                            |
-| API e2e tests           | `apps/api/test/*.e2e-spec.ts`                                             | `orders.e2e-spec.ts`                                  |
-| Web feature files       | `apps/web/src/features/<feature>/...`                                     | `apps/web/src/features/cart/cart-store.ts`            |
-| Web routes              | only under `apps/web/src/app/`                                            | `apps/web/src/app/checkout/page.tsx`                  |
-| Web components (shared) | `apps/web/src/components/<name>.tsx`                                      | `product-card.tsx`                                    |
-| Docs                    | `docs/<area>/<topic>.md`                                                  | `docs/requirements/scenarios.md`                      |
-| ADRs                    | `docs/architecture/adr/NNNN-slug.md`                                      | `0004-payment-mock-method.md`                         |
-| Diagrams (source)       | `docs/diagrams/<type>/<type>-<topic>-v<n>.mmd`                            | `erd-core-v1.mmd`                                     |
-| Diagrams (export)       | same stem, `.svg` / `.png`                                                | `wf-menu-v2.png`                                      |
-| Playwright tests        | `tests/e2e/<journey>.spec.ts`                                             | `checkout-journey.spec.ts`                            |
+| Sản phẩm                   | Mẫu                                                                       | Ví dụ                                                 |
+| -------------------------- | ------------------------------------------------------------------------- | ----------------------------------------------------- |
+| Tệp tính năng API          | `apps/api/src/modules/<feature>/<feature>.{module,controller,service}.ts` | `apps/api/src/modules/products/products.service.ts`   |
+| DTO API                    | `.../dto/<verb>-<noun>.dto.ts`                                            | `apps/api/src/modules/orders/dto/create-order.dto.ts` |
+| Unit test API              | `*.spec.ts` đặt cùng chỗ                                                  | `products.service.spec.ts`                            |
+| E2e test API               | `apps/api/test/*.e2e-spec.ts`                                             | `orders.e2e-spec.ts`                                  |
+| Tệp tính năng Web          | `apps/web/src/features/<feature>/...`                                     | `apps/web/src/features/cart/cart-store.ts`            |
+| Route Web                  | chỉ dưới `apps/web/src/app/`                                              | `apps/web/src/app/checkout/page.tsx`                  |
+| Component Web (dùng chung) | `apps/web/src/components/<name>.tsx`                                      | `product-card.tsx`                                    |
+| Tài liệu                   | `docs/<area>/<topic>.md`                                                  | `docs/requirements/scenarios.md`                      |
+| ADR                        | `docs/architecture/adr/NNNN-slug.md`                                      | `0004-payment-mock-method.md`                         |
+| Biểu đồ (nguồn)            | `docs/diagrams/<type>/<type>-<topic>-v<n>.mmd`                            | `erd-core-v1.mmd`                                     |
+| Biểu đồ (xuất)             | cùng stem, `.svg` / `.png`                                                | `wf-menu-v2.png`                                      |
+| Test Playwright            | `tests/e2e/<journey>.spec.ts`                                             | `checkout-journey.spec.ts`                            |
 
-**Branch names:** `feat/<task-stt>-<slug>`, `fix/<task-stt>-<slug>`, `docs/<slug>`, `chore/<slug>`. Examples: `feat/15-products-api`, `fix/26-auth-login-email-dup`, `docs/setup-config`.
+**Tên branch:** `feat/<task-stt>-<slug>`, `fix/<task-stt>-<slug>`, `docs/<slug>`, `chore/<slug>`. Ví dụ: `feat/15-products-api`, `fix/26-auth-login-email-dup`, `docs/setup-config`.
 
-**Environment files:** `.env` and `.env.local` are never committed. `.env.example` is. See [Configuration §2.3](config.md).
+**Tệp môi trường:** `.env` và `.env.local` không bao giờ được commit. `.env.example` thì có. Xem [Cấu hình §2.3](config.md).
 
-## 7. Commit and PR conventions
+## 7. Quy ước commit và PR
 
-### 7.1 Commit messages
+### 7.1 Thông điệp commit
 
-Format: `<type>(<scope>): <summary> (Task <stt>)`
+Định dạng: `<type>(<scope>): <summary> (Task <stt>)`
 
-| Field        | Allowed values                                                        |
-| ------------ | --------------------------------------------------------------------- |
-| `type`       | `feat`, `fix`, `docs`, `test`, `refactor`, `chore`                    |
-| `scope`      | the module or area — `api`, `web`, `orders`, `auth`, `docs`, `config` |
-| `summary`    | imperative mood, ≤ 72 chars, no trailing period                       |
-| `Task <stt>` | the spreadsheet STT, or `Task 0` for cross-cutting work               |
+| Trường       | Giá trị cho phép                                                       |
+| ------------ | ---------------------------------------------------------------------- |
+| `type`       | `feat`, `fix`, `docs`, `test`, `refactor`, `chore`                     |
+| `scope`      | module hoặc khu vực — `api`, `web`, `orders`, `auth`, `docs`, `config` |
+| `summary`    | thức mệnh lệnh, ≤ 72 ký tự, không dấu chấm cuối                        |
+| `Task <stt>` | STT trong bảng tính, hoặc `Task 0` cho công việc xuyên suốt            |
 
-Examples:
+Ví dụ:
 - `feat(api): products module (Task 2.0)`
 - `feat(web): menu grid with loading state (Task 3.0)`
 - `test(api): idempotent payment integration (Task 52.0)`
 - `docs: setup and config guides (Task 12.0)`
 - `chore: bump prisma to 6.x (Task 0)`
 
-**Body:** required when the change is not self-explanatory. Explain *why*, not *what* (the diff shows *what*). Reference the ADR number if the commit implements a decision.
+**Thân:** bắt buộc khi thay đổi không tự giải thích. Giải thích *tại sao*, không phải *cái gì* (diff cho thấy *cái gì*). Tham chiếu số ADR nếu commit thực hiện một quyết định.
 
-**Trailer:** add `Refs: Task <stt>` on its own line at the end when the task spans multiple commits. This is how you find all commits for a task.
+**Trailer:** thêm `Refs: Task <stt>` trên dòng riêng ở cuối khi nhiệm vụ trải qua nhiều commit. Đây là cách tìm mọi commit cho một nhiệm vụ.
 
-### 7.2 Pull requests
+### 7.2 Pull request
 
-Every PR uses the repository template (created in Task 6.0). The checklist mirrors DoD §5:
+Mọi PR dùng template của repository (được tạo trong Nhiệm vụ 6.0). Checklist phản ánh DoD §5:
 
 ```markdown
 ## Task
@@ -191,80 +187,62 @@ Task <stt> — <task name>
 <if UI change>
 ```
 
-**PR size:** aim for ≤ 400 changed lines excluding lockfiles and generated code. A larger PR needs a reason in the description or it gets split. This is a guideline, not a gate — the reviewer enforces it.
+**Kích thước PR:** nhắm ≤ 400 dòng thay đổi không tính lockfile và code sinh tự động. PR lớn hơn cần lý do trong mô tả hoặc bị tách. Đây là hướng dẫn, không phải cổng chặn — reviewer thực thi nó.
 
-**Review SLA:** a reviewer responds within one working day. If they cannot, they say so and the author finds another reviewer. A PR that sits unreviewed for two working days is a blocker raised at standup.
+**SLA review:** reviewer phản hồi trong vòng một ngày làm việc. Nếu không thể, họ nói ra và tác giả tìm reviewer khác. PR để không review trong hai ngày làm việc là điểm chặn nêu tại standup.
 
-**Merge:** squash-merge to `main`, delete the branch. The squashed commit subject follows §7.1. The merge commit SHA is what goes in the evidence note.
+**Merge:** squash-merge vào `main`, xóa branch. Tiêu đề commit squashed theo §7.1. SHA commit merge là thứ được ghi trong ghi chú bằng chứng.
 
-## 8. Spreadsheet mechanics
+## 8. Cơ chế bảng tính
 
-The spreadsheet is a working artifact with live formulas. Three rules keep it from breaking:
+Bảng tính là công cụ làm việc với công thức sống. Ba quy tắc giữ cho nó không bị hỏng:
 
-1. **Do not insert or reorder columns** in `Danh sách task` or `Giờ làm mỗi ngày`. The hidden `G–H` columns and the `WORKDAY`/`SUMIF` formulas reference fixed ranges. A column insert shifts every range and breaks the progress count silently.
-2. **Do not edit the formula rows.** Rows starting with `="Phase …"` and `="Tiến độ chung: …"` are computed. Edit the data rows, not the headers.
-3. **Status glyphs are copied, not typed** (§3). The progress formula matches on the exact string.
+1. **Không chèn hoặc sắp xếp lại cột** trong `Danh sách task` hoặc `Giờ làm mỗi ngày`. Các cột ẩn `G–H` và công thức `WORKDAY`/`SUMIF` tham chiếu phạm vi cố định. Chèn cột sẽ dịch chuyển mọi phạm vi và âm thầm làm hỏng phép đếm tiến độ.
+2. **Không sửa các dòng công thức.** Các dòng bắt đầu bằng `="Phase …"` và `="Tiến độ chung: …"` là được tính toán. Sửa các dòng dữ liệu, không sửa phần đầu.
+3. **Ký tự trạng thái được sao chép, không gõ** (§3). Công thức tiến độ khớp trên chuỗi chính xác.
 
-**If you must change the start date** (`Cấu hình!B3`): every `WORKDAY`-derived date reflows automatically, but the hand-typed dates in `Danh sách task` column `Ngày` (e.g. `2026-10-21 20:26:03.922000` on Task 6.0) were computed once and **do not** reflow. Recompute them or the two sheets disagree. See [Configuration §5](config.md).
+**Nếu bạn phải thay đổi ngày bắt đầu** (`Cấu hình!B3`): mọi ngày dẫn xuất từ `WORKDAY` tự động tính lại, nhưng các ngày được gõ tay trong cột `Ngày` của `Danh sách task` (ví dụ `2026-10-21 20:26:03.922000` trên Nhiệm vụ 6.0) được tính một lần và **không** tính lại. Hãy tính lại chúng hoặc hai sheet sẽ không khớp. Xem [Cấu hình §5](config.md).
 
-**Backup:** before any structural edit to the spreadsheet, commit a copy to `docs/plans/` (e.g. `backlog-2026-10-26.xlsx`). The Git history is the recovery mechanism.
+**Sao lưu:** trước bất kỳ chỉnh sửa cấu trúc nào của bảng tính, commit một bản sao vào `docs/plans/` (ví dụ `backlog-2026-10-26.xlsx`). Lịch sử Git là cơ chế phục hồi.
 
-## 9. Review checklist (what a reviewer actually checks)
+## 9. Checklist review (reviewer thực sự kiểm tra gì)
 
-In order, stop at the first failure:
+Theo thứ tự, dừng ở lỗi đầu tiên:
 
-1. **Task linkage:** the PR title and description reference the correct STT; the evidence note draft matches the PR.
-2. **Scope:** the PR does what the task says and nothing more. Drive-by refactors are a separate PR.
-3. **DoD §5:** builds, acceptance criteria, validation/states, doc.
-4. **Naming §6:** files, branches, commits follow the patterns.
-5. **No secrets:** no `.env`, no tokens, no real `JWT_SECRET` in the diff.
-6. **No spreadsheet structural edits:** column inserts, formula edits, retyped glyphs.
-7. **Tests:** new behavior has a test; the relevant suite passes in CI (once CI exists — Phase 2+).
+1. **Liên kết nhiệm vụ:** tiêu đề và mô tả PR tham chiếu đúng STT; bản nháp ghi chú bằng chứng khớp với PR.
+2. **Phạm vi:** PR làm đúng những gì nhiệm vụ nói và không hơn. Refactor nhân tiện là PR riêng.
+3. **DoD §5:** build, tiêu chí chấp nhận, validate/trạng thái, tài liệu.
+4. **Đặt tên §6:** tệp, branch, commit theo mẫu.
+5. **Không có bí mật:** không `.env`, không token, không `JWT_SECRET` thật trong diff.
+6. **Không chỉnh sửa cấu trúc bảng tính:** chèn cột, sửa công thức, gõ lại ký tự.
+7. **Test:** hành vi mới có test; bộ test liên quan pass trong CI (khi CI tồn tại — Giai đoạn 2+).
 
-The reviewer leaves a comment for each failure, not a vague "needs work." The author resolves and re-requests review; the reviewer does not re-review from scratch.
+Reviewer để lại bình luận cho từng lỗi, không phải "cần làm lại" chung chung. Tác giả giải quyết và yêu cầu review lại; reviewer không review lại từ đầu.
 
-## 10. Blockers and escalation
+## 10. Điểm chặn và leo thang
 
-A blocker is anything that stops a task from reaching `● Xong` within its estimate + 25% (the spreadsheet's rule 2). When a blocker appears:
+Điểm chặn là bất cứ thứ gì ngăn một nhiệm vụ đạt `● Xong` trong vòng ước lượng + 25% (quy tắc 2 của bảng tính). Khi điểm chặn xuất hiện:
 
-1. Raise it at the next Daily Scrum (or immediately in the team channel if it is severe).
-2. The SM records it: what, who, since when, what is needed to unblock.
-3. If unresolved in one working day, the SM escalates to the PO, who may reassign the task to the `Dự phòng` (backup) member named in the spreadsheet.
-4. If a task is reassigned, the evidence note records both the original and the new owner, and the reason.
+1. Nêu tại Daily Scrum tiếp theo (hoặc ngay lập tức trong kênh nhóm nếu nghiêm trọng).
+2. SM ghi lại: cái gì, ai, từ khi nào, cần gì để gỡ chặn.
+3. Nếu không giải quyết trong một ngày làm việc, SM leo thang lên PO, người có thể chuyển nhiệm vụ cho thành viên `Dự phòng` (backup) được nêu trong bảng tính.
+4. Nếu nhiệm vụ được chuyển giao, ghi chú bằng chứng ghi lại cả chủ cũ và chủ mới, cùng lý do.
 
-**Do not silently reassign.** The spreadsheet's `Người làm` column and the evidence note must agree.
+**Không âm thầm chuyển giao.** Cột `Người làm` của bảng tính và ghi chú bằng chứng phải khớp nhau.
 
-## 11. Change log for this document
+## 11. Nhật ký thay đổi của tài liệu này
 
-Changes to this document affect everyone. Every change gets a row here and an entry in the PR description.
+Thay đổi tài liệu này ảnh hưởng đến tất cả mọi người. Mỗi thay đổi có một dòng ở đây và một mục trong mô tả PR.
 
-| Date         | Change          | Author | ADR / PR |
-| ------------ | --------------- | ------ | -------- |
-| *2026-10-22* | Initial version | H.Tài  | —        |
+| Ngày         | Thay đổi      | Tác giả | ADR / PR |
+| ------------ | ------------- | ------- | -------- |
+| *2026-10-22* | Phiên bản đầu | H.Tài   | —        |
 
-## 12. Open items
+## 12. Ghi Chú
 
-| Item                                                       | Owner | Closes when                               |
-| ---------------------------------------------------------- | ----- | ----------------------------------------- |
-| Ratify role assignments (PO, SM)                           | H.Tài | Task 3.0 `● Xong`                         |
-| Create PR template file `.github/PULL_REQUEST_TEMPLATE.md` | Nghĩa | Task 6.0 evidence note updated to cite it |
-| Decide CI provider (GitHub Actions assumed)                | H.Tài | First workflow in `.github/workflows/`    |
-| Retro note location (`docs/plans/retro-<sprint>.md`)       | H.Tài | First Sprint Review                       |
-
----
-
-## Notes on choices I made (so you can accept or override)
-
-1. **§4 is the heart of this doc, and it makes a specific call on *where* the evidence note goes.** You said "we need to write a note in the task list when we complete a task, the note should contain the file name and its location." The `Ghi chú` column already holds planning content, and adding a column would shift the hidden `G–H` columns that the date formulas depend on. So the decision is: append to the existing cell after ` | EVIDENCE: `. It's ugly but it's the only option that doesn't break the spreadsheet. If you'd rather add a dedicated `I – Evidence` column, that's a cleaner long-term choice — but it requires auditing every `$E`/`$G`/`$H` reference first, which is why I flagged it as a "spreadsheet-wide change" rather than assuming it.
-
-2. **§5 (DoD) is deliberately short and points at the PDF.** The PDF's §10 is the authority; this doc doesn't paraphrase it into something that can drift. What this doc adds is *"§4 evidence is how DoD is proven"* — that's the missing link between the PDF's DoD and the spreadsheet's `● Xong`.
-
-3. **§6 naming table is the enforcement surface.** It repeats some of `project-structure.md`'s conventions (NestJS module files, Next.js feature files) because a reviewer should not have to open two docs to check a filename. The duplication is intentional and the two must be updated together — I noted that in the config doc's §6 as well.
-
-4. **§8 (spreadsheet mechanics) is the section nobody writes until the spreadsheet breaks.** Three rules — no column inserts, no formula edits, copy glyphs — each maps to a real failure mode I can see in your file: the `COUNTIF` string match, the hidden-column date formulas, and the hand-typed `Ngày` column that won't reflow. The start-date trap is cross-referenced from `config.md` §5 so it's stated once in each doc's own vocabulary.
-
-5. **§10 (blockers) operationalizes the spreadsheet's rule 2** ("if the proposed person is late > 25%, the backup takes over"). The spreadsheet states the rule; this doc states the process for invoking it, including the "do not silently reassign" guard. That guard matters because silent reassignment is how evidence notes stop matching the `Người làm` column.
-
-6. **§12 (open items) will shrink as you close things.** The PR template file (`.github/PULL_REQUEST_TEMPLATE.md`) is referenced in §7.2 but doesn't exist yet — it's a Task 6.0 artifact, and Task 6.0 is already `● Xong` without it. That's a real gap: either create the template now and update Task 6.0's evidence note, or move the template creation into the open items table (which I did). Pick one at the next standup.
-
-7. **One inconsistency to fix in `setup.md` after this:** §10 step 5 says `feat(api): products module (Task 2.0)` — that matches §7.1 here. Good. But §10 step 7 says "add the evidence note in the same PR" — §4 here says the note is *ready* for the spreadsheet when the PR is approved, and the spreadsheet edit happens after merge. Minor, but align the wording so nobody edits the spreadsheet before the PR merges and then has to correct the commit SHA.
+| Mục                                                    | Người phụ trách | Đóng khi                                                       |
+| ------------------------------------------------------ | --------------- | -------------------------------------------------------------- |
+| Phê chuẩn phân công vai trò (PO, SM)                   | H.Tài           | Nhiệm vụ 3.0 `● Xong`                                          |
+| Tạo tệp PR template `.github/PULL_REQUEST_TEMPLATE.md` | Nghĩa           | Ghi chú bằng chứng Nhiệm vụ 6.0 được cập nhật để tham chiếu nó |
+| Quyết định nhà cung cấp CI (giả định GitHub Actions)   | H.Tài           | Workflow đầu tiên trong `.github/workflows/`                   |
+| Vị trí biên bản retro (`docs/plans/retro-<sprint>.md`) | H.Tài           | Sprint Review đầu tiên                                         |
