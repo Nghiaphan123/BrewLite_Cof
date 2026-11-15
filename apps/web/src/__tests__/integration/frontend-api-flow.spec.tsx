@@ -504,7 +504,6 @@ describe('Integration Test: Frontend <-> Backend API', () => {
         name: 'Nguyễn Văn A',
         email: 'new@brewlite.vn',
         password: 'password123',
-        name: 'new',
       }),
     );
 
