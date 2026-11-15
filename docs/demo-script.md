@@ -1,7 +1,7 @@
 # BrewLite - Kịch bản demo bàn giao
 
 **Dùng cho:** buổi Sprint Review / Demo cuối Sprint 3 (Mục 11 đề Assignment 1)  
-**Cập nhật theo:** `main` ngày 10/11/2026 (có PR #14, #15 và chọn size trên thẻ món)  
+**Cập nhật theo:** `main` ngày 15/11/2026 (có PR #14, #15, chọn size trên thẻ món, nút "Thêm vào giỏ" mở trang chọn topping)  
 **Liên quan:** [README](../README.md), [Local deployment](deployment.md), [Scenarios](requirements/scenarios.md), [Test strategy §7](testing/test-strategy.md), [Checklist đề bài](brewlite-checklist.md), Retro [Sprint 1](plans/retro-sprint-1.md), [Sprint 2](plans/retro-sprint-2.md), [Sprint 3](plans/retro-sprint-3.md)
 
 Mục 11 của đề yêu cầu buổi bàn giao gồm 4 phần. Tài liệu này đi theo đúng thứ tự đó:
@@ -77,9 +77,9 @@ Giá dùng trong kịch bản: Latte size S 45.000₫, size M cộng 5.000₫, s
 | 3   | Đăng nhập `customer01`                                                                       | JWT được cấp, tên khách hiện ở header                                                   | Chuyển đến `/menu`                                   |
 | 4   | Xem menu                                                                                     | Trạng thái đang tải rồi lưới sản phẩm có ảnh, tên, giá                                 | 30 món hiển thị                                      |
 | 5   | Trên thẻ một món, bấm chọn size **L**                                                        | Giá trên thẻ đổi theo size ngay tại menu                                                | Giá tăng 10.000₫ so với size S                       |
-| 6   | Bấm **"Thêm vào giỏ"** trên thẻ đó                                                           | Thông báo "Đã thêm … (size L) vào giỏ", badge giỏ hàng tăng                             | Badge = 1                                            |
+| 6   | Bấm **"Thêm vào giỏ"** trên thẻ đó, ở trang chi tiết bấm nút thêm vào giỏ                    | Trang chi tiết mở ra với size **L** đã chọn sẵn để khách chọn thêm topping; thêm xong tự quay lại menu | Thông báo "Đã thêm … vào giỏ", badge = 1 |
 | 7   | Mở **Latte**, chọn size **M**, thêm 2 topping (ví dụ Trân châu đen, Kem cheese), số lượng 2 | Giá cập nhật ngay khi đổi tuỳ chọn: (45.000 + 5.000 + 10.000) × 2                       | Tạm tính **120.000₫**                                |
-| 8   | Thêm vào giỏ, mở giỏ hàng, đổi số lượng một món                                              | Tổng tiền tự tính lại                                                                   | Tổng đúng                                            |
+| 8   | Thêm vào giỏ (trang quay lại menu), mở giỏ hàng, đổi số lượng một món                        | Tổng tiền tự tính lại                                                                   | Tổng đúng                                            |
 | 9   | Nhập mã `WELCOME20K`, bấm **Áp dụng**                                                        | Giảm giá áp dụng và hiện trên tổng                                                      | Giảm 20.000₫                                         |
 | 10  | Chỉ vào nút **Thanh toán**                                                                   | Nút hiện tổng tiền (tiêu chí US-05)                                                     | `Thanh toán · <tổng>₫`                               |
 | 11  | Bấm Thanh toán, chọn **Ví điện tử** (hoặc **Thẻ ngân hàng**), làm theo bước xác nhận demo   | Cổng thanh toán là mô phỏng, không dùng tiền thật                                       | Thanh toán thành công                                |

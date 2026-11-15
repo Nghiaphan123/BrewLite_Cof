@@ -8,7 +8,7 @@ BrewLite is a mobile-first web app for ordering coffee at a counter. A customer 
 
 | Area          | What the user can do                                                                                                    |
 | ------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| Menu          | Browse 30 drinks with image, name and price; pick size S/M/L on the card, then "Thêm vào giỏ" or "Mua ngay" (straight to checkout) |
+| Menu          | Browse 30 drinks with image, name and price; pick size S/M/L on the card, then "Thêm vào giỏ" (opens the product page to add toppings, then returns to the menu) or "Mua ngay" (straight to checkout) |
 | Product       | Choose size S/M/L and toppings; the price updates as options change; a sold-out drink or topping cannot be chosen       |
 | Cart          | Add, change quantity, remove; the total and the cart badge update automatically; the cart is kept per account and warns when a drink or topping runs short |
 | Account       | Register (name, email, password) and sign in with JWT; the profile shows loyalty points, past orders, password change   |
