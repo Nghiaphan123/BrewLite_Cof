@@ -83,6 +83,7 @@ model User {
   orders    Order[]
   payments  Payment[]
   cart      Cart?
+  loyaltyTransactions LoyaltyTransaction[]
 
   @@map("users")
 }
