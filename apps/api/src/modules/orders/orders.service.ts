@@ -43,6 +43,9 @@ import { PromotionsService } from '../promotions/promotions.service.js';
 import { loyaltyPointsFor } from '../payments/loyalty.js';
 import { toppingUsage } from './topping-usage.js';
 
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 interface CreateOrderItemInput {
   productId: string;
   size: 'S' | 'M' | 'L';
@@ -289,9 +292,11 @@ export class OrdersService {
 
   async transition(orderId: string, nextStatus: OrderStatus) {
     return this.prisma.$transaction(async (tx) => {
-      const order = await tx.order.findUnique({
-        where: { id: orderId },
-      });
+      // orders.id is a UUID column: a malformed id would make Postgres fail the
+      // query (500). No order can have it, so it is answered like a missing order.
+      const order = UUID_PATTERN.test(orderId)
+        ? await tx.order.findUnique({ where: { id: orderId } })
+        : null;
 
       if (!order) {
         throw new NotFoundException({
