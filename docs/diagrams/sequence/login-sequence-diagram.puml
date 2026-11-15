@@ -1,0 +1,37 @@
+@startuml login-sequence-diagram
+title BrewLite – Đăng nhập
+skinparam shadowing false
+skinparam backgroundColor #FFFFFF
+skinparam sequenceMessageAlign left
+autonumber
+
+actor "Khách hàng" as KH
+participant "Web (Next.js)" as UI
+participant "Zustand store\n(localStorage)" as ST
+participant "API (NestJS)" as API
+database "PostgreSQL" as DB
+
+KH -> UI: Nhập email (hoặc tên) + mật khẩu\nbấm "Đăng nhập"
+UI -> UI: Hiện màn hình "Đang đăng nhập..."
+UI -> API: POST /auth/login {email, password}
+API -> DB: Tìm user theo email hoặc tên\n("admin" → admin@brewlite.vn)
+DB --> API: user | null
+API -> API: bcrypt.compare(password, passwordHash)
+alt không có user hoặc sai mật khẩu
+  API --> UI: 401 AUTH_INVALID
+  UI --> KH: "Email hoặc mật khẩu không đúng."
+else tài khoản bị admin khoá
+  API --> UI: 403 ACCOUNT_BLOCKED
+  UI --> KH: "Tài khoản của bạn đã bị khoá..."
+else hợp lệ
+  API -> API: Ký JWT {sub, email, role}\n(hết hạn theo JWT_EXPIRES_IN)
+  API --> UI: 200 {accessToken, expiresIn, user}
+  UI -> ST: setAuth: lưu brewlite_token, brewlite_user
+  note over KH, DB: CartSync thấy có userId mới → tải giỏ hàng từ server (xem cart-sync-sequence-diagram)
+  alt role = ADMIN
+    UI --> KH: Chuyển tới /admin
+  else khách hàng
+    UI --> KH: Chuyển tới trang redirect an toàn (mặc định /)
+  end
+end
+@enduml

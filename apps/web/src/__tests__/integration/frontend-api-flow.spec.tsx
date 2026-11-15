@@ -90,8 +90,14 @@ describe('Integration Test: Frontend <-> Backend API', () => {
     expect(screen.queryByText('Cà phê sữa')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('tab', { name: /Tất cả/ }));
+    // Thêm vào giỏ: chưa thêm ngay mà sang trang chi tiết để chọn topping, giữ size đã chọn.
+    fireEvent.click(screen.getByTestId('card-size-coffee-1-L'));
+    fireEvent.click(screen.getByRole('button', { name: 'Thêm Cà phê sữa vào giỏ hàng' }));
+    expect(pushMock).toHaveBeenCalledWith('/products/coffee-1?size=L');
+    expect(useCartStore.getState().getTotalItems()).toBe(0);
+
     fireEvent.click(
-      screen.getByRole('button', { name: 'Thêm Cà phê sữa vào giỏ hàng' }),
+      screen.getByRole('button', { name: 'Mua ngay Cà phê sữa' }),
     );
     expect(useCartStore.getState().getTotalItems()).toBe(1);
     expect(screen.getByRole('link', { name: /Giỏ hàng, hiện có 1 sản phẩm/ })).toBeInTheDocument();

@@ -88,7 +88,7 @@ describe('Thẻ món ở menu: tồn kho (mục 5)', () => {
   it('còn hàng: thêm nhanh được, hết số ly còn lại thì khoá nút', () => {
     render(<ProductCard product={{ id: 'p1', name: 'Latte', price: 45000, imageUrl: '', stock: 1 }} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Thêm Latte vào giỏ hàng' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Mua ngay Latte' }));
     expect(useCartStore.getState().getTotalItems()).toBe(1);
     expect(screen.getByRole('button', { name: 'Giỏ đã có hết số Latte còn lại' })).toBeDisabled();
   });

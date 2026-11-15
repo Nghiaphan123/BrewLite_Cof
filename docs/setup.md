@@ -1,71 +1,71 @@
-# BrewLite - Setup and Onboarding
+# BrewLite - Cài đặt và Hướng dẫn nhập môn
 
-**Status:** Phase 1 deliverable  
-**Owner:** Nghĩa, H.Tài (Task 1.0, Task 12.0)  
-**Related:** [Project Structure](project-structure.md), [Configuration](config.md), [Working Agreement](working-agreement.md), [README](../README.md)
+**Trạng thái:** Sản phẩm bàn giao Giai đoạn 1
+**Người phụ trách:** Nghĩa, H.Tài (Nhiệm vụ 1.0, Nhiệm vụ 12.0)
+**Liên quan:** [Cấu trúc dự án](project-structure.md), [Cấu hình](config.md), [Thỏa thuận làm việc](working-agreement.md), [README](../README.md)
 
-This guide takes a teammate from a clean machine to a running BrewLite stack: web app, API, and database, with seed data loaded. Follow it top to bottom the first time. If a step fails, check the [Troubleshooting](#troubleshooting) section before asking in the team channel.
+Hướng dẫn này đưa một thành viên từ máy sạch đến một stack BrewLite đang chạy: ứng dụng web, API, và cơ sở dữ liệu, với dữ liệu seed đã được nạp. Lần đầu hãy làm theo từ trên xuống dưới. Nếu một bước thất bại, hãy xem phần [Xử lý sự cố](#xử-lý-sự-cố) trước khi hỏi trong kênh nhóm.
 
-> **Scope:** this doc covers local development only. Docker Compose end-to-end and deployment are Phase 2+ (`docs/deployment.md`).
+> **Phạm vi:** tài liệu này chỉ bao gồm phát triển cục bộ. Docker Compose đầu-cuối và triển khai thuộc Giai đoạn 2+ (`docs/deployment.md`).
 
-## 1. Prerequisites
+## 1. Yêu cầu tiên quyết
 
-| Tool                         | Version               | Check command      | Notes                                                    |
-| ---------------------------- | --------------------- | ------------------ | -------------------------------------------------------- |
-| Node.js                      | 22 LTS or 24 LTS      | `node --version`   | Must be ≥ 22. The apps pin no engine field yet; use LTS. |
-| npm                          | 10+ (ships with Node) | `npm --version`    | Package manager is npm per app, not a root workspace.    |
-| Docker Desktop               | Current stable        | `docker --version` | Used for the PostgreSQL container only in Phase 1.       |
-| Git                          | 2.40+                 | `git --version`    |                                                          |
-| PostgreSQL client (optional) | 16+                   | `psql --version`   | Only needed for manual DB inspection.                    |
-| IDE                          | VS Code recommended   | —                  | Install the Prisma and ESLint extensions.                |
+| Công cụ                      | Phiên bản            | Lệnh kiểm tra      | Ghi chú                                                                |
+| ---------------------------- | -------------------- | ------------------ | ---------------------------------------------------------------------- |
+| Node.js                      | 22 LTS hoặc 24 LTS   | `node --version`   | Phải ≥ 22. Các ứng dụng chưa ghim trường engine; dùng LTS.             |
+| npm                          | 10+ (đi kèm Node)    | `npm --version`    | Trình quản lý gói là npm theo từng ứng dụng, không phải workspace gốc. |
+| Docker Desktop               | Bản ổn định hiện tại | `docker --version` | Chỉ dùng cho container PostgreSQL trong Giai đoạn 1.                   |
+| Git                          | 2.40+                | `git --version`    |                                                                        |
+| PostgreSQL client (tùy chọn) | 16+                  | `psql --version`   | Chỉ cần cho việc kiểm tra DB thủ công.                                 |
+| IDE                          | Khuyến nghị VS Code  | —                  | Cài extension Prisma và ESLint.                                        |
 
-Windows users: run commands in **PowerShell** unless a step says otherwise. The examples use PowerShell syntax.
+Người dùng Windows: chạy lệnh trong **PowerShell** trừ khi một bước nói khác. Các ví dụ dùng cú pháp PowerShell.
 
-## 2. Clone and enter the repository
+## 2. Clone và vào repository
 
 ```powershell
 git clone <repository-url> BrewLite
 cd BrewLite
 ```
 
-The root has **no** `package.json` and no npm workspace. Every install and every script runs from `apps/api` or `apps/web`. Do not run `npm install` at the root — it will fail or create a stray lockfile.
+Thư mục gốc **không có** `package.json` và không có npm workspace. Mọi lần cài đặt và mọi script chạy từ `apps/api` hoặc `apps/web`. Không chạy `npm install` ở thư mục gốc — nó sẽ thất bại hoặc tạo một lockfile lạc.
 
-## 3. Start the database
+## 3. Khởi động cơ sở dữ liệu
 
-Phase 1 uses the PostgreSQL service from the root `docker-compose.yml`.
+Giai đoạn 1 dùng dịch vụ PostgreSQL từ `docker-compose.yml` ở thư mục gốc.
 
 ```powershell
 docker compose up -d db
 docker compose ps
 ```
 
-Expected: the `db` service is `running` and healthy. If port `5432` is already taken by a local Postgres install, stop that service or change the host port in `docker-compose.yml` and update `DATABASE_URL` in `apps/api/.env` (see [Configuration](config.md)).
+Kỳ vọng: dịch vụ `db` ở trạng thái `running` và healthy. Nếu cổng `5432` đã bị một bản cài Postgres cục bộ chiếm, hãy dừng dịch vụ đó hoặc đổi cổng host trong `docker-compose.yml` và cập nhật `DATABASE_URL` trong `apps/api/.env` (xem [Cấu hình](config.md)).
 
-Verify connectivity:
+Kiểm tra kết nối:
 
 ```powershell
 docker compose exec db pg_isready -U brewlite
 ```
 
-## 4. Configure environment files
+## 4. Cấu hình tệp môi trường
 
-Each app owns its own `.env`. Copy the examples, then fill in values.
+Mỗi ứng dụng có `.env` riêng. Sao chép các tệp mẫu, sau đó điền giá trị.
 
 ```powershell
 Copy-Item apps/api/.env.example apps/api/.env
 Copy-Item apps/web/.env.example apps/web/.env
 ```
 
-The full variable table, defaults, and the reason for each variable live in [Configuration](config.md). The minimum you need for a local run:
+Bảng biến đầy đủ, giá trị mặc định, và lý do cho từng biến nằm trong [Cấu hình](config.md). Tối thiểu bạn cần cho một lần chạy cục bộ:
 
 - `apps/api/.env` — `DATABASE_URL`, `JWT_SECRET`, `PORT`, `WEB_ORIGIN`
 - `apps/web/.env` — `NEXT_PUBLIC_API_URL`
 
-**Never commit `.env`.** It is covered by `.gitignore`; if you find yourself needing to share a value, update `.env.example` instead.
+**Không bao giờ commit `.env`.** Nó được bao bởi `.gitignore`; nếu bạn thấy mình cần chia sẻ một giá trị, hãy cập nhật `.env.example` thay vào đó.
 
-## 5. Install dependencies
+## 5. Cài đặt phụ thuộc
 
-Install separately in each app. Order does not matter, but do not mix them.
+Cài đặt riêng trong từng ứng dụng. Thứ tự không quan trọng, nhưng đừng trộn lẫn chúng.
 
 ```powershell
 cd apps/api
@@ -75,11 +75,11 @@ cd ../web
 npm install
 ```
 
-Each app has its own `package-lock.json`. Commit the lockfile whenever you add, remove, or upgrade a dependency in that app.
+Mỗi ứng dụng có `package-lock.json` riêng. Commit lockfile mỗi khi bạn thêm, xóa, hoặc nâng cấp một phụ thuộc trong ứng dụng đó.
 
-## 6. Set up the database schema
+## 6. Thiết lập schema cơ sở dữ liệu
 
-From `apps/api`:
+Từ `apps/api`:
 
 ```powershell
 cd apps/api
@@ -88,21 +88,21 @@ npx prisma migrate dev
 npx prisma db seed
 ```
 
-- `prisma generate` builds the client from `prisma/schema.prisma`.
-- `migrate dev` applies migrations and creates the database if missing. In Phase 1, the first migration is created by the owner of Task 1.0 / Task 14.0 — if `prisma/migrations/` is empty, coordinate before running this.
-- `db seed` loads sample menu data (Task 9.0, Task 14.0). The seed script is `apps/api/prisma/seed.ts`.
+- `prisma generate` xây dựng client từ `prisma/schema.prisma`.
+- `migrate dev` áp dụng các migration và tạo cơ sở dữ liệu nếu chưa có. Trong Giai đoạn 1, migration đầu tiên được tạo bởi người phụ trách Nhiệm vụ 1.0 / Nhiệm vụ 14.0 — nếu `prisma/migrations/` trống, hãy phối hợp trước khi chạy lệnh này.
+- `db seed` nạp dữ liệu menu mẫu (Nhiệm vụ 9.0, Nhiệm vụ 14.0). Script seed là `apps/api/prisma/seed.ts`.
 
-To reset to a clean state:
+Để đặt lại về trạng thái sạch:
 
 ```powershell
 npx prisma migrate reset
 ```
 
-This drops the schema, re-applies migrations, and re-runs the seed. **It deletes all local data.** Confirm before running.
+Lệnh này xóa schema, áp dụng lại migration, và chạy lại seed. **Nó xóa toàn bộ dữ liệu cục bộ.** Hãy xác nhận trước khi chạy.
 
-## 7. Run the apps
+## 7. Chạy các ứng dụng
 
-Use two terminals.
+Dùng hai terminal.
 
 **Terminal 1 — API:**
 
@@ -111,7 +111,7 @@ cd apps/api
 npm run start:dev
 ```
 
-Expected: Nest logs a startup banner and listens on the API port from `apps/api/.env` (see [Configuration](config.md) for the assigned port; `3001` is the provisional default per `config.md` §1.2). The default endpoint check is:
+Kỳ vọng: Nest ghi log banner khởi động và lắng nghe trên cổng API từ `apps/api/.env` (xem [Cấu hình](config.md) để biết cổng được gán; `3001` là mặc định tạm thời theo `config.md` §1.2). Kiểm tra endpoint mặc định là:
 
 ```powershell
 curl http://localhost:3001/api/v1/health
@@ -124,24 +124,24 @@ cd apps/web
 npm run dev
 ```
 
-Expected: Next.js prints `Local: http://localhost:3000` (or the next free port — read the log, do not assume). Open it in a browser.
+Kỳ vọng: Next.js in ra `Local: http://localhost:3000` (hoặc cổng trống tiếp theo — đọc log, đừng giả định). Mở nó trong trình duyệt.
 
-## 8. Verify the scaffold ("Hello" check)
+## 8. Xác minh scaffold (kiểm tra "Hello")
 
-This is the acceptance criterion for Task 1.0 and Task 12.0. All four checks must pass before you consider setup complete.
+Đây là tiêu chí chấp nhận cho Nhiệm vụ 1.0 và Nhiệm vụ 12.0. Cả bốn kiểm tra phải pass trước khi bạn coi việc cài đặt là hoàn tất.
 
-| Check           | How                                                          | Expected                                                   |
-| --------------- | ------------------------------------------------------------ | ---------------------------------------------------------- |
-| Web boots       | Open `http://localhost:3000`                                 | The starter page renders without console errors.           |
-| Web reaches API | Open the browser devtools Network tab while loading the page | The request to `NEXT_PUBLIC_API_URL` succeeds (200).       |
-| API responds    | `curl http://localhost:3001/api/v1/health`                   | `{ "status": "ok", "version": "v1" }`                      |
-| DB is wired     | `cd apps/api; npx prisma studio`                             | Prisma Studio opens and shows the seeded tables with rows. |
+| Kiểm tra         | Cách                                                    | Kỳ vọng                                                    |
+| ---------------- | ------------------------------------------------------- | ---------------------------------------------------------- |
+| Web khởi động    | Mở `http://localhost:3000`                              | Trang khởi đầu render không có lỗi console.                |
+| Web gọi được API | Mở tab Network trong devtools trình duyệt khi tải trang | Yêu cầu đến `NEXT_PUBLIC_API_URL` thành công (200).        |
+| API phản hồi     | `curl http://localhost:3001/api/v1/health`              | `{ "status": "ok", "version": "v1" }`                      |
+| DB được kết nối  | `cd apps/api; npx prisma studio`                        | Prisma Studio mở và hiển thị các bảng đã seed với dữ liệu. |
 
-If any check fails, stop and use [Troubleshooting](#troubleshooting). A green scaffold is the exit condition for Phase 1 setup.
+Nếu bất kỳ kiểm tra nào thất bại, hãy dừng lại và dùng [Xử lý sự cố](#xử-lý-sự-cố). Một scaffold xanh là điều kiện thoát cho việc cài đặt Giai đoạn 1.
 
-## 9. Run tests
+## 9. Chạy test
 
-From each app:
+Từ từng ứng dụng:
 
 ```powershell
 cd apps/api
@@ -154,67 +154,67 @@ cd apps/web
 npm test
 ```
 
-The API uses Vitest for unit and e2e runs (`vitest.config.ts`, `vitest.config.e2e.ts`); the web app uses the runner configured in its `package.json`. Cross-app Playwright tests live in root `tests/e2e/` and are Phase 2+.
+API dùng Vitest cho các lần chạy unit và e2e (`vitest.config.ts`, `vitest.config.e2e.ts`); ứng dụng web dùng runner được cấu hình trong `package.json` của nó. Test Playwright xuyên ứng dụng nằm trong `tests/e2e/` ở thư mục gốc và thuộc Giai đoạn 2+.
 
-## 10. Daily workflow
+## 10. Quy trình làm việc hàng ngày
 
-1. Pull latest `main`, branch from it: `git switch -c feat/<task-stt>-<slug>`.
-2. Start the database: `docker compose up -d db`.
-3. Start API and web in two terminals (§7).
-4. Make changes; run the relevant test suite (§9).
-5. Commit referencing the task STT, e.g. `feat(api): products module (Task 2.0)` — see [Working Agreement](working-agreement.md) for the commit and PR rules.
-6. Open a PR using the repository template; the checklist mirrors the Definition of Done.
-7. Mark the task `● Xong` in the spreadsheet **and** add the evidence note in the same PR. See [Working Agreement](working-agreement.md) § "Task evidence notes".
+1. Pull `main` mới nhất, tạo branch từ đó: `git switch -c feat/<task-stt>-<slug>`.
+2. Khởi động cơ sở dữ liệu: `docker compose up -d db`.
+3. Khởi động API và web trong hai terminal (§7).
+4. Thực hiện thay đổi; chạy bộ test liên quan (§9).
+5. Commit tham chiếu STT nhiệm vụ, ví dụ `feat(api): products module (Task 2.0)` — xem [Thỏa thuận làm việc](working-agreement.md) để biết quy tắc commit và PR.
+6. Mở PR dùng template của repository; checklist phản ánh Định nghĩa Hoàn thành.
+7. Đánh dấu nhiệm vụ `● Xong` trong bảng tính **và** thêm ghi chú bằng chứng trong cùng PR. Xem [Thỏa thuận làm việc](working-agreement.md) § "Ghi chú bằng chứng nhiệm vụ".
 
-## Troubleshooting
+## Xử lý sự cố
 
-**`npm install` fails at the repo root**  
-Expected. Install from `apps/api` or `apps/web`. There is no root `package.json`.
+**`npm install` thất bại ở thư mục gốc repo**
+Đúng như kỳ vọng. Hãy cài từ `apps/api` hoặc `apps/web`. Không có `package.json` ở gốc.
 
-**Port 5432 already in use**  
-A local PostgreSQL is running. Either stop it, or change the host port in `docker-compose.yml` (e.g. `"5433:5432"`) and update `DATABASE_URL` to `...@localhost:5433/...`.
+**Cổng 5432 đã được dùng**
+Một PostgreSQL cục bộ đang chạy. Hoặc dừng nó, hoặc đổi cổng host trong `docker-compose.yml` (ví dụ `"5433:5432"`) và cập nhật `DATABASE_URL` thành `...@localhost:5433/...`.
 
-**Prisma `P1001: Can't reach database server`**  
-The `db` container is not up or not healthy. Run `docker compose ps` and `docker compose logs db`. Also confirm `DATABASE_URL` host is `localhost` (not `db`) when running the API on the host.
+**Prisma `P1001: Can't reach database server`**
+Container `db` chưa lên hoặc không healthy. Chạy `docker compose ps` và `docker compose logs db`. Đồng thời xác nhận host của `DATABASE_URL` là `localhost` (không phải `db`) khi chạy API trên host.
 
-**Prisma `P3005: database schema is not empty` on `migrate dev`**  
-The database has objects but no migration history. Run `npx prisma migrate reset` in `apps/api` (destroys local data), then re-run `migrate dev` and `db seed`.
+**Prisma `P3005: database schema is not empty` khi `migrate dev`**
+Cơ sở dữ liệu có các đối tượng nhưng không có lịch sử migration. Chạy `npx prisma migrate reset` trong `apps/api` (phá hủy dữ liệu cục bộ), sau đó chạy lại `migrate dev` và `db seed`.
 
-**Web shows CORS errors**  
-`WEB_ORIGIN` in `apps/api/.env` must match the exact origin the browser uses (`http://localhost:3000`, including protocol and port). Update it and restart the API.
+**Web hiển thị lỗi CORS**
+`WEB_ORIGIN` trong `apps/api/.env` phải khớp chính xác origin mà trình duyệt dùng (`http://localhost:3000`, bao gồm giao thức và cổng). Cập nhật nó và khởi động lại API.
 
-**Web calls the wrong API URL**  
-`NEXT_PUBLIC_*` variables are inlined at build/start time. After editing `apps/web/.env`, stop and restart `npm run dev`.
+**Web gọi sai URL API**
+Các biến `NEXT_PUBLIC_*` được nhúng tại thời điểm build/khởi động. Sau khi sửa `apps/web/.env`, dừng và khởi động lại `npm run dev`.
 
-**`prisma generate` "client not found"**  
-Run `npx prisma generate` from `apps/api` after any `npm install` that touched Prisma, and after every schema change.
+**`prisma generate` "client not found"**
+Chạy `npx prisma generate` từ `apps/api` sau bất kỳ `npm install` nào có đụng đến Prisma, và sau mỗi thay đổi schema.
 
-**Seed fails with unique constraint**  
-The seed is not idempotent against an already-seeded DB. Run `npx prisma migrate reset` and retry.
+**Seed thất bại với unique constraint**
+Seed không idempotent với một DB đã được seed. Chạy `npx prisma migrate reset` và thử lại.
 
-**Node version mismatch / unsupported engine**  
-Switch to Node 22 or 24 LTS (`nvm use 22` or `fnm use 22`). Check with `node --version`.
+**Node version mismatch / unsupported engine**
+Chuyển sang Node 22 hoặc 24 LTS (`nvm use 22` hoặc `fnm use 22`). Kiểm tra bằng `node --version`.
 
-## References
+## Tham khảo
 
-- [Project Structure](project-structure.md) — where files live and why.
-- [Configuration](config.md) — every env var, port, and planning assumption.
-- [Working Agreement](working-agreement.md) — task evidence notes, naming, commit/PR rules.
-- [API Contract](architecture/api-contract.md) — endpoints and payload shapes.
-- Root `README.md` — project summary and the quickstart that points here.
+- [Cấu trúc dự án](project-structure.md) — tệp nằm ở đâu và tại sao.
+- [Cấu hình](config.md) — mọi biến môi trường, cổng, và giả định lập kế hoạch.
+- [Thỏa thuận làm việc](working-agreement.md) — ghi chú bằng chứng nhiệm vụ, đặt tên, quy tắc commit/PR.
+- [Hợp đồng API](architecture/api-contract.md) — các endpoint và hình dạng payload.
+- `README.md` ở gốc — tóm tắt dự án và quickstart trỏ đến đây.
 
 ---
 
-## Notes on choices I made (so you can accept or override)
+## Ghi chú về các lựa chọn tôi đã đưa ra (để bạn chấp nhận hoặc ghi đè)
 
-1. **API port is deliberately left as `<API_PORT>`.** Your `Cấu hình` sheet and `.env.example` haven't fixed it yet — that's exactly the kind of thing `docs/config.md` is supposed to lock down. Once you write `config.md`, replace `<API_PORT>` here in one pass (there are 4 occurrences). If you want a default now, `3001` is the conventional Nest choice alongside Next on `3000`.
+1. **Cổng API cố tình để là `<API_PORT>`.** Sheet `Cấu hình` và `.env.example` của bạn chưa cố định nó — đó chính là loại thứ mà `docs/config.md` được cho là phải khóa lại. Khi bạn viết `config.md`, hãy thay `<API_PORT>` ở đây trong một lần (có 4 lần xuất hiện). Nếu bạn muốn có mặc định ngay bây giờ, `3001` là lựa chọn Nest quy ước bên cạnh Next trên `3000`.
 
-2. **The "Hello" check table is the actual Phase 1 exit gate.** I made it a table with four rows because Task 1.0's acceptance criterion is literally "both apps run 'Hello'", and a checklist is harder to skip than prose. It's also the demo evidence you'd cite in the Task 1.0 `● Xong` note.
+2. **Bảng kiểm tra "Hello" là cổng thoát thực sự của Giai đoạn 1.** Tôi làm nó thành một bảng với bốn dòng vì tiêu chí chấp nhận của Nhiệm vụ 1.0 đúng nghĩa là "cả hai ứng dụng chạy 'Hello'", và một checklist khó bỏ qua hơn văn xuôi. Nó cũng là bằng chứng demo bạn sẽ trích trong ghi chú `● Xong` của Nhiệm vụ 1.0.
 
-3. **Troubleshooting is scoped to failures a Phase 1 teammate will actually hit** — the root-`npm install` mistake (called out three times across docs because it's the #1 onboarding failure for a two-app repo), Prisma `P1001`/`P3005`, CORS from a `WEB_ORIGIN` mismatch, and `NEXT_PUBLIC_*` restart semantics. I did not add generic "reinstall Node" advice.
+3. **Phần Xử lý sự cố được giới hạn trong các lỗi mà một thành viên Giai đoạn 1 thực sự sẽ gặp** — lỗi `npm install` ở gốc (được nêu ba lần xuyên suốt các tài liệu vì đây là lỗi nhập môn số 1 cho một repo hai ứng dụng), Prisma `P1001`/`P3005`, CORS từ `WEB_ORIGIN` không khớp, và ngữ nghĩa khởi động lại `NEXT_PUBLIC_*`. Tôi không thêm lời khuyên chung chung kiểu "cài lại Node".
 
-4. **No Docker instructions for the apps themselves.** `apps/api/Dockerfile` and `apps/web/Dockerfile` exist in the scaffold, but wiring them into Compose is Task 57.0 (Phase 6) per the spreadsheet. The setup doc says so explicitly so nobody assumes `docker compose up` runs the whole stack in Phase 1 — only the `db` service.
+4. **Không có hướng dẫn Docker cho chính các ứng dụng.** `apps/api/Dockerfile` và `apps/web/Dockerfile` tồn tại trong scaffold, nhưng việc nối chúng vào Compose là Nhiệm vụ 57.0 (Giai đoạn 6) theo bảng tính. Tài liệu cài đặt nói rõ điều này để không ai giả định `docker compose up` chạy toàn bộ stack trong Giai đoạn 1 — chỉ dịch vụ `db`.
 
-5. **Windows-first commands.** Your spreadsheet and structure doc use PowerShell (`cd apps/api; npm install`), so the examples use `Copy-Item` and PowerShell syntax. I added a one-line note rather than duplicating every command in bash.
+5. **Lệnh ưu tiên Windows.** Bảng tính và tài liệu cấu trúc của bạn dùng PowerShell (`cd apps/api; npm install`), nên các ví dụ dùng `Copy-Item` và cú pháp PowerShell. Tôi thêm một dòng ghi chú thay vì nhân đôi mọi lệnh trong bash.
 
-6. **Two forward references you should honor when writing the next docs:** `config.md` must define `WEB_ORIGIN`, `JWT_SECRET`, `PORT`, `DATABASE_URL`, `NEXT_PUBLIC_API_URL`, and the chosen ports; `working-agreement.md` must define the exact `[DoD]` evidence line and the `feat(<scope>): ... (Task <stt>)` commit format referenced in §10. If either drifts, this doc breaks.
+6. **Hai tham chiếu chuyển tiếp bạn nên tôn trọng khi viết các tài liệu tiếp theo:** `config.md` phải định nghĩa `WEB_ORIGIN`, `JWT_SECRET`, `PORT`, `DATABASE_URL`, `NEXT_PUBLIC_API_URL`, và các cổng được chọn; `working-agreement.md` phải định nghĩa dòng bằng chứng `[DoD]` chính xác và định dạng commit `feat(<scope>): ... (Task <stt>)` được tham chiếu trong §10. Nếu một trong hai bị trôi dạt, tài liệu này sẽ hỏng.

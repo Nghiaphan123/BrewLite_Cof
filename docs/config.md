@@ -1,55 +1,55 @@
-# BrewLite - Configuration
+# BrewLite - Cấu hình
 
-**Status:** Phase 1 deliverable  
-**Owner:** Nghĩa (Task 1.0, Task 11.0, Task 12.0)  
-**Related:** [Setup](setup.md), [Project Structure](project-structure.md), [ADR 0003 Database](architecture/adr/0003-database-postgres-prisma.md), [ADR 0004 Payment Mock](architecture/adr/0004-payment-mock-method.md), [Working Agreement](working-agreement.md)
+**Trạng thái:** Sản phẩm bàn giao Giai đoạn 1
+**Người phụ trách:** Nghĩa (Nhiệm vụ 1.0, Nhiệm vụ 11.0, Nhiệm vụ 12.0)
+**Liên quan:** [Cài đặt](setup.md), [Cấu trúc dự án](project-structure.md), [ADR 0003 Cơ sở dữ liệu](architecture/adr/0003-database-postgres-prisma.md), [ADR 0004 Thanh toán giả lập](architecture/adr/0004-payment-mock-method.md), [Thỏa thuận làm việc](working-agreement.md)
 
-This document is the written contract for every environment variable, port, and project constant in BrewLite. If a value here disagrees with `.env.example`, this document wins; if this document disagrees with a running app, one of them is wrong and must be fixed in the same PR.
+Tài liệu này là hợp đồng bằng văn bản cho mọi biến môi trường, cổng, và hằng số dự án trong BrewLite. Nếu một giá trị ở đây khác với `.env.example`, tài liệu này thắng; nếu tài liệu này khác với một ứng dụng đang chạy, một trong hai sai và phải được sửa trong cùng PR.
 
-> **Stability:** values marked **🔒 Locked** are settled and may only change via an ADR. Values marked **🟡 Provisional** are in use but not yet ratified — each carries a fix suggestion and a decision owner. Values marked **⬜ Open** are not decided; do not hard-code them.
+> **Độ ổn định:** các giá trị được đánh dấu **🔒 Đã khóa** là đã chốt và chỉ có thể thay đổi qua một ADR. Các giá trị được đánh dấu **🟡 Tạm thời** đang được dùng nhưng chưa được phê chuẩn — mỗi giá trị đi kèm một gợi ý sửa và một người ra quyết định. Các giá trị được đánh dấu **⬜ Mở** chưa được quyết định; không hard-code chúng.
 
-## 1. Ports
+## 1. Cổng
 
-### 1.1 Port table
+### 1.1 Bảng cổng
 
-| Service              | Port         | Status        | Binding     | Notes                                                                     |
-| -------------------- | ------------ | ------------- | ----------- | ------------------------------------------------------------------------- |
-| Web (Next.js)        | `3000`       | 🔒 Locked      | `localhost` | Next.js default; also the origin used in CORS.                            |
-| API (NestJS)         | `3001`       | 🟡 Provisional | `localhost` | Conventional Nest default. See §1.2 for the risk and the fix.             |
-| PostgreSQL           | `5432`       | 🔒 Locked      | `localhost` | Inside the `db` container; host port may be remapped (§1.3).              |
-| Prisma Studio        | `5555`       | 🔒 Locked      | `localhost` | Default Prisma Studio port; dev-only.                                     |
-| Mock payment gateway | *in-process* | 🔒 Locked      | —           | Phase 1 mock runs inside the API process; no separate port. See ADR 0004. |
+| Dịch vụ                 | Cổng               | Trạng thái | Binding     | Ghi chú                                                                            |
+| ----------------------- | ------------------ | ---------- | ----------- | ---------------------------------------------------------------------------------- |
+| Web (Next.js)           | `3000`             | 🔒 Đã khóa  | `localhost` | Mặc định Next.js; cũng là origin dùng trong CORS.                                  |
+| API (NestJS)            | `3001`             | 🟡 Tạm thời | `localhost` | Mặc định Nest quy ước. Xem §1.2 để biết rủi ro và cách sửa.                        |
+| PostgreSQL              | `5432`             | 🔒 Đã khóa  | `localhost` | Bên trong container `db`; cổng host có thể được ánh xạ lại (§1.3).                 |
+| Prisma Studio           | `5555`             | 🔒 Đã khóa  | `localhost` | Cổng mặc định của Prisma Studio; chỉ dùng khi phát triển.                          |
+| Cổng thanh toán giả lập | *trong tiến trình* | 🔒 Đã khóa  | —           | Mock Giai đoạn 1 chạy bên trong tiến trình API; không có cổng riêng. Xem ADR 0004. |
 
-**How these are consumed:**
+**Cách các giá trị này được tiêu thụ:**
 
-- Web reads its own port from Next.js itself (`npm run dev -p <port>` if overridden); `NEXT_PUBLIC_API_URL` must point at the API port.
-- API reads `PORT` from `apps/api/.env`; `main.ts` calls `app.listen(process.env.PORT)`.
-- API's CORS allowlist reads `WEB_ORIGIN` (must include the web port).
-- `apps/api/.env` `DATABASE_URL` must match the host-mapped Postgres port.
-- `docker-compose.yml` maps host↔container ports for `db` only.
+- Web đọc cổng của chính nó từ Next.js (`npm run dev -p <port>` nếu bị ghi đè); `NEXT_PUBLIC_API_URL` phải trỏ đến cổng API.
+- API đọc `PORT` từ `apps/api/.env`; `main.ts` gọi `app.listen(process.env.PORT)`.
+- Danh sách cho phép CORS của API đọc `WEB_ORIGIN` (phải bao gồm cổng web).
+- `DATABASE_URL` trong `apps/api/.env` phải khớp với cổng Postgres được ánh xạ trên host.
+- `docker-compose.yml` ánh xạ cổng host↔container chỉ cho `db`.
 
-### 1.2 API port risk and fix (🟡 Provisional → 🔒)
+### 1.2 Rủi ro và cách sửa cổng API (🟡 Tạm thời → 🔒)
 
-**Why `3001` is provisional:** it is the conventional NestJS companion to Next's `3000`, but nothing in the assignment or spreadsheet pins it. Two failure modes are common enough to plan for:
+**Tại sao `3001` là tạm thời:** đây là lựa chọn NestJS quy ước đi kèm với `3000` của Next, nhưng không có gì trong bài tập hoặc bảng tính ghim nó. Hai chế độ lỗi đủ phổ biến để lập kế hoạch:
 
-1. **Collision on the developer machine.** Another local service (a second Nest app, a Docker dashboard, some IDE plugin) already holds `3001`. The API fails to bind and the error is easy to miss if you only watch the web terminal.
-2. **Collision with a future service.** If Phase 2+ adds a second backend process (e.g. a queue worker or a mock gateway on its own port), `3001` is the first port it will want.
+1. **Xung đột trên máy của lập trình viên.** Một dịch vụ cục bộ khác (một ứng dụng Nest thứ hai, một bảng điều khiển Docker, một plugin IDE nào đó) đã giữ `3001`. API không bind được và lỗi dễ bị bỏ sót nếu bạn chỉ nhìn terminal web.
+2. **Xung đột với một dịch vụ tương lai.** Nếu Giai đoạn 2+ thêm một tiến trình backend thứ hai (ví dụ một queue worker hoặc một mock gateway trên cổng riêng), `3001` là cổng đầu tiên nó sẽ muốn.
 
-**Fix suggestions, in order of preference:**
+**Gợi ý sửa, theo thứ tự ưu tiên:**
 
-| Option                                     | When to choose it                                          | What changes                                                                                                                                |
-| ------------------------------------------ | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| **A. Keep `3001`, document it everywhere** | Team is confident nothing else needs `3001`                | Ratify in an ADR; no code change.                                                                                                           |
-| **B. Move API to `4000`**                  | You want a visibly distinct API port and no Next adjacency | `PORT=4000`, `NEXT_PUBLIC_API_URL=http://localhost:4000`, `WEB_ORIGIN` unchanged, update `docker-compose.yml` if API is ever containerized. |
-| **C. Allocate at runtime**                 | You expect per-developer drift                             | API reads `PORT` (default `3001`); web reads `NEXT_PUBLIC_API_URL` — already the design. No hard-coded ports in code, only in `.env`.       |
+| Lựa chọn                             | Khi nào chọn                                              | Thay đổi gì                                                                                                                                   |
+| ------------------------------------ | --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| **A. Giữ `3001`, ghi chú ở mọi nơi** | Nhóm tin chắc không có gì khác cần `3001`                 | Phê chuẩn trong một ADR; không thay đổi code.                                                                                                 |
+| **B. Chuyển API sang `4000`**        | Bạn muốn cổng API khác biệt rõ ràng và không liền kề Next | `PORT=4000`, `NEXT_PUBLIC_API_URL=http://localhost:4000`, `WEB_ORIGIN` không đổi, cập nhật `docker-compose.yml` nếu API được container hóa.   |
+| **C. Cấp phát lúc runtime**          | Bạn kỳ vọng sự khác biệt giữa các lập trình viên          | API đọc `PORT` (mặc định `3001`); web đọc `NEXT_PUBLIC_API_URL` — đã là thiết kế hiện tại. Không hard-code cổng trong code, chỉ trong `.env`. |
 
-**What must not happen:** hard-coding the API port in frontend fetch calls, in `docker-compose.yml` healthchecks, or in any doc other than this one and `.env.example`. The fix for a port collision should be a one-line `.env` edit, never a code change.
+**Điều không được xảy ra:** hard-code cổng API trong các lệnh gọi fetch của frontend, trong healthcheck của `docker-compose.yml`, hoặc trong bất kỳ tài liệu nào khác ngoài tài liệu này và `.env.example`. Cách sửa cho xung đột cổng phải là một chỉnh sửa `.env` một dòng, không bao giờ là thay đổi code.
 
-**Decision owner:** Nghĩa. **Deadline:** before Task 11.0 (backend Hello) is marked `● Xong`. Until then, treat `3001` as the default in docs and `.env.example`, and record the actual bound port in the Task 11.0 evidence note.
+**Người ra quyết định:** Nghĩa. **Hạn chót:** trước khi Nhiệm vụ 11.0 (backend Hello) được đánh dấu `● Xong`. Cho đến lúc đó, hãy coi `3001` là mặc định trong tài liệu và `.env.example`, và ghi lại cổng thực tế được bind trong ghi chú bằng chứng Nhiệm vụ 11.0.
 
-### 1.3 PostgreSQL host-port remap
+### 1.3 Ánh xạ lại cổng host PostgreSQL
 
-The `db` service always listens on `5432` **inside** the container. On the host it maps `5432:5432` by default. If `5432` is already taken by a local Postgres install:
+Dịch vụ `db` luôn lắng nghe trên `5432` **bên trong** container. Trên host nó ánh xạ `5432:5432` theo mặc định. Nếu `5432` đã bị một bản cài Postgres cục bộ chiếm:
 
 ```yaml
 # docker-compose.yml (db service)
@@ -57,133 +57,133 @@ ports:
   - "5433:5432"   # host:container
 ```
 
-Then update `apps/api/.env`:
+Sau đó cập nhật `apps/api/.env`:
 
 ```dotenv
 DATABASE_URL="postgresql://brewlite:brewlite@localhost:5433/brewlite?schema=public"
 ```
 
-Inside the Compose network (if the API is ever containerized), the host is `db` and the port is always `5432` — the remap only affects host connections. Document any remap in the Task 11.0 evidence note.
+Bên trong mạng Compose (nếu API được container hóa), host là `db` và cổng luôn là `5432` — việc ánh xạ lại chỉ ảnh hưởng đến kết nối từ host. Ghi lại bất kỳ ánh xạ lại nào trong ghi chú bằng chứng Nhiệm vụ 11.0.
 
-## 2. Environment variables
+## 2. Biến môi trường
 
-Two env files, one per app. Neither is committed. Both have a `.env.example` sibling that **is** committed and must stay in sync with this table.
+Hai tệp env, mỗi ứng dụng một tệp. Không tệp nào được commit. Cả hai đều có tệp anh em `.env.example` **được** commit và phải luôn đồng bộ với bảng này.
 
 ### 2.1 `apps/api/.env`
 
-| Variable            | Status | Required | Default / example                                                      | Purpose                                                                                            |
-| ------------------- | ------ | -------- | ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| `NODE_ENV`          | 🔒      | yes      | `development`                                                          | Nest runtime mode. `production` disables pretty logs and enables stricter validation.              |
-| `PORT`              | 🟡      | yes      | `3001`                                                                 | API listen port. See §1.2.                                                                         |
-| `WEB_ORIGIN`        | 🔒      | yes      | `http://localhost:3000`                                                | CORS allowlist entry. Must be an exact origin — no trailing slash, no wildcard.                    |
-| `DATABASE_URL`      | 🔒      | yes      | `postgresql://brewlite:brewlite@localhost:5432/brewlite?schema=public` | Prisma connection string. Host is `localhost` for host-run API, `db` for containerized API (§1.3). |
-| `JWT_SECRET`        | 🟡      | yes      | *(dev only)* `change-me-in-dev-only-32-chars-min`                      | HMAC signing key. ≥ 32 chars. Never commit a real value. See §4.                                   |
-| `JWT_EXPIRES_IN`    | 🔒      | yes      | `1d`                                                                   | Token TTL. Shorter for demo builds is fine.                                                        |
-| `BCRYPT_ROUNDS`     | 🔒      | yes      | `10`                                                                   | Password hash cost.                                                                                |
-| `PAYMENT_MOCK_MODE` | 🟡      | yes      | `success`                                                              | Mock behavior selector: `success` \| `failure` \| `random`. See ADR 0004.                          |
-| `LOG_LEVEL`         | 🔒      | no       | `debug`                                                                | Nest logger level. `info` in demo builds.                                                          |
+| Biến                | Trạng thái | Bắt buộc | Mặc định / ví dụ                                                       | Mục đích                                                                                                |
+| ------------------- | ---------- | -------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `NODE_ENV`          | 🔒          | có       | `development`                                                          | Chế độ runtime Nest. `production` tắt log đẹp và bật validate nghiêm ngặt hơn.                          |
+| `PORT`              | 🟡          | có       | `3001`                                                                 | Cổng lắng nghe API. Xem §1.2.                                                                           |
+| `WEB_ORIGIN`        | 🔒          | có       | `http://localhost:3000`                                                | Mục trong danh sách cho phép CORS. Phải là origin chính xác — không dấu gạch chéo cuối, không wildcard. |
+| `DATABASE_URL`      | 🔒          | có       | `postgresql://brewlite:brewlite@localhost:5432/brewlite?schema=public` | Chuỗi kết nối Prisma. Host là `localhost` cho API chạy trên host, `db` cho API trong container (§1.3).  |
+| `JWT_SECRET`        | 🟡          | có       | *(chỉ dev)* `change-me-in-dev-only-32-chars-min`                       | Khóa ký HMAC. ≥ 32 ký tự. Không bao giờ commit giá trị thật. Xem §4.                                    |
+| `JWT_EXPIRES_IN`    | 🔒          | có       | `1d`                                                                   | TTL token. Ngắn hơn cho bản demo cũng được.                                                             |
+| `BCRYPT_ROUNDS`     | 🔒          | có       | `10`                                                                   | Chi phí hash mật khẩu.                                                                                  |
+| `PAYMENT_MOCK_MODE` | 🟡          | có       | `success`                                                              | Bộ chọn hành vi mock: `success` \| `failure` \| `random`. Xem ADR 0004.                                 |
+| `LOG_LEVEL`         | 🔒          | không    | `debug`                                                                | Mức logger Nest. `info` trong bản demo.                                                                 |
 
 ### 2.2 `apps/web/.env`
 
-| Variable              | Status | Required | Default / example       | Purpose                                                                                      |
-| --------------------- | ------ | -------- | ----------------------- | -------------------------------------------------------------------------------------------- |
-| `NEXT_PUBLIC_API_URL` | 🟡      | yes      | `http://localhost:3001` | Base URL the browser uses to reach the API. Must include scheme and port, no trailing slash. |
-| `NEXT_PUBLIC_APP_ENV` | 🔒      | no       | `development`           | UI environment badge / feature-flag gate.                                                    |
+| Biến                  | Trạng thái | Bắt buộc | Mặc định / ví dụ        | Mục đích                                                                                         |
+| --------------------- | ---------- | -------- | ----------------------- | ------------------------------------------------------------------------------------------------ |
+| `NEXT_PUBLIC_API_URL` | 🟡          | có       | `http://localhost:3001` | URL cơ sở trình duyệt dùng để đến API. Phải bao gồm giao thức và cổng, không dấu gạch chéo cuối. |
+| `NEXT_PUBLIC_APP_ENV` | 🔒          | không    | `development`           | Huy hiệu môi trường UI / cổng feature-flag.                                                      |
 
-**`NEXT_PUBLIC_*` semantics:** these are inlined at build/start time. Editing `apps/web/.env` requires a dev-server restart; in a production build it requires a rebuild. Never put secrets in a `NEXT_PUBLIC_*` variable.
+**Ngữ nghĩa `NEXT_PUBLIC_*`:** các biến này được nhúng tại thời điểm build/khởi động. Sửa `apps/web/.env` yêu cầu khởi động lại dev-server; trong một bản build production nó yêu cầu build lại. Không bao giờ đặt bí mật trong một biến `NEXT_PUBLIC_*`.
 
-### 2.3 Sync rule with `.env.example`
+### 2.3 Quy tắc đồng bộ với `.env.example`
 
-`.env.example` must contain **every** variable in the tables above, with a safe placeholder value and a one-line comment. When a variable is added, removed, or renamed:
+`.env.example` phải chứa **mọi** biến trong các bảng trên, với một giá trị placeholder an toàn và một bình luận một dòng. Khi một biến được thêm, xóa, hoặc đổi tên:
 
-1. Update this table in the same PR.
-2. Update the corresponding `.env.example`.
-3. Grep the repo for the old name and fix stragglers.
+1. Cập nhật bảng này trong cùng PR.
+2. Cập nhật `.env.example` tương ứng.
+3. Grep repo để tìm tên cũ và sửa những chỗ còn sót.
 
-A PR that touches env vars without touching this doc fails review. This is the enforcement point.
+Một PR đụng đến biến env mà không đụng đến tài liệu này sẽ trượt review. Đây là điểm thực thi.
 
-## 3. Constants that are not env vars
+## 3. Các hằng số không phải biến env
 
-Some values are project decisions, not per-environment settings. They live in code, and this table is their source of truth.
+Một số giá trị là quyết định của dự án, không phải cài đặt theo môi trường. Chúng nằm trong code, và bảng này là nguồn chân lý của chúng.
 
-| Constant                          | Value                                                                   | Status | Where                                                                   | Why a doc and not a comment                                                                                                       |
-| --------------------------------- | ----------------------------------------------------------------------- | ------ | ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| Project start date                | `2026-10-26` (Mon)                                                      | 🔒      | spreadsheet `Cấu hình!B3`                                               | Drives all schedule math; see §5.                                                                                                 |
-| Working days                      | Mon–Fri                                                                 | 🔒      | spreadsheet `Cấu hình!B4`                                               | No holidays in the plan.                                                                                                          |
-| Max hours/day: H.Tài, Nghĩa, Luân | `5.0`                                                                   | 🔒      | spreadsheet `Cấu hình!E8:E10`                                           | Team capacity assumption.                                                                                                         |
-| Max hours/day: P.Tài, Trí         | `3.0`                                                                   | 🔒      | spreadsheet `Cấu hình!E11:E12`                                          | Part-time capacity assumption.                                                                                                    |
-| Standard task size                | `6.0` points                                                            | 🔒      | spreadsheet `Cấu hình!B5`                                               | Calibration anchor for effort estimates.                                                                                          |
-| Order states                      | `PENDING, PAID, PAYMENT_FAILED, PREPARING, READY, COMPLETED, CANCELLED` | 🔒      | ADR 0004 + `orders.service.ts` + `OrderStatus` enum in `schema.prisma`  | State Machine vocabulary; must match PDF §9.1. The full enum is in the Task 1.0 ERD (ADR 0003 D-ERD-scope), not added in Phase 5. |
-| Idempotency header                | `Idempotency-Key`                                                       | 🟡      | `api-contract.md`                                                       | Header name for `POST /payments`. Provisional until Task 7.0 closes.                                                              |
-| Currency                          | VND, integer, no minor units                                            | 🔒      | Prisma schema (`price Int`, `total Int`, `lineTotal Int`, `amount Int`) | No floating point for money. See ADR 0003 D-ERD-scope.                                                                            |
-| API error envelope                | `{ "statusCode", "message", "error" }`                                  | 🟡      | `api-contract.md`                                                       | Nest default; may be extended with `code`.                                                                                        |
+| Hằng số                             | Giá trị                                                                 | Trạng thái | Ở đâu                                                                     | Tại sao là tài liệu mà không phải bình luận                                                                                                  |
+| ----------------------------------- | ----------------------------------------------------------------------- | ---------- | ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ngày bắt đầu dự án                  | `2026-10-26` (Thứ Hai)                                                  | 🔒          | bảng tính `Cấu hình!B3`                                                   | Điều khiển mọi phép toán lịch trình; xem §5.                                                                                                 |
+| Ngày làm việc                       | Thứ Hai–Thứ Sáu                                                         | 🔒          | bảng tính `Cấu hình!B4`                                                   | Không có ngày lễ trong kế hoạch.                                                                                                             |
+| Giờ tối đa/ngày: H.Tài, Nghĩa, Luân | `5.0`                                                                   | 🔒          | bảng tính `Cấu hình!E8:E10`                                               | Giả định năng lực nhóm.                                                                                                                      |
+| Giờ tối đa/ngày: P.Tài, Trí         | `3.0`                                                                   | 🔒          | bảng tính `Cấu hình!E11:E12`                                              | Giả định năng lực bán thời gian.                                                                                                             |
+| Kích thước nhiệm vụ chuẩn           | `6.0` điểm                                                              | 🔒          | bảng tính `Cấu hình!B5`                                                   | Mốc hiệu chuẩn cho ước lượng nỗ lực.                                                                                                         |
+| Trạng thái đơn hàng                 | `PENDING, PAID, PAYMENT_FAILED, PREPARING, READY, COMPLETED, CANCELLED` | 🔒          | ADR 0004 + `orders.service.ts` + enum `OrderStatus` trong `schema.prisma` | Từ vựng State Machine; phải khớp PDF §9.1. Enum đầy đủ nằm trong ERD Nhiệm vụ 1.0 (ADR 0003 D-ERD-scope), không được thêm trong Giai đoạn 5. |
+| Header idempotency                  | `Idempotency-Key`                                                       | 🟡          | `api-contract.md`                                                         | Tên header cho `POST /payments`. Tạm thời cho đến khi Nhiệm vụ 7.0 đóng.                                                                     |
+| Tiền tệ                             | VND, số nguyên, không đơn vị lẻ                                         | 🔒          | Prisma schema (`price Int`, `total Int`, `lineTotal Int`, `amount Int`)   | Không dùng số thực cho tiền. Xem ADR 0003 D-ERD-scope.                                                                                       |
+| Phong bì lỗi API                    | `{ "statusCode", "message", "error" }`                                  | 🟡          | `api-contract.md`                                                         | Mặc định Nest; có thể mở rộng với `code`.                                                                                                    |
 
-If a value here must change, change it here **and** in its code/spreadsheet home in the same PR. Do not let the two drift.
+Nếu một giá trị ở đây phải thay đổi, hãy thay đổi nó ở đây **và** ở nơi lưu trữ trong code/bảng tính trong cùng PR. Đừng để hai bên trôi dạt.
 
-### 3.1 Schema decisions recorded in ADR 0003 (batch, Task 1.0 + Task 10)
+### 3.1 Quyết định schema được ghi trong ADR 0003 (theo lô, Nhiệm vụ 1.0 + Nhiệm vụ 10)
 
-The Task 1.0 ERD batches the five-entity design with Task 10's schema needs. The following fields are in the schema from the first migration, not added later:
+ERD Nhiệm vụ 1.0 gộp thiết kế năm thực thể với nhu cầu schema của Nhiệm vụ 10. Các trường sau có trong schema từ migration đầu tiên, không được thêm sau:
 
-| Field                                                                | Entity    | Task | Why batched                                                                 |
-| -------------------------------------------------------------------- | --------- | ---- | --------------------------------------------------------------------------- |
-| `stock Int`, `version Int @default(0)`                               | `Product` | 10c  | Enum and version backfills are awkward after seed; see ADR 0003 D-ERD-scope |
-| `idempotencyKey String @unique`, `requestHash String`, `status` enum | `Payment` | 10b  | Unique constraint must exist before the first payment row                   |
-| `loyaltyPoints Int @default(0)`                                      | `User`    | 10d  | One column; free to batch                                                   |
-| `status` enum (7 values)                                             | `Order`   | 10a  | Enum alteration is the most awkward Postgres migration                      |
+| Trường                                                               | Thực thể  | Nhiệm vụ | Tại sao gộp                                                         |
+| -------------------------------------------------------------------- | --------- | -------- | ------------------------------------------------------------------- |
+| `stock Int`, `version Int @default(0)`                               | `Product` | 10c      | Backfill enum và version rất khó sau seed; xem ADR 0003 D-ERD-scope |
+| `idempotencyKey String @unique`, `requestHash String`, `status` enum | `Payment` | 10b      | Ràng buộc unique phải tồn tại trước dòng thanh toán đầu tiên        |
+| `loyaltyPoints Int @default(0)`                                      | `User`    | 10d      | Một cột; miễn phí để gộp                                            |
+| `status` enum (7 giá trị)                                            | `Order`   | 10a      | Thay đổi enum là migration Postgres khó nhất                        |
 
-**Deferred** (new tables, not columns): `Promotion` (Phase 5), `LoyaltyLedger` (Phase 2+), `OrderItemTopping` join table (Phase 2+). Each gets its own ERD version (`erd-core-v2`) when its phase arrives.
+**Hoãn lại** (bảng mới, không phải cột): `Promotion` (Giai đoạn 5), `LoyaltyLedger` (Giai đoạn 2+), bảng nối `OrderItemTopping` (Giai đoạn 2+). Mỗi bảng có phiên bản ERD riêng (`erd-core-v2`) khi giai đoạn của nó đến.
 
-## 4. Secrets and local development
+## 4. Bí mật và phát triển cục bộ
 
-- **Committed:** `.env.example` with placeholder values only. Never a real secret.
-- **Never committed:** `.env`, `.env.local`, any file matched by `.gitignore`'s env rules.
-- **Dev `JWT_SECRET`:** it is acceptable to use an obvious placeholder in a local `.env` (e.g. `change-me-in-dev-only-32-chars-min`). It is **not** acceptable in any committed file, screenshot, or PR description. If you paste a terminal transcript into a PR, redact it.
-- **Rotation:** if a real secret is ever committed, treat it as leaked — rotate immediately and note it in `docs/working-agreement.md`'s incident log (created when the first incident happens, not before).
-- **Production:** Phase 2+ (`docs/deployment.md`) defines how production secrets are injected. This doc only covers local dev.
+- **Được commit:** `.env.example` chỉ với giá trị placeholder. Không bao giờ bí mật thật.
+- **Không bao giờ commit:** `.env`, `.env.local`, bất kỳ tệp nào khớp với quy tắc env của `.gitignore`.
+- **`JWT_SECRET` dev:** chấp nhận được khi dùng một placeholder rõ ràng trong `.env` cục bộ (ví dụ `change-me-in-dev-only-32-chars-min`). **Không** chấp nhận được trong bất kỳ tệp được commit, ảnh chụp màn hình, hoặc mô tả PR. Nếu bạn dán một bản ghi terminal vào PR, hãy che nó đi.
+- **Xoay vòng:** nếu một bí mật thật từng bị commit, hãy coi nó đã bị rò rỉ — xoay vòng ngay lập tức và ghi lại trong nhật ký sự cố của `docs/working-agreement.md` (được tạo khi sự cố đầu tiên xảy ra, không phải trước đó).
+- **Production:** Giai đoạn 2+ (`docs/deployment.md`) định nghĩa cách bí mật production được tiêm vào. Tài liệu này chỉ bao gồm dev cục bộ.
 
-## 5. Planning assumptions (from the spreadsheet)
+## 5. Giả định lập kế hoạch (từ bảng tính)
 
-These are recorded here because the spreadsheet is a working artifact that cannot be diffed in a code review. If a reviewer asks "why is the schedule this way," the answer must be readable in Git.
+Những điều này được ghi ở đây vì bảng tính là một công cụ làm việc không thể diff trong review code. Nếu một reviewer hỏi "tại sao lịch trình lại như vậy," câu trả lời phải đọc được trong Git.
 
-- **Start date:** Monday `2026-10-26`. All `WORKDAY` formulas in the spreadsheet anchor on `Cấu hình!B3`. Changing it reflows every computed date; changing it does not reflow the hand-typed dates in the `Ngày` column of `Danh sách task` (they were computed once) — **if you change the start date, recompute those dates**, or the two sheets disagree.
-- **Working week:** Monday–Friday. No public-holiday calendar is applied. If the team observes a holiday, it is an unplanned day off; the plan absorbs it via the buffer below.
-- **Capacity:** H.Tài / Nghĩa / Luân at `5.0 h/day`; P.Tài / Trí at `3.0 h/day` (part-time). The `Giờ làm mỗi ngày` sheet flags any day that exceeds these caps in red; a red cell is a planning bug, not a runtime bug.
-- **Effort model:** a "standard task" is `6.0` points ≈ `0.5` hours for a fast member (weight 10) and ≈ `2.0` hours for a slow member (weight 5); see `Cấu hình!C8:C12`. This is a calibration assumption, not a measurement.
-- **Schedule is serial per phase:** a phase starts only after the previous phase's Definition of Done is met. Within a phase, tasks marked "Làm song song" may run concurrently.
-- **Buffer:** the plan carries **no** explicit buffer. The spreadsheet's own rule 7 says to keep **20–30%** slack in practice for Scrum ceremonies, integration defects, and review waits. Treat every computed date as optimistic by that margin.
-- **Estimated vs. actual:** the `Giờ hoàn thành (tích lũy)` column is a cumulative *estimate*; actuals are not tracked in the sheet. If actuals are needed for Retrospective, add them to `docs/plans/` in Phase 2+, not to the spreadsheet.
+- **Ngày bắt đầu:** Thứ Hai `2026-10-26`. Mọi công thức `WORKDAY` trong bảng tính neo vào `Cấu hình!B3`. Thay đổi nó sẽ tính lại mọi ngày được tính toán; thay đổi nó không tính lại các ngày gõ tay trong cột `Ngày` của `Danh sách task` (chúng được tính một lần) — **nếu bạn thay đổi ngày bắt đầu, hãy tính lại các ngày đó**, hoặc hai sheet sẽ không khớp.
+- **Tuần làm việc:** Thứ Hai–Thứ Sáu. Không áp dụng lịch ngày lễ công cộng. Nếu nhóm nghỉ lễ, đó là một ngày nghỉ không kế hoạch; kế hoạch hấp thụ nó qua bộ đệm bên dưới.
+- **Năng lực:** H.Tài / Nghĩa / Luân ở `5.0 h/ngày`; P.Tài / Trí ở `3.0 h/ngày` (bán thời gian). Sheet `Giờ làm mỗi ngày` đánh dấu đỏ bất kỳ ngày nào vượt các giới hạn này; một ô đỏ là lỗi lập kế hoạch, không phải lỗi runtime.
+- **Mô hình nỗ lực:** một "nhiệm vụ chuẩn" là `6.0` điểm ≈ `0.5` giờ cho thành viên nhanh (weight 10) và ≈ `2.0` giờ cho thành viên chậm (weight 5); xem `Cấu hình!C8:C12`. Đây là giả định hiệu chuẩn, không phải đo lường.
+- **Lịch trình tuần tự theo giai đoạn:** một giai đoạn chỉ bắt đầu sau khi Định nghĩa Hoàn thành của giai đoạn trước được đáp ứng. Trong một giai đoạn, các nhiệm vụ được đánh dấu "Làm song song" có thể chạy đồng thời.
+- **Bộ đệm:** kế hoạch **không** mang bộ đệm rõ ràng. Quy tắc 7 của bảng tính nói giữ **20–30%** dư địa trong thực tế cho các nghi lễ Scrum, lỗi tích hợp, và chờ review. Hãy coi mọi ngày được tính toán là lạc quan bởi biên độ đó.
+- **Ước lượng vs. thực tế:** cột `Giờ hoàn thành (tích lũy)` là một *ước lượng* tích lũy; thực tế không được theo dõi trong sheet. Nếu cần thực tế cho Retrospective, hãy thêm chúng vào `docs/plans/` trong Giai đoạn 2+, không thêm vào bảng tính.
 
-## 6. How to change a value in this document
+## 6. Cách thay đổi một giá trị trong tài liệu này
 
-1. Open an ADR if the value is 🔒 or if a 🟡 item is being ratified. Reference this doc's section number.
-2. Edit this doc and the code/`.env.example`/spreadsheet in the same PR.
-3. Add a line to `docs/working-agreement.md`'s change log if the change affects anyone beyond the author.
-4. If the change affects the port table (§1) or an env var (§2), grep the repo for the old value and fix every hit — including `docs/setup.md`'s `<API_PORT>` placeholders.
+1. Mở một ADR nếu giá trị là 🔒 hoặc nếu một mục 🟡 đang được phê chuẩn. Tham chiếu số phần của tài liệu này.
+2. Sửa tài liệu này và code/`.env.example`/bảng tính trong cùng PR.
+3. Thêm một dòng vào nhật ký thay đổi của `docs/working-agreement.md` nếu thay đổi ảnh hưởng đến bất kỳ ai ngoài tác giả.
+4. Nếu thay đổi ảnh hưởng đến bảng cổng (§1) hoặc một biến env (§2), grep repo để tìm giá trị cũ và sửa mọi chỗ khớp — bao gồm các placeholder `<API_PORT>` trong `docs/setup.md`.
 
-## 7. Open items (tracked here until closed)
+## 7. Mục còn mở (theo dõi ở đây cho đến khi đóng)
 
-| Item                                                                       | Status | Owner | Closes when                                                           |
-| -------------------------------------------------------------------------- | ------ | ----- | --------------------------------------------------------------------- |
-| Ratify API port (`3001` vs `4000` vs runtime)                              | 🟡      | Nghĩa | ADR recorded; Task 11.0 `● Xong` evidence cites the bound port        |
-| Ratify `JWT_SECRET` placeholder policy                                     | 🟡      | Nghĩa | Recorded in ADR 0005 or a one-line decision in `working-agreement.md` |
-| Ratify error envelope (`code` field or not)                                | ✅      | H.Tài | Closed: ADR 0005 C3, `api-contract.md` §3                             |
-| Ratify `Idempotency-Key` header spelling/casing                            | ✅      | H.Tài | Closed: ADR 0005 C5, `api-contract.md` §9                             |
-| Ratify `PAYMENT_MOCK_MODE` values                                          | 🟡      | H.Tài | ADR 0004 closes                                                       |
-| **Batch decision: Task 1.0 ERD includes Task 10's columns**                | ✅      | H.Tài | Closed: ADR 0003 D-ERD-scope                                          |
-| **Task 1.0 ERD scope (5 entities + Task 10 columns, new tables deferred)** | ✅      | H.Tài | Closed: `erd-core-v1` committed                                       |
+| Mục                                                                            | Trạng thái | Người phụ trách | Đóng khi                                                                          |
+| ------------------------------------------------------------------------------ | ---------- | --------------- | --------------------------------------------------------------------------------- |
+| Phê chuẩn cổng API (`3001` vs `4000` vs runtime)                               | 🟡          | Nghĩa           | ADR được ghi; bằng chứng `● Xong` của Nhiệm vụ 11.0 trích cổng được bind          |
+| Phê chuẩn chính sách placeholder `JWT_SECRET`                                  | 🟡          | Nghĩa           | Được ghi trong ADR 0005 hoặc một quyết định một dòng trong `working-agreement.md` |
+| Phê chuẩn phong bì lỗi (trường `code` hay không)                               | ✅          | H.Tài           | Đã đóng: ADR 0005 C3, `api-contract.md` §3                                        |
+| Phê chuẩn cách viết/viết hoa header `Idempotency-Key`                          | ✅          | H.Tài           | Đã đóng: ADR 0005 C5, `api-contract.md` §9                                        |
+| Phê chuẩn các giá trị `PAYMENT_MOCK_MODE`                                      | 🟡          | H.Tài           | ADR 0004 đóng                                                                     |
+| **Quyết định theo lô: ERD Nhiệm vụ 1.0 bao gồm các cột của Nhiệm vụ 10**       | ✅          | H.Tài           | Đã đóng: ADR 0003 D-ERD-scope                                                     |
+| **Phạm vi ERD Nhiệm vụ 1.0 (5 thực thể + cột Nhiệm vụ 10, bảng mới hoãn lại)** | ✅          | H.Tài           | Đã đóng: `erd-core-v1` được commit                                                |
 
 ---
 
-## Notes on choices I made (so you can accept or override)
+## Ghi chú về các lựa chọn tôi đã đưa ra (để bạn chấp nhận hoặc ghi đè)
 
-1. **The 🟡/🔒/⬜ status vocabulary is the core design decision here.** You said ports may not be ready and 3001 is likely but not certain. Rather than pretend `3001` is locked (which would force a doc edit the moment it changes) or leave it open (which leaves `<API_PORT>` unfillable in `setup.md`), I made "provisional with a decision owner and a deadline" a first-class state. This is the same pattern ADRs use for "proposed" vs "accepted," applied at the value level.
+1. **Bộ từ vựng trạng thái 🟡/🔒/⬜ là quyết định thiết kế cốt lõi ở đây.** Bạn nói các cổng có thể chưa sẵn sàng và 3001 có khả năng nhưng chưa chắc chắn. Thay vì giả vờ `3001` đã được khóa (điều sẽ buộc phải sửa tài liệu ngay khi nó thay đổi) hoặc để nó mở (điều khiến `<API_PORT>` không thể điền trong `setup.md`), tôi biến "tạm thời với một người ra quyết định và một hạn chót" thành một trạng thái hạng nhất. Đây là cùng một mẫu mà ADR dùng cho "đề xuất" vs "chấp nhận," áp dụng ở cấp giá trị.
 
-2. **§1.2 is deliberately longer than a port table needs to be.** It lists two failure modes and three fix options, and it names the anti-pattern ("hard-coding the API port in frontend fetch calls") because that's the actual risk when a port is provisional — someone hard-codes it, then the port changes, and now a "config" change is a code change. The fix suggestions are ordered by cost, and option C ("allocate at runtime") is the one that makes the whole question moot — worth considering.
+2. **§1.2 cố tình dài hơn mức một bảng cổng cần.** Nó liệt kê hai chế độ lỗi và ba lựa chọn sửa, và nó nêu tên anti-pattern ("hard-code cổng API trong các lệnh gọi fetch của frontend") vì đó là rủi ro thực sự khi một cổng là tạm thời — ai đó hard-code nó, rồi cổng thay đổi, và bây giờ một thay đổi "cấu hình" là một thay đổi code. Các gợi ý sửa được sắp xếp theo chi phí, và lựa chọn C ("cấp phát lúc runtime") là lựa chọn khiến toàn bộ câu hỏi trở nên vô nghĩa — đáng cân nhắc.
 
-3. **I kept the "VND, integer minor-unit-free" constant** because the PDF's wireframe shows `35k`, `45.000đ` etc., and the Prisma schema will need a decision on `Int` vs `Decimal` before Task 1.0's ERD is final. Flagging it here means the ERD owner sees it.
+3. **Tôi giữ hằng số "VND, số nguyên không đơn vị lẻ"** vì wireframe của PDF hiển thị `35k`, `45.000đ` v.v., và Prisma schema sẽ cần một quyết định về `Int` vs `Decimal` trước khi ERD của Nhiệm vụ 1.0 được chốt. Gắn cờ nó ở đây có nghĩa là người phụ trách ERD sẽ thấy nó.
 
-4. **§5 (planning assumptions) is the section that answers "why is the schedule this way."** The spreadsheet's rule 7 says keep 20–30% buffer, but the plan carries none — that's a discrepancy worth recording, not hiding. I also flagged the `Ngày` column drift risk: those dates were computed once and won't reflow if `Cấu hình!B3` changes. That's a real trap.
+4. **§5 (giả định lập kế hoạch) là phần trả lời "tại sao lịch trình lại như vậy."** Quy tắc 7 của bảng tính nói giữ 20–30% bộ đệm, nhưng kế hoạch không mang bộ đệm nào — đó là một sự khác biệt đáng ghi lại, không phải che giấu. Tôi cũng gắn cờ rủi ro trôi dạt cột `Ngày`: những ngày đó được tính một lần và sẽ không tính lại nếu `Cấu hình!B3` thay đổi. Đó là một cái bẫy thực sự.
 
-5. **§7 (open items) is the section that keeps this doc from rotting.** Every 🟡 in the doc has a row here with an owner and a closing condition, so "provisional" can't become "permanent by neglect." When you ratify the API port, you delete its row — the doc shrinks as decisions land.
+5. **§7 (mục còn mở) là phần giữ cho tài liệu này không bị mục nát.** Mọi 🟡 trong tài liệu có một dòng ở đây với một người phụ trách và một điều kiện đóng, để "tạm thời" không thể trở thành "vĩnh viễn do bỏ mặc." Khi bạn phê chuẩn cổng API, bạn xóa dòng của nó — tài liệu thu nhỏ lại khi các quyết định được đưa ra.
 
-6. **One thing to fix in `setup.md` after this:** it has four `<API_PORT>` placeholders and two `<port>` references. With this doc written, replace them with `3001` and add "(see [Configuration §1.2](config.md#12-api-port-risk-and-fix--provisional--locked) if your machine needs a different port)". I left them as placeholders in the previous turn precisely so this turn could resolve them in one pass.
+6. **Một điều cần sửa trong `setup.md` sau tài liệu này:** nó có bốn placeholder `<API_PORT>` và hai tham chiếu `<port>`. Với tài liệu này đã được viết, hãy thay chúng bằng `3001` và thêm "(xem [Cấu hình §1.2](config.md#12-api-port-risk-and-fix--provisional--locked) nếu máy bạn cần một cổng khác)". Tôi đã để chúng là placeholder ở lượt trước chính xác để lượt này có thể giải quyết chúng trong một lần.

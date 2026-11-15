@@ -1,0 +1,37 @@
+@startuml cart-sync-sequence-diagram
+title BrewLite – Đồng bộ giỏ hàng với server
+skinparam shadowing false
+skinparam backgroundColor #FFFFFF
+skinparam sequenceMessageAlign left
+autonumber
+
+participant "Web (Next.js)" as UI
+participant "Zustand store\n(localStorage)" as ST
+participant "API (NestJS)" as API
+database "PostgreSQL" as DB
+
+note over UI, DB: Chạy khi đăng nhập hoặc tải lại trang lúc đã đăng nhập (CartSync, có userId)
+UI -> ST: Khôi phục giỏ từ localStorage (brewlite-cart)
+alt giỏ của chính user này còn thay đổi chưa lưu (dirty)
+  UI -> API: PUT /cart {items, promoCode}
+else cần lấy giỏ từ server
+  UI -> API: GET /cart (Bearer token)
+  API -> DB: Đọc carts + cart_items + topping, khuyến mãi
+  DB --> API: giỏ đã lưu
+  API --> UI: 200 {items, promoCode, promotion}
+  alt giỏ trên máy là giỏ khách (chưa có chủ)
+    UI -> ST: Gộp giỏ khách + giỏ server (tối đa 99 ly/dòng)
+    UI -> API: PUT /cart (giỏ đã gộp)
+  else giỏ của tài khoản khác hoặc đã đồng bộ
+    UI -> ST: Thay bằng giỏ trên server
+  end
+end
+== Mỗi lần giỏ thay đổi ==
+ST -> UI: subscribe: giỏ vừa đổi
+UI -> UI: Đánh dấu dirty, đợi 400 ms (debounce)
+UI -> API: PUT /cart {items, promoCode}
+API -> API: Kiểm tra món tồn tại, gộp dòng trùng\n(qty ≤ 99)
+API -> DB: Transaction: upsert cart,\nxoá rồi ghi lại cart_items
+API --> UI: 200 giỏ đã lưu
+UI -> UI: Xoá cờ dirty
+@enduml

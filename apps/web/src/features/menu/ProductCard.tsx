@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { calculateUnitPrice } from "@/features/product/pricing";
 import { useCartStore } from "@/store/cart.store";
-import { useUiStore } from "@/store/ui.store";
 import { isOutOfStock, remainingForCart } from "@/features/product/stock";
 import type { Product, SizeOption } from "@/types";
 
@@ -57,20 +56,17 @@ function PayIcon() {
 export function ProductCard({ product }: ProductCardProps) {
   const addItem = useCartStore((state) => state.addItem);
   const cartItems = useCartStore((state) => state.items);
-  const showToast = useUiStore((state) => state.showToast);
   const router = useRouter();
-  const [added, setAdded] = useState(false);
   const [size, setSize] = useState<SizeOption>("M");
   const unitPrice = calculateUnitPrice(product.price, size, []);
   // Mục 5: món hết hàng (hoặc giỏ đã có đủ số ly còn lại) thì không cho thêm nhanh.
   const outOfStock = isOutOfStock(product);
   const canAdd = remainingForCart(product, cartItems) > 0;
 
-  function addToCart() {
+  // Thêm vào giỏ: sang trang chi tiết để chọn topping (giữ size đã chọn); thêm xong trang đó quay lại menu.
+  function chooseToppings() {
     if (!canAdd) return;
-    addItem(product, size, []);
-    setAdded(true);
-    showToast(`Đã thêm ${product.name} (size ${size}) vào giỏ`);
+    router.push(`/products/${product.id}?size=${size}`);
   }
 
   function buyNow() {
@@ -162,10 +158,10 @@ export function ProductCard({ product }: ProductCardProps) {
             <button
               type="button"
               aria-label={`Thêm ${product.name} vào giỏ hàng`}
-              onClick={addToCart}
+              onClick={chooseToppings}
               className="flex min-h-11 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border border-emerald-900 px-2 py-2 text-xs font-semibold text-emerald-950 transition hover:bg-emerald-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-800 sm:text-sm"
             >
-              {added ? "Đã thêm" : "Thêm vào giỏ"}
+              Thêm vào giỏ
               <CartIcon />
             </button>
             <button
