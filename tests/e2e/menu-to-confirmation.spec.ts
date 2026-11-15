@@ -32,6 +32,12 @@ test('menu to confirmation with mock Wallet', async ({ page, request }) => {
   await page.getByTestId('size-M').click();
   await page.getByTestId('add-to-cart-btn').click();
 
+  await expect(page).toHaveURL(/\/menu$/);
+  const cartLink = page.getByRole('link', { name: /Giỏ hàng, hiện có 1 sản phẩm/ });
+  await expect(cartLink).toBeVisible();
+  await cartLink.click();
+
+  await expect(page).toHaveURL(/\/cart$/);
   await expect(page.getByTestId('proceed-checkout-btn')).toBeVisible();
   await expectNoHorizontalOverflow(page);
   await page.getByTestId('proceed-checkout-btn').click();
