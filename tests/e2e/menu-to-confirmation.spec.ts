@@ -1,6 +1,9 @@
 import { expect, test, type Page } from '@playwright/test';
 
-const apiBase = (process.env.API_URL ?? 'http://localhost:3001/api/v1').replace(/\/+$/, '');
+const apiUrl = (globalThis as typeof globalThis & {
+  process?: { env?: Record<string, string | undefined> };
+}).process?.env?.API_URL;
+const apiBase = (apiUrl ?? 'http://localhost:3001/api/v1').replace(/\/+$/, '');
 
 async function expectNoHorizontalOverflow(page: Page) {
   await expect
