@@ -1,0 +1,30 @@
+@startuml apply-promo-sequence-diagram
+title BrewLite – Áp mã khuyến mãi trong giỏ hàng
+skinparam shadowing false
+skinparam backgroundColor #FFFFFF
+skinparam sequenceMessageAlign left
+autonumber
+
+actor "Khách hàng" as KH
+participant "Web (Next.js)" as UI
+participant "Zustand store\n(localStorage)" as ST
+participant "API (NestJS)" as API
+database "PostgreSQL" as DB
+
+KH -> UI: Nhập mã (vd WELCOME20K), bấm "Áp dụng"
+UI -> UI: Chuẩn hoá mã: trim + chữ in hoa
+UI -> API: POST /promotions/validate {code, subtotal}
+API -> DB: Tìm promotion theo code
+DB --> API: promotion | null
+alt không có mã
+  API --> UI: 404 PROMO_NOT_FOUND
+else tắt / hết hạn / chưa đạt giá tối thiểu / hết lượt
+  API --> UI: 400 PROMO_INACTIVE | PROMO_EXPIRED |\nPROMO_MIN_ORDER_NOT_MET | PROMO_EXHAUSTED
+else hợp lệ
+  API -> API: computeDiscount: PERCENT (làm tròn xuống)\nhoặc FIXED, không vượt tạm tính
+  API --> UI: 200 {code, type, value, minOrderTotal,\ndiscountAmount}
+  UI -> ST: setPromotion(promotion)
+  UI --> KH: Hiện số tiền giảm và tổng mới
+end
+note over KH, DB: Khi lỗi: setPromotion(null) và hiện thông báo lỗi tiếng Việt dưới ô nhập mã
+@enduml
