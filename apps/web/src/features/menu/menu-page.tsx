@@ -65,11 +65,11 @@ function getProductCategory(product: Product): Exclude<MenuTab, "Tất cả"> {
   if (name.includes("da xay")) {
     return "Đá xay";
   }
-  if (name.includes("tra") || name.includes("tr")) {
+  if (name.includes("tra")) {
     return "Trà";
   }
   if (
-    ["ca phe", "cà phê", "bac xiu", "bạc xỉu", "sua", "sữa", "espresso", "americano", "cappuccino", "latte", "macchiato", "mocha", "cold brew"]
+    ["ca phe", "bac xiu", "sua", "espresso", "americano", "cappuccino", "latte", "macchiato", "mocha", "cold brew"]
       .some((keyword) => name.includes(keyword))
   ) {
     return "Cà phê";
@@ -361,11 +361,10 @@ export function MenuPage() {
                   role="tab"
                   aria-selected={selected}
                   onClick={() => setActiveTab(tab)}
-                  className={`min-h-11 shrink-0 snap-start rounded-full border px-3.5 py-2 text-sm font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-800 sm:px-4 ${
-                    selected
+                  className={`min-h-11 shrink-0 snap-start rounded-full border px-3.5 py-2 text-sm font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-800 sm:px-4 ${selected
                       ? "border-emerald-900 bg-emerald-900 text-white shadow-sm"
                       : "border-stone-300 bg-white text-stone-700 hover:border-emerald-700 hover:text-emerald-900"
-                  }`}
+                    }`}
                 >
                   {tab}
                   <span className={`ml-2 text-xs ${selected ? "text-emerald-100" : "text-stone-400"}`}>

@@ -75,6 +75,12 @@ describe('POST /api/v1/payments idempotency (graded test b)', () => {
     // Stock decremented exactly once
     const productAfter = await prisma.product.findUnique({ where: { id: product.id } });
     expect(productAfter?.stock).toBe(10 - order.items[0].qty);
+
+    const loyaltyRows = await prisma.loyaltyTransaction.findMany({ where: { orderId: order.id } });
+    expect(loyaltyRows).toHaveLength(1);
+    expect(loyaltyRows[0].type).toBe('EARN');
+    expect(loyaltyRows[0].points).toBe(35);
+    expect(loyaltyRows[0].userId).toBe(userId);
   });
 
   /**
@@ -179,6 +185,9 @@ describe('POST /api/v1/payments idempotency (graded test b)', () => {
     // Stock unchanged
     const productAfter = await prisma.product.findUnique({ where: { id: product.id } });
     expect(productAfter?.stock).toBe(10);
+
+    const loyaltyRows = await prisma.loyaltyTransaction.findMany({ where: { orderId: order.id } });
+    expect(loyaltyRows).toHaveLength(0);
   });
 
   /**

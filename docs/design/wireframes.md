@@ -2,7 +2,7 @@
 
 **Trạng thái:** Sản phẩm bàn giao Phase 1 (Sprint 0)
 **Phụ trách:** Nghĩa (Task 5)
-**Tài liệu liên quan:** [UI Decisions](ui-decisions.md), [Product Backlog](../requirements/product-backlog.md), [Scenarios](../requirements/scenarios.md), [API Contract](../architecture/api-contract.md), [Kế hoạch 3 Sprint](../diagrams/sprint-plan.md), Đề bài PDF Mục 7
+**Tài liệu liên quan:** [UI Decisions](ui-decisions.md), [Product Backlog](../requirements/product-backlog.md), [Scenarios](../requirements/scenarios.md), [API Contract](../architecture/api-contract.md), [Kế hoạch 3 Sprint](../../archive/docs/diagrams/sprint-plan.md), Đề bài PDF Mục 7
 **Bản chạy tương tác (HTML Prototype):** 👉 [Mở giao diện 5 màn hình MVP (`wireframe-5.html`)](./wireframe-5.html)
 
 Tài liệu này là danh mục quản lý toàn bộ wireframe của dự án **BrewLite**. Với mỗi màn hình, tài liệu quy định rõ đường dẫn (route), nguồn giao diện tham chiếu, các trạng thái UI bắt buộc phải xử lý, tiêu chí chấp nhận (Acceptance Criteria) và kịch bản kiểm thử tương ứng.

@@ -3,7 +3,7 @@
 - **Status:** Accepted
 - **Date:** 2026-10-22
 - **Deciders:** H.Tài, Nghĩa
-- **Related:** [Working Agreement](../../working-agreement.md), [Project Structure](../../project-structure.md), [Configuration](../../config.md)
+- **Related:** [Working Agreement](../../../archive/docs/working-agreement.md), [Project Structure](../../../archive/docs/architecture/architecture.md), [Configuration](../../../archive/docs/config.md)
 
 ## Context
 
@@ -39,6 +39,7 @@ The following decisions are already identified as needing ADRs, and their number
 | 0004 | Payment mock, order state machine, idempotency          | Proposed → Accepted when Task 8/10 close     |
 | 0005 | API contract conventions (envelope, errors, versioning) | Proposed → Accepted when Task 7.0 closes     |
 | 0006 | UI state and auth token storage                         | Proposed → Accepted when Task 5.0 closes     |
+| 0007 | Hosting platform: Render, GHCR, private Postgres        | Accepted. See `0007-hosting-platform.md`.    |
 
 ## Consequences
 
@@ -115,8 +116,8 @@ List, each with an owner and a closing condition. If any exist, status is `Propo
 ## References
 
 - Assignment PDF §10 (Definition of Done), §11 (handover).
-- [Working Agreement](../../working-agreement.md) §9 (review checklist), §11 (change log).
-- [Configuration](../../config.md) §7 (open items that point at ADRs).
+- [Working Agreement](../../../archive/docs/working-agreement.md) §9 (review checklist), §11 (change log).
+- [Configuration](../../../archive/docs/config.md) §7 (open items that point at ADRs).
 - [Scenarios](../../requirements/scenarios.md) §13 (open decisions D1–D6).
 - Michael Nygard, "Documenting Architecture Decisions" (the original ADR pattern this follows).
 

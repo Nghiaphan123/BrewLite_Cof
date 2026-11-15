@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { AppFeedback } from "@/components/AppFeedback";
 import { CartStoreHydration } from "@/components/CartStoreHydration";
 import { CartSync } from "@/components/CartSync";
+import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -40,6 +41,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body className="min-h-full flex flex-col bg-white text-neutral-900">
         <CartStoreHydration />
         <CartSync />
+        <ServiceWorkerRegister />
         {children}
         {/* usePathname cần Suspense để các route động vẫn prerender được (cacheComponents). */}
         <Suspense fallback={null}>

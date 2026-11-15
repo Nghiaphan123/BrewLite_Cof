@@ -2,6 +2,8 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { AppModule } from '../../src/app.module.js';
 import { HttpExceptionFilter } from '../../src/common/http-exception.filter.js';
+import { LoggingInterceptor } from '../../src/common/logging.interceptor.js';
+import { requestIdMiddleware } from '../../src/common/request-id.middleware.js';
 import { PrismaService } from '../../src/common/prisma.service.js';
 
 /**
@@ -17,6 +19,8 @@ export async function createE2EApp(): Promise<{
   }).compile();
 
   const app = moduleRef.createNestApplication();
+  app.use(requestIdMiddleware);
+  app.useGlobalInterceptors(new LoggingInterceptor());
   app.setGlobalPrefix('api/v1');
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));

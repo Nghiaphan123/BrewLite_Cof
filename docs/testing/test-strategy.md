@@ -2,7 +2,7 @@
 
 **Status:** Phase 1 deliverable  
 **Owner:** H.Tài (SM; testing owner through Phase 6)  
-**Related:** [Scenarios](../requirements/scenarios.md), [Product Backlog](../requirements/product-backlog.md), [Working Agreement](../working-agreement.md), [API Contract](../architecture/api-contract.md), [ADR 0004](../architecture/adr/0004-payment-mock-and-order-lifecycle.md), [Traceability Matrix](../traceability-matrix.md), [Setup](../setup.md)
+**Related:** [Scenarios](../requirements/scenarios.md), [Product Backlog](../requirements/product-backlog.md), [Working Agreement](../../archive/docs/working-agreement.md), [API Contract](../architecture/api-contract.md), [ADR 0004](../architecture/adr/0004-payment-mock-and-order-lifecycle.md), [Traceability Matrix](../traceability-matrix.md), [Setup](../../archive/docs/setup.md)
 
 This document defines BrewLite's testing strategy: what levels of testing exist, what each level is responsible for, which tool runs each, how tests map to the graded requirements, and what "test complete" means for a task. It is the strategy; the specific test cases are in `scenarios.md` (flows) and `product-backlog.md` (acceptance criteria).
 
@@ -209,10 +209,10 @@ CI is not in Phase 1 (`.github/workflows/` is empty). When it lands:
 - Assignment PDF §9 (three graded tests), §10 (DoD), §4.2 (NFR).
 - [Scenarios](../requirements/scenarios.md) §12 (scenario → test traceability), §9–§10 (graded test scenarios).
 - [Product Backlog](../requirements/product-backlog.md) (acceptance criteria per task).
-- [Working Agreement](../working-agreement.md) §4 (evidence notes cite tests), §9 (review checklist).
+- [Working Agreement](../../archive/docs/working-agreement.md) §4 (evidence notes cite tests), §9 (review checklist).
 - [API Contract](../architecture/api-contract.md) (endpoint shapes the integration tests assert).
 - [ADR 0004](../architecture/adr/0004-payment-mock-and-order-lifecycle.md) (state machine, idempotency, stock timing the graded tests prove).
-- [Setup](../setup.md) §9 (how to run tests locally).
+- [Setup](../../archive/docs/setup.md) §9 (how to run tests locally).
 - [UI Decisions](../design/ui-decisions.md) §4.2 (pricing fixture), §6 (UI states), §7 (accessibility checklist).
 - 
 ---

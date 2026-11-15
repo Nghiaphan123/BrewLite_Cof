@@ -96,8 +96,8 @@ export interface Order {
     imageUrl?: string;
     size: SizeOption;
     qty: number;
-    lineTotal: number;
     unitPrice?: number;
+    lineTotal: number;
     toppings?: Array<{
       id?: string;
       name?: string;

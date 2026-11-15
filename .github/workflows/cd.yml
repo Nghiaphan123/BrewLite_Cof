@@ -1,0 +1,116 @@
+# Assignment 2 Task 5.3. Runs on a version tag or a manual dispatch.
+# It refuses to deploy if the Render secrets are missing. It does not invent a URL.
+name: CD
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  deploy:
+    name: Build, push, deploy, smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Require deploy secrets
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_API_SERVICE_ID: ${{ secrets.RENDER_API_SERVICE_ID }}
+          RENDER_WEB_SERVICE_ID: ${{ secrets.RENDER_WEB_SERVICE_ID }}
+          API_PUBLIC_ORIGIN: ${{ secrets.API_PUBLIC_ORIGIN }}
+        run: |
+          missing=0
+          for name in RENDER_API_KEY RENDER_API_SERVICE_ID RENDER_WEB_SERVICE_ID API_PUBLIC_ORIGIN; do
+            if [ -z "${!name}" ]; then
+              echo "Missing GitHub secret: $name"
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            echo "Refusing to deploy. Add the secrets, then rerun. Do not invent a production URL."
+            exit 1
+          fi
+
+      - name: Image names
+        id: images
+        run: |
+          owner=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          echo "api=${{ env.REGISTRY }}/${owner}/brewlite-api:${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          echo "web=${{ env.REGISTRY }}/${owner}/brewlite-web:${{ github.sha }}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: apps/api
+          push: true
+          tags: ${{ steps.images.outputs.api }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: apps/web
+          push: true
+          tags: ${{ steps.images.outputs.web }}
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ secrets.API_PUBLIC_ORIGIN }}/api/v1
+
+      - name: Deploy API image
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          SERVICE_ID: ${{ secrets.RENDER_API_SERVICE_ID }}
+          IMAGE: ${{ steps.images.outputs.api }}
+        run: |
+          curl --fail-with-body --silent --show-error \
+            --request POST \
+            --url "https://api.render.com/v1/services/${SERVICE_ID}/deploys" \
+            --header "Authorization: Bearer ${RENDER_API_KEY}" \
+            --header "Content-Type: application/json" \
+            --data "{\"imageUrl\":\"${IMAGE}\"}" \
+            --output /tmp/api-deploy.json
+          echo "Requested API deploy for commit ${{ github.sha }}"
+
+      - name: Deploy web image
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          SERVICE_ID: ${{ secrets.RENDER_WEB_SERVICE_ID }}
+          IMAGE: ${{ steps.images.outputs.web }}
+        run: |
+          curl --fail-with-body --silent --show-error \
+            --request POST \
+            --url "https://api.render.com/v1/services/${SERVICE_ID}/deploys" \
+            --header "Authorization: Bearer ${RENDER_API_KEY}" \
+            --header "Content-Type: application/json" \
+            --data "{\"imageUrl\":\"${IMAGE}\"}" \
+            --output /tmp/web-deploy.json
+          echo "Requested web deploy for commit ${{ github.sha }}"
+
+      - name: Smoke test
+        env:
+          API_PUBLIC_ORIGIN: ${{ secrets.API_PUBLIC_ORIGIN }}
+        run: |
+          url="${API_PUBLIC_ORIGIN%/}/api/v1/health"
+          echo "Checking health. The URL is not printed."
+          for attempt in 1 2 3 4 5 6 7 8 9 10 11 12; do
+            body=$(curl --silent --show-error --max-time 20 "$url" || true)
+            if printf '%s' "$body" | grep -q '"status":"ok"'; then
+              echo "Health check passed on attempt ${attempt}."
+              exit 0
+            fi
+            echo "Attempt ${attempt} did not return status ok. Waiting for a cold start."
+            sleep 10
+          done
+          echo "Smoke test failed. Redeploy the previous commit SHA. Do not record this URL as live."
+          exit 1

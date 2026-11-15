@@ -37,14 +37,18 @@ import {
   HttpException,
   HttpStatus,
 } from '@nestjs/common';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { InvalidStateTransitionError } from '../modules/orders/order-state-machine.js';
+import { redact } from './redact.js';
+import { requestIdFrom } from './request-id.middleware.js';
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
+    const request = ctx.getRequest<Request>();
+    const requestId = requestIdFrom(request);
 
     if (exception instanceof InvalidStateTransitionError) {
       return response.status(HttpStatus.CONFLICT).json({
@@ -76,12 +80,16 @@ export class HttpExceptionFilter implements ExceptionFilter {
       });
     }
 
-    // Default 500 error envelope per ADR 0005 C3
-    console.error('Unhandled exception in HttpExceptionFilter:', exception);
+    // Default 500 error envelope per ADR 0005 C3 and C10.
+    // Log the request id and a redacted message. Never log the exception object:
+    // Prisma errors can contain the database URL.
+    const rawMessage = exception instanceof Error ? exception.message : 'Internal error';
+    console.error(`requestId=${requestId} status=500 ${redact(rawMessage)}`);
     return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
       statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
       error: 'Internal Server Error',
-      message: (exception as any)?.message ?? 'Lỗi hệ thống nội bộ',
+      message: 'Lỗi hệ thống nội bộ',
+      requestId,
     });
   }
 }

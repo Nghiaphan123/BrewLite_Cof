@@ -6,16 +6,16 @@ BrewLite is a mobile-first web app for ordering coffee at a counter. A customer 
 
 ## Features
 
-| Area          | What the user can do                                                                                                    |
-| ------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| Menu          | Browse 30 drinks with image, name and price; pick size S/M/L on the card, then "Thêm vào giỏ" (opens the product page to add toppings, then returns to the menu) or "Mua ngay" (straight to checkout) |
-| Product       | Choose size S/M/L and toppings; the price updates as options change; a sold-out drink or topping cannot be chosen       |
-| Cart          | Add, change quantity, remove; the total and the cart badge update automatically; the cart is kept per account and warns when a drink or topping runs short |
-| Account       | Register (name, email, password) and sign in with JWT; the profile shows loyalty points, past orders, password change   |
-| Checkout      | Apply a promotion code, pay by Wallet or Card; the "Thanh toán" button shows the total                                  |
-| Payment       | Success marks the order `PAID` and takes drink and topping stock; failure marks it `PAYMENT_FAILED` and keeps the cart so the customer can retry |
-| Confirmation  | The order code, status and items; order history at `/orders`                                                            |
-| Admin         | `/admin`: drink stock, topping stock and price, block / open user accounts, create and cancel promotion codes, order status changes that follow the state machine |
+| Area         | What the user can do                                                                                                                                                                                  |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Menu         | Browse 30 drinks with image, name and price; pick size S/M/L on the card, then "Thêm vào giỏ" (opens the product page to add toppings, then returns to the menu) or "Mua ngay" (straight to checkout) |
+| Product      | Choose size S/M/L and toppings; the price updates as options change; a sold-out drink or topping cannot be chosen                                                                                     |
+| Cart         | Add, change quantity, remove; the total and the cart badge update automatically; the cart is kept per account and warns when a drink or topping runs short                                            |
+| Account      | Register (name, email, password) and sign in with JWT; the profile shows loyalty points, past orders, password change                                                                                 |
+| Checkout     | Apply a promotion code, pay by Wallet or Card; the "Thanh toán" button shows the total                                                                                                                |
+| Payment      | Success marks the order `PAID` and takes drink and topping stock; failure marks it `PAYMENT_FAILED` and keeps the cart so the customer can retry                                                      |
+| Confirmation | The order code, status and items; order history at `/orders`                                                                                                                                          |
+| Admin        | `/admin`: drink stock, topping stock and price, block / open user accounts, create and cancel promotion codes, order status changes that follow the state machine                                     |
 
 ## Tech stack
 
@@ -78,12 +78,12 @@ Stop with `docker compose down` (data is kept); add `-v` to delete the local dat
 
 The seed (`npm run db:seed`) is safe to run again. It creates:
 
-| Data             | Value                                                                                              |
-| ---------------- | -------------------------------------------------------------------------------------------------- |
-| Customers        | `customer01@brewlite.test` to `customer10@brewlite.test`, password `Brewlite@123` (`SEED_USER_PASSWORD`) |
-| Admin            | `admin@brewlite.vn`, password `123456`                                                             |
-| Promotion codes  | `BREW10` (10% off), `WELCOME20K` (20,000 VND off orders from 50,000 VND)                           |
-| Low-stock item   | "Cà phê phin giới hạn" starts with stock 1, for the sold-out demo                                  |
+| Data            | Value                                                                                                    |
+| --------------- | -------------------------------------------------------------------------------------------------------- |
+| Customers       | `customer01@brewlite.test` to `customer10@brewlite.test`, password `Brewlite@123` (`SEED_USER_PASSWORD`) |
+| Admin           | `admin@brewlite.vn`, password `123456`                                                                   |
+| Promotion codes | `BREW10` (10% off), `WELCOME20K` (20,000 VND off orders from 50,000 VND)                                 |
+| Low-stock item  | "Cà phê phin giới hạn" starts with stock 1, for the sold-out demo                                        |
 
 These are demo values only. Re-running the seed refreshes the menu but does not reset live stock or loyalty points.
 
@@ -132,6 +132,7 @@ cd apps/api
 npm test                 # unit tests (Vitest)
 npm run test:e2e         # API tests with Supertest; needs the database running
 npm run lint
+npm run build
 
 cd apps/web
 npm test                 # unit and component tests (Vitest + Testing Library)
@@ -143,11 +144,11 @@ The e2e tests use a separate database (`brewlite_test`, created automatically), 
 
 ### Graded business-rule tests (Task 10)
 
-| Rule                                                       | Test file                                                                                                    |
-| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| (a) Invalid order state transitions are rejected           | `apps/api/src/modules/orders/order-state-machine.spec.ts`, `apps/api/test/order-state-machine.e2e-spec.ts`    |
-| (b) The same `Idempotency-Key` twice creates one payment   | `apps/api/test/payments.e2e-spec.ts`                                                                         |
-| (c) Concurrent orders never oversell stock                 | `apps/api/test/orders-concurrent-stock.e2e-spec.ts`                                                          |
+| Rule                                                     | Test file                                                                                                  |
+| -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| (a) Invalid order state transitions are rejected         | `apps/api/src/modules/orders/order-state-machine.spec.ts`, `apps/api/test/order-state-machine.e2e-spec.ts` |
+| (b) The same `Idempotency-Key` twice creates one payment | `apps/api/test/payments.e2e-spec.ts`                                                                       |
+| (c) Concurrent orders never oversell stock               | `apps/api/test/orders-concurrent-stock.e2e-spec.ts`                                                        |
 
 Run one file, for example: `npx vitest run --config ./vitest.config.e2e.ts test/payments.e2e-spec.ts` (inside `apps/api`).
 
@@ -155,19 +156,19 @@ The order lifecycle follows the assignment diagram (§9.1): `PENDING → PAID �
 
 ## Documentation
 
-| Topic                   | Document                                                                                                             |
-| ----------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Topic                   | Document                                                                                                                                                                                                                                    |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Demo and handover       | [Demo script](docs/demo-script.md), Sprint Retrospectives: [Sprint 1](docs/plans/retro-sprint-1.md), [Sprint 2](docs/plans/retro-sprint-2.md), [Sprint 3](docs/plans/retro-sprint-3.md), [assignment checklist](docs/brewlite-checklist.md) |
-| Requirements            | [Product backlog](docs/requirements/product-backlog.md), [scenarios](docs/requirements/scenarios.md)                 |
-| Design                  | [Wireframes](docs/design/wireframes.md), [UI decisions](docs/design/ui-decisions.md)                                 |
-| Diagrams                | [docs/diagrams/](docs/diagrams/), [Sprint plan](docs/diagrams/sprint-plan.md)                                         |
-| Architecture            | [Architecture](docs/architecture/architecture.md), [API contract](docs/architecture/api-contract.md), [ADRs](docs/architecture/adr/) |
-| Setup and configuration | [Setup](docs/setup.md), [configuration](docs/config.md), [local deployment](docs/deployment.md)                      |
-| Testing                 | [Test strategy](docs/testing/test-strategy.md), [traceability matrix](docs/traceability-matrix.md)                   |
-| Team process            | [Working agreement](docs/working-agreement.md), [kickoff note](docs/plans/kickoff-2026-10-22.md)                     |
+| Requirements            | [Product backlog](docs/requirements/product-backlog.md), [scenarios](docs/requirements/scenarios.md)                                                                                                                                        |
+| Design                  | [Wireframes](docs/design/wireframes.md), [UI decisions](docs/design/ui-decisions.md)                                                                                                                                                        |
+| Diagrams                | [docs/diagrams/](docs/diagrams/), [Sprint plan](docs/diagrams/sprint-plan.md)                                                                                                                                                               |
+| Architecture            | [Architecture](docs/architecture/architecture.md), [API contract](docs/architecture/api-contract.md), [ADRs](docs/architecture/adr/)                                                                                                        |
+| Setup and configuration | [Setup](docs/setup.md), [configuration](docs/config.md), [local deployment](docs/deployment.md)                                                                                                                                             |
+| Testing                 | [Test strategy](docs/testing/test-strategy.md), [traceability matrix](docs/traceability-matrix.md)                                                                                                                                          |
+| Team process            | [Working agreement](docs/working-agreement.md), [kickoff note](docs/plans/kickoff-2026-10-22.md)                                                                                                                                            |
 
 ## Working rules
 
-- Branch, commit, and PR naming rules and review checklists are in [CONTRIBUTING.md](CONTRIBUTING.md). The PR description template is in [.github/pull_request_template.md](.github/pull_request_template.md).
+- Branch, commit, PR naming rules, review checklists, and Definition of Done are in [CONTRIBUTING.md](CONTRIBUTING.md). The PR description template is in [.github/pull_request_template.md](.github/pull_request_template.md).
 - All changes go through pull requests with a teammate review; lint, test, or build failures block the merge.
 - A task counts as done when it meets the Definition of Done (assignment §10): it builds and meets its acceptance criteria, has clear reviewed commits, the API validates input, the UI handles loading and error states, and this README explains how to run it.

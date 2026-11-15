@@ -8,12 +8,14 @@ import { OrdersModule } from './modules/orders/orders.module.js';
 import { PaymentsModule } from './modules/payments/payments.module.js';
 import { ProductsModule } from './modules/products/products.module.js';
 import { PromotionsModule } from './modules/promotions/promotions.module.js';
+import { HealthModule } from './health/health.module.js';
 
 @Module({
   imports: [
     AdminModule,
     AuthModule,
     CartModule,
+    HealthModule,
     OrdersModule,
     PaymentsModule,
     ProductsModule,
@@ -22,4 +24,4 @@ import { PromotionsModule } from './modules/promotions/promotions.module.js';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }

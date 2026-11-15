@@ -3,7 +3,7 @@
 - **Status:** Accepted
 - **Date:** 2026-10-22
 - **Deciders:** Nghĩa, H.Tài
-- **Related:** [ADR 0001](0001-record-architecture-decisions.md), [Project Structure](../../project-structure.md), [Setup](../../setup.md), [Configuration](../../config.md)
+- **Related:** [ADR 0001](0001-record-architecture-decisions.md), [Project Structure](../../../archive/docs/architecture/architecture.md), [Setup](../../../archive/docs/setup.md), [Configuration](../../../archive/docs/config.md)
 
 ## Context
 
@@ -104,9 +104,9 @@ Until then, the current layout stands.
 
 - Assignment PDF §6 (technology), §10 (DoD), §11 (handover).
 - [ADR 0001](0001-record-architecture-decisions.md) — the ADR process this follows.
-- [Project Structure](../../project-structure.md) — the layout this ADR justifies.
-- [Setup](../../setup.md) §2, §7 — the per-app install and two-terminal dev workflow that depend on this decision.
-- [Configuration](../../config.md) §2.3 — the per-app `.env.example` sync rule that follows from having two apps.
+- [Project Structure](../../../archive/docs/architecture/architecture.md) — the layout this ADR justifies.
+- [Setup](../../../archive/docs/setup.md) §2, §7 — the per-app install and two-terminal dev workflow that depend on this decision.
+- [Configuration](../../../archive/docs/config.md) §2.3 — the per-app `.env.example` sync rule that follows from having two apps.
 - [UI Decisions](../../design/ui-decisions.md) §4.2 — the pricing fixture that replaces a shared package.
 
 ---

@@ -1,10 +1,22 @@
-# BrewLite - Traceability Matrix
+# BrewLite — Traceability matrix
 
-**Status:** Phase 1 skeleton — evidence columns fill as tasks close (Phase 2–6)  
-**Owner:** H.Tài (SM)  
-**Related:** [Product Backlog](requirements/product-backlog.md), [Scenarios](requirements/scenarios.md), [API Contract](architecture/api-contract.md), [Working Agreement](working-agreement.md), assignment PDF §4, §8, §9, §10, §12
+**Status:** Assignment 2 rewrite. Evidence is what exists in this repository today.  
+**Owner:** team  
+**Related:** [SRS](requirements/srs.md), [UC-01](requirements/use-case-uc01-place-and-pay.md), [modeling notes](diagrams/task2-modeling.md), [ADR 0007](architecture/adr/0007-hosting-platform.md)
 
-This matrix maps every assignment requirement to the artifact that proves it. The left columns are fixed by the PDF; the right columns fill as tasks close. A row with `TBD` is a requirement that has an owning task but no evidence yet — that is expected until Phase 6. A row with **no owning task** is a scope gap and must be resolved at Sprint Planning.
+Columns follow the Assignment 2 template: requirement, use case, design, code or API, test. The status column is extra so a row is not read as "done in production" when it is not.
+
+Status words:
+
+| Status     | Meaning                                                                       |
+| ---------- | ----------------------------------------------------------------------------- |
+| Covered    | The named code and test exist in this repo.                                   |
+| Partial    | Some of the requirement is implemented or tested. The gap is named.           |
+| Documented | The design exists. The code or the test does not.                             |
+| Refused    | The requirement is Won't. No code is expected.                                |
+| Not run    | The check needs a pipeline, a deploy, or a measurement that has not happened. |
+
+No row claims a production URL or a recorded CI run. The Playwright browser-test source and CI job exist at `tests/e2e/menu-to-confirmation.spec.ts` and `.github/workflows/ci.yml`; no browser-test run is recorded yet.
 
 ## 1. Functional requirements (PDF §4.1)
 
@@ -19,11 +31,11 @@ This matrix maps every assignment requirement to the artifact that proves it. Th
 
 ## 2. Non-functional requirements (PDF §4.2)
 
-| #   | Requirement                            | Owning task                           | Evidence                                       | Status |
-| --- | -------------------------------------- | ------------------------------------- | ---------------------------------------------- | ------ |
+| #   | Requirement                            | Owning task                           | Evidence                                                                                                                                                                                                                         | Status |
+| --- | -------------------------------------- | ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
 | N1  | API response < 500 ms on sample data   | Task 2 (products), Task 9 (NFR check) | [`testing/nfr-response-time.md`](testing/nfr-response-time.md) (15/11/2026): p95 of `GET /products`, `GET /products/:id`, `POST /auth/login`, `GET /orders/me` all < 500 ms; script `apps/api/scripts/measure-response-time.mjs` | Done   |
-| N2  | Password hashed, JWT, input validation | Task 7, Task 6                        | `api-contract.md` §6–§8; `config.md` §4; tests | TBD    |
-| N3  | Works on web browsers                  | Task 3–Task 9                         | `ui-decisions.md` §3; e2e (Phase 2+)           | TBD    |
+| N2  | Password hashed, JWT, input validation | Task 7, Task 6                        | `api-contract.md` §6–§8; `config.md` §4; tests                                                                                                                                                                                   | TBD    |
+| N3  | Works on web browsers                  | Task 3–Task 9                         | `ui-decisions.md` §3; e2e (Phase 2+)                                                                                                                                                                                             | TBD    |
 
 ## 3. Backlog tasks (PDF §8) — one row per scored task
 
@@ -62,6 +74,6 @@ DoD is verified per task via the spreadsheet's evidence note (`working-agreement
 | `OrderItem` | Task 6      | `prisma/schema.prisma`                                                | TBD    |
 | `Payment`   | Task 8      | `prisma/schema.prisma`; ADR 0004 D4 (`idempotencyKey`, `requestHash`) | TBD    |
 
-## 7. Scope gaps
+## 4. How to update a row
 
-*(Empty at Phase 1 close. Any requirement with no owning task is added here and resolved at Sprint Planning.)*
+Change the status in the same pull request as the code or the test. Do not mark NFR-05 Covered until `GET /api/v1/health` responds, a pull request has run the pipeline, and the README contains a URL that answers. Do not invent that URL in this file.

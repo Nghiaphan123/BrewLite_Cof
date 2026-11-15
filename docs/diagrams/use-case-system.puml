@@ -1,0 +1,53 @@
+@startuml use-case-system
+!pragma layout smetana
+title BrewLite — system use cases (Assignment 2, Task 1.2)
+top to bottom direction
+skinparam shadowing false
+skinparam backgroundColor #FFFFFF
+skinparam packageStyle rectangle
+skinparam usecase {
+  BackgroundColor #FAF7F2
+  BorderColor #6F4E37
+  FontColor #3B2A1E
+}
+skinparam actor {
+  BorderColor #3B2A1E
+  FontColor #3B2A1E
+}
+skinparam rectangle {
+  BorderColor #6F4E37
+}
+
+actor "Khách hàng\n(Customer)" as Customer
+actor "Đơn vị thanh toán\n(mock)" as Payment
+
+rectangle "BrewLite" {
+  usecase "UC-MENU\nXem menu" as Menu
+  usecase "UC-DETAIL\nXem chi tiết\nvà chọn tùy chọn" as Detail
+  usecase "UC-CART\nQuản lý giỏ hàng" as Cart
+  usecase "UC-AUTH\nĐăng ký / đăng nhập" as Auth
+  usecase "UC-01\nĐặt và thanh toán đơn" as PayOrder
+  usecase "UC-TRACK\nXác nhận, trạng thái\nvà lịch sử" as Track
+}
+
+Customer --> Menu
+Customer --> Detail
+Customer --> Cart
+Customer --> Auth
+Customer --> PayOrder
+Customer --> Track
+Payment --> PayOrder
+
+PayOrder ..> Auth : <<include>>
+PayOrder ..> Cart : <<include>>
+Detail ..> Menu : <<extend>>
+Track ..> PayOrder : <<extend>>
+
+note bottom of Payment
+  Nhân viên quầy, quản lý cửa hàng,
+  giảng viên và nhóm phát triển là stakeholder.
+  Họ không có use case trong MVP.
+  Không có thanh toán ngân hàng thật.
+end note
+
+@enduml

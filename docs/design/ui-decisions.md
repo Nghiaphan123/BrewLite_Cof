@@ -1,8 +1,14 @@
 # BrewLite - Các Quyết định UI
 
+<<<<<<< HEAD
+**Status:** Phase 1 deliverable  
+**Owner:** Nghĩa (Task 5.0)  
+**Related:** [Wireframes](wireframes.md), [Product Backlog](../requirements/product-backlog.md), [Scenarios](../requirements/scenarios.md), [Configuration](../../archive/docs/config.md), [Project Structure](../../archive/docs/architecture/architecture.md), assignment PDF §6, §7
+=======
 **Trạng thái:** Sản phẩm bàn giao Giai đoạn 1
 **Người phụ trách:** Nghĩa (Nhiệm vụ 5.0)
 **Liên quan:** [Wireframes](wireframes.md), [Product Backlog](../requirements/product-backlog.md), [Scenarios](../requirements/scenarios.md), [Cấu hình](../config.md), [Cấu trúc dự án](../project-structure.md), PDF bài tập §6, §7
+>>>>>>> main
 
 Tài liệu này ghi lại các quyết định UI định hình mọi màn hình trong MVP của BrewLite. Nó không phải là một design system và không phải là một component library — nó là tập hợp các lựa chọn phải nhất quán xuyên suốt năm màn hình MVP và mà một reviewer có thể trích dẫn khi một PR vi phạm một trong số đó.
 
