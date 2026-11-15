@@ -5,7 +5,7 @@
 - `[x]` đã có trong project (kèm bằng chứng)
 - `[ ]` chưa có / mới có một phần (ghi rõ còn thiếu gì)
 
-**Tóm tắt:** 10/10 task trong Product Backlog đều có code và test. Phần còn thiếu chủ yếu là **bằng chứng quy trình** (review PR, buổi demo, ý kiến thành viên trong retro) và **kiểm chứng phi chức năng** (trình duyệt; bài đo < 500ms nhóm quyết định bỏ qua).
+**Tóm tắt:** 10/10 task trong Product Backlog đều có code và test. Phần còn thiếu chủ yếu là **bằng chứng quy trình** (review PR, buổi demo, ý kiến thành viên trong retro) và **kiểm chứng phi chức năng** (thử trên nhiều trình duyệt).
 
 ---
 
@@ -82,7 +82,7 @@
 - [x] 6. Xác nhận đơn (mã, trạng thái) và lịch sử đơn
 
 ## 3. Yêu cầu phi chức năng (Mục 4.2)
-- [ ] API phản hồi < 500ms với dữ liệu mẫu – **chưa đo**, nhóm quyết định bỏ qua bài đo này (ghi ở `docs/plans/retro-sprint-3.md`); `docs/testing/test-strategy.md` và `traceability-matrix.md` (N1) vẫn ghi "TBD / Phase 2+"
+- [x] API phản hồi < 500ms với dữ liệu mẫu – đo ngày 15/11/2026, p95 của 4 endpoint đều dưới 500 ms: `docs/testing/nfr-response-time.md`, `traceability-matrix.md` (N1)
 - [x] Mật khẩu băm, JWT, validate đầu vào (`ValidationPipe` whitelist + DTO)
 - [ ] Chạy tốt trên các trình duyệt – **chưa có kiểm chứng** (chưa có test Playwright / bảng thử Chrome, Edge, Firefox, mobile)
 
@@ -145,7 +145,7 @@
 ## Việc nên làm tiếp (theo thứ tự ưu tiên)
 1. [x] Viết `docs/plans/retro-sprint-1.md`, `retro-sprint-2.md`, `retro-sprint-3.md` (làm tốt / cần cải thiện / 1 hành động) – còn điền ý kiến thành viên và chốt hành động trong buổi họp
 2. [ ] Từ giờ mỗi PR cần ít nhất 1 thành viên **Approve** trước khi merge (đúng DoD và `CONTRIBUTING.md`)
-3. [-] Đo thời gian phản hồi API < 500ms – nhóm quyết định bỏ qua
+3. [x] Đo thời gian phản hồi API < 500ms – `docs/testing/nfr-response-time.md`
 4. [x] Cập nhật burndown thực tế từ lịch sử commit/PR vào `sprint-plan.md`
 5. [ ] Thử giao diện trên Chrome, Edge, Firefox và điện thoại; ghi kết quả vào `docs/testing/`
 6. [ ] Chuẩn bị kịch bản demo + ghi lại phản hồi sau buổi Sprint Review – kịch bản đã có (`docs/demo-script.md`), còn ghi phản hồi

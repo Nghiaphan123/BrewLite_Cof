@@ -116,7 +116,7 @@ File task chưa ghi các việc đã xong sau 07/11: #78 (PR #12, #13 merge 08/1
   - Burndown trong kế hoạch Sprint là biểu đồ mẫu cho tới ngày 10/11, không được cập nhật hằng ngày trong lúc làm (nay đã thay bằng số liệu thật, xem [sprint-plan.md §4](../diagrams/sprint-plan.md)).
   - Biên bản retro Sprint 1 và 2 không được viết lúc kết thúc sprint (đã lập bổ sung).
   - File task chưa ghi các việc xong sau 07/11, và một số dòng ghi chưa đúng ngày, người làm.
-- **Yêu cầu phi chức năng chưa kiểm chứng:** nhóm quyết định bỏ qua bài đo "API phản hồi dưới 500 ms"; chưa thử trên nhiều trình duyệt (đề §4.2).
+- **Yêu cầu phi chức năng chưa kiểm chứng:** đến ngày 10/11 chưa đo "API phản hồi dưới 500 ms" (đã đo bổ sung ngày 15/11, đạt: `docs/testing/nfr-response-time.md`); chưa thử trên nhiều trình duyệt (đề §4.2).
 
 ### Ý kiến thành viên
 
@@ -161,7 +161,7 @@ Working agreement yêu cầu chốt **một** hành động chính. Các đề x
 | Giao diện nhận diện admin theo vai trò (`role`) thay vì theo email `admin@…`               | API đã kiểm tra quyền thật                    |
 | Thêm ô "Nhập lại mật khẩu" khi đăng ký                                                     | Wireframe màn 7 có ô này                      |
 | `PAYMENT_MOCK_MODE=random` được nhắc trong `config.md`, ADR 0004 nhưng code chỉ hiểu `success`/`failure` | Sửa tài liệu hoặc code              |
-| Đo thời gian phản hồi API (< 500 ms) và thử trên Chrome, Edge, Firefox, điện thoại         | Task #65, #66; đề §4.2                        |
+| Thử trên Chrome, Edge, Firefox, điện thoại (đo < 500 ms đã xong 15/11)                     | Task #66 (#65 xong); đề §4.2                  |
 | Cập nhật burndown thật vào `docs/diagrams/sprint-plan.md`                                  | Task #67; số liệu ở mục 1.2                   |
 | Làm nhẹ Dockerfile (chỉ cài thư viện cần cho lúc chạy)                                    | Giảm thời gian build và dung lượng            |
 | Quyết định nhánh `dev3`                                                                    | Xung đột với bản sửa trang đăng nhập ở PR #10 |

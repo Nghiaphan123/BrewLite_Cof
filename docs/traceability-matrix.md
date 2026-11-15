@@ -21,7 +21,7 @@ This matrix maps every assignment requirement to the artifact that proves it. Th
 
 | #   | Requirement                            | Owning task                           | Evidence                                       | Status |
 | --- | -------------------------------------- | ------------------------------------- | ---------------------------------------------- | ------ |
-| N1  | API response < 500 ms on sample data   | Task 2 (products), Task 9 (NFR check) | `docs/testing/` (Phase 2+)                     | TBD    |
+| N1  | API response < 500 ms on sample data   | Task 2 (products), Task 9 (NFR check) | [`testing/nfr-response-time.md`](testing/nfr-response-time.md) (15/11/2026): p95 of `GET /products`, `GET /products/:id`, `POST /auth/login`, `GET /orders/me` all < 500 ms; script `apps/api/scripts/measure-response-time.mjs` | Done   |
 | N2  | Password hashed, JWT, input validation | Task 7, Task 6                        | `api-contract.md` §6–§8; `config.md` §4; tests | TBD    |
 | N3  | Works on web browsers                  | Task 3–Task 9                         | `ui-decisions.md` §3; e2e (Phase 2+)           | TBD    |
 
