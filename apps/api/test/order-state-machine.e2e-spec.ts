@@ -51,7 +51,7 @@ describe('Order state machine (graded test a)', () => {
 
   const transition = (orderId: string, next: string, token = adminToken) =>
     request(app.getHttpServer())
-      .post(`/api/v1/orders/${orderId}/transition`)
+      .post(`/api/orders/${orderId}/transition`)
       .set('Authorization', `Bearer ${token}`)
       .send({ next });
 
@@ -128,7 +128,7 @@ describe('Order state machine (graded test a)', () => {
     const { order } = await orderIn('COMPLETED');
 
     const res = await request(app.getHttpServer())
-      .patch(`/api/v1/admin/orders/${order.id}/status`)
+      .patch(`/api/admin/orders/${order.id}/status`)
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ status: 'PENDING' });
 
@@ -140,11 +140,11 @@ describe('Order state machine (graded test a)', () => {
 
   it('a malformed order id answers 404 ORDER_NOT_FOUND, not 500', async () => {
     const admin = await request(app.getHttpServer())
-      .patch('/api/v1/admin/orders/not-a-uuid/status')
+      .patch('/api/admin/orders/not-a-uuid/status')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ status: 'PREPARING' });
     const internal = await request(app.getHttpServer())
-      .post('/api/v1/orders/not-a-uuid/transition')
+      .post('/api/orders/not-a-uuid/transition')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ next: 'PREPARING' });
 
@@ -159,7 +159,7 @@ describe('Order state machine (graded test a)', () => {
     const order = await seedOrder(prisma, customer.id, product.id, { qty: 2, total: 70000 });
 
     const paid = await request(app.getHttpServer())
-      .post('/api/v1/payments')
+      .post('/api/payments')
       .set('Authorization', `Bearer ${customerToken}`)
       .set('Idempotency-Key', randomUUID())
       .send({ orderId: order.id, method: 'WALLET' });
@@ -169,7 +169,7 @@ describe('Order state machine (graded test a)', () => {
     expect((await prisma.product.findUnique({ where: { id: product.id } }))?.stock).toBe(3);
 
     const res = await request(app.getHttpServer())
-      .patch(`/api/v1/admin/orders/${order.id}/status`)
+      .patch(`/api/admin/orders/${order.id}/status`)
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ status: 'CANCELLED' });
 

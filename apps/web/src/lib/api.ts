@@ -2,12 +2,12 @@ import { Order, OrderStatus, Product, Promotion, SizeOption, Topping, User } fro
 import { ApiError, apiFetch, getApiErrorMessage } from '@/lib/api-errors';
 import { useAuthStore } from '@/store/auth.store';
 
-const configuredApiUrl = (
-  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1'
-).replace(/\/+$/, '');
-export const API_BASE_URL = configuredApiUrl.endsWith('/api/v1')
-  ? configuredApiUrl
-  : `${configuredApiUrl}/api/v1`;
+// NEXT_PUBLIC_API_URL may be the API origin or end in /api. An old value ending in
+// /api/v1 is still accepted: the suffix is dropped and /api is added back.
+const configuredApiOrigin = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api')
+  .replace(/\/+$/, '')
+  .replace(/\/api(\/v1)?$/, '');
+export const API_BASE_URL = `${configuredApiOrigin}/api`;
 
 function getAuthHeaders(): HeadersInit {
   const token =

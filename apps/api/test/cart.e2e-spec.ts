@@ -21,13 +21,13 @@ describe('Cart API', () => {
 
   const put = (authToken: string, body: object) =>
     request(app.getHttpServer())
-      .put('/api/v1/cart')
+      .put('/api/cart')
       .set('Authorization', `Bearer ${authToken}`)
       .send(body);
 
   const get = (authToken: string) =>
     request(app.getHttpServer())
-      .get('/api/v1/cart')
+      .get('/api/cart')
       .set('Authorization', `Bearer ${authToken}`);
 
   beforeAll(async () => {
@@ -51,7 +51,7 @@ describe('Cart API', () => {
   });
 
   it('requires a token', async () => {
-    const res = await request(app.getHttpServer()).get('/api/v1/cart');
+    const res = await request(app.getHttpServer()).get('/api/cart');
     expect(res.status).toBe(401);
   });
 
@@ -174,7 +174,7 @@ describe('Order pricing matches the cart (ui-decisions.md §4.2)', () => {
     ['L', 45000],
   ])('charges the size %s price', async (size, unitPrice) => {
     const res = await request(app.getHttpServer())
-      .post('/api/v1/orders')
+      .post('/api/orders')
       .set('Authorization', `Bearer ${token}`)
       .send({ items: [{ productId, size, qty: 2, toppingIds: [] }] });
 
@@ -185,7 +185,7 @@ describe('Order pricing matches the cart (ui-decisions.md §4.2)', () => {
 
   it('adds size and topping prices together', async () => {
     const res = await request(app.getHttpServer())
-      .post('/api/v1/orders')
+      .post('/api/orders')
       .set('Authorization', `Bearer ${token}`)
       .send({ items: [{ productId, size: 'L', qty: 2, toppingIds }] });
 
@@ -214,7 +214,7 @@ describe('Order pages list what was bought', () => {
     toppingName = `Order topping ${randomUUID()}`;
     toppingId = (await prisma.topping.create({ data: { name: toppingName, price: 5000 } })).id;
     const order = await request(app.getHttpServer())
-      .post('/api/v1/orders')
+      .post('/api/orders')
       .set('Authorization', `Bearer ${token}`)
       .send({ items: [{ productId, size: 'L', qty: 2, toppingIds: [toppingId] }] });
     orderCode = order.body.code;
@@ -239,7 +239,7 @@ describe('Order pages list what was bought', () => {
 
   it('GET /orders/me includes items with toppings', async () => {
     const res = await request(app.getHttpServer())
-      .get('/api/v1/orders/me')
+      .get('/api/orders/me')
       .set('Authorization', `Bearer ${token}`);
     expect(res.status).toBe(200);
     expect(res.body.items[0].items).toEqual([expectedLine()]);
@@ -247,7 +247,7 @@ describe('Order pages list what was bought', () => {
 
   it('GET /orders/:code includes items with toppings', async () => {
     const res = await request(app.getHttpServer())
-      .get(`/api/v1/orders/${orderCode}`)
+      .get(`/api/orders/${orderCode}`)
       .set('Authorization', `Bearer ${token}`);
     expect(res.status).toBe(200);
     expect(res.body.items).toEqual([expectedLine()]);

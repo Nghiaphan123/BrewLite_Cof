@@ -7,8 +7,8 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
-  // C1: Base path /api/v1 (ADR 0005)
-  app.setGlobalPrefix('api/v1');
+  // C1: Base path /api (ADR 0005, cập nhật 17/11/2026)
+  app.setGlobalPrefix('api');
 
   // C3: Standard error envelope filter
   app.useGlobalFilters(new HttpExceptionFilter());

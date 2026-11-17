@@ -31,16 +31,17 @@ The API follows these conventions. They apply to every endpoint, including Task 
 
 ### C1 — Base path and versioning
 
-- **Base path:** `/api/v1`. All endpoints are under it. `GET /api/v1/products`, not `GET /products`.
+- **Base path:** `/api`. All endpoints are under it. `GET /api/products`, not `GET /products`.
+- **Cập nhật 17/11/2026:** nhóm đổi đường dẫn cơ sở từ `/api/v1` sang `/api` cho gọn và thống nhất với frontend (`setGlobalPrefix('api')`). Chưa có phiên bản API thứ hai nên chưa cần đoạn version; nếu sau này có thay đổi phá vỡ tương thích, thêm lại `/api/v2` cho phiên bản mới. Phần "Alternatives" bên dưới giữ nguyên lập luận ban đầu.
 - **Versioning:** path-based (`/v1`), not header-based. A breaking change introduces `/v2` and keeps `/v1` until the frontend migrates. Non-breaking changes (new optional fields, new endpoints) do not bump the version.
-- **Rationale:** path versioning is visible in logs, curl commands, and the frontend's base URL (`NEXT_PUBLIC_API_URL` includes `/api/v1`). Header versioning is invisible and easy to forget in tests.
-- **Health check:** `GET /api/v1/health` is the only endpoint outside the auth rules; it returns `{ status: "ok", version: "v1" }`. It is not versioned further.
+- **Rationale:** path versioning is visible in logs, curl commands, and the frontend's base URL (`NEXT_PUBLIC_API_URL` includes `/api`). Header versioning is invisible and easy to forget in tests.
+- **Health check:** `GET /api/health` is the only endpoint outside the auth rules; it returns `{ status: "ok", version: "v1" }`. It is not versioned further.
 
 ### C2 — Success response shape
 
-- **Single resource:** the resource object directly, no wrapper. `GET /api/v1/products/:id` returns `{ id, name, price, imageUrl, stock }`.
-- **Collection:** a wrapper with `items` and `total`. `GET /api/v1/products` returns `{ items: [...], total: 6 }`. `total` is the count of items in this response, not the total in the database (Phase 1 has no pagination; `total` is the array length). If pagination is added, `total` becomes the DB count and `nextCursor` is added.
-- **Created resource:** `201` with the resource, including server-generated fields (`id`, `code`, `status`). `POST /api/v1/orders` returns `{ id, code, status: "PENDING", total, createdAt }`.
+- **Single resource:** the resource object directly, no wrapper. `GET /api/products/:id` returns `{ id, name, price, imageUrl, stock }`.
+- **Collection:** a wrapper with `items` and `total`. `GET /api/products` returns `{ items: [...], total: 6 }`. `total` is the count of items in this response, not the total in the database (Phase 1 has no pagination; `total` is the array length). If pagination is added, `total` becomes the DB count and `nextCursor` is added.
+- **Created resource:** `201` with the resource, including server-generated fields (`id`, `code`, `status`). `POST /api/orders` returns `{ id, code, status: "PENDING", total, createdAt }`.
 - **Mutation with no body:** `204 No Content` (e.g. a future `DELETE`). Phase 1 has no such endpoint.
 - **No `{ data: ... }` wrapper.** It adds a level of nesting for no benefit; the frontend reads `res.items` or `res.id` directly.
 
@@ -84,7 +85,7 @@ Status codes in use:
 ### C4 — Authentication header
 
 - **Header:** `Authorization: Bearer <jwt>`. Standard, not custom.
-- **Token source:** `POST /api/v1/auth/login` returns `{ accessToken, expiresIn, user: { id, email } }`. The frontend stores `accessToken` in `localStorage` (`ui-decisions.md` §5.2) and sends it on every request via `apps/web/src/lib/api.ts`.
+- **Token source:** `POST /api/auth/login` returns `{ accessToken, expiresIn, user: { id, email } }`. The frontend stores `accessToken` in `localStorage` (`ui-decisions.md` §5.2) and sends it on every request via `apps/web/src/lib/api.ts`.
 - **Missing token on a protected route:** `401` with `error: "Unauthorized"` and `code: "AUTH_REQUIRED"`.
 - **Expired token:** `401` with `code: "AUTH_EXPIRED"`. The frontend clears the token and redirects to login.
 - **No refresh token in Phase 1.** `JWT_EXPIRES_IN` is `1d` (`config.md` §2.1); a refresh flow is a Phase 2+ item.
@@ -92,7 +93,7 @@ Status codes in use:
 ### C5 — Idempotency header
 
 - **Header spelling:** `Idempotency-Key` (exact casing). HTTP headers are case-insensitive, but the API's documentation and tests use this casing consistently.
-- **Required for:** `POST /api/v1/payments` only (ADR 0004 D4). Not required for `POST /api/v1/orders`.
+- **Required for:** `POST /api/payments` only (ADR 0004 D4). Not required for `POST /api/orders`.
 - **Format:** a client-generated UUID v4 or any opaque string ≤ 128 chars. The server does not validate the format beyond length.
 - **Behavior:** see ADR 0004 D4. The server stores the key with the payment; a replay with the same body returns the stored response; a replay with a different body returns `409` with `code: "IDEMPOTENCY_CONFLICT"`.
 
@@ -136,11 +137,11 @@ Phase 1 has no pagination. Collections return all items with `total` = array len
 - **The grader can read one doc.** `api-contract.md` references this ADR for conventions and lists only endpoint-specific shapes. A reviewer reading `api-contract.md` does not re-argue `{ data }` vs. bare objects.
 - **Errors are machine-readable.** `code` lets the frontend branch on `OUT_OF_STOCK` or `IDEMPOTENCY_CONFLICT` without string-matching `message`. This matters for `scenarios.md` S-PAY-5, S-PAY-6, S-ORD-6.
 - **Money and time are unambiguous.** The integer-VND and ISO-UTC rules are stated once; `ui-decisions.md` §4.1 and `config.md` §3 reference them. No per-endpoint decisions.
-- **Versioning is visible.** `/api/v1` in `NEXT_PUBLIC_API_URL` and in every curl command in `setup.md` and `api-contract.md`.
+- **Versioning is visible.** `/api` in `NEXT_PUBLIC_API_URL` and in every curl command in `setup.md` and `api-contract.md`.
 
 ### Negative / costs
 
-- **`/api/v1` is a prefix every route must remember.** Nest's `setGlobalPrefix('api/v1')` handles it centrally, but a controller that forgets it will 404 in a way that's easy to miss. Mitigation: the first controller (health) sets the pattern; reviewers check the prefix.
+- **`/api` is a prefix every route must remember.** Nest's `setGlobalPrefix('api')` handles it centrally, but a controller that forgets it will 404 in a way that's easy to miss. Mitigation: the first controller (health) sets the pattern; reviewers check the prefix.
 - **The error envelope is a superset of Nest's default**, so a custom `HttpExceptionFilter` must map Nest exceptions into it. That's one filter, written once, tested once. Without it, errors leak Nest's default shape and the frontend parser breaks.
 - **`code` is optional, which means some errors have it and some don't.** The frontend must handle both. Mitigation: `code` is present for all errors the frontend branches on (auth, stock, idempotency, state transition); generic validation errors omit it.
 - **`items`/`total` wrapper on collections is an extra nesting level.** It's the price of a consistent collection shape; the alternative (bare array) makes adding pagination a breaking change.
@@ -187,7 +188,7 @@ Reopen this ADR (new ADR superseding 0005) if any of the following becomes true:
 
 **Closed by Task 7.0 (2026-10-22):**
 
-- `/api/v1` prefix confirmed; `NEXT_PUBLIC_API_URL` includes it (`config.md` §2.2, `setup.md` §7–§8 updated).
+- `/api` prefix confirmed; `NEXT_PUBLIC_API_URL` includes it (`config.md` §2.2, `setup.md` §7–§8 updated).
 - Order `code` format is `BL-YYYY-NNNN` (`api-contract.md` §8).
 - `code` is optional for generic `4xx`, present for branchable errors (C3, `api-contract.md` §3).
 - `X-Request-Id` generated by server when absent (C10).

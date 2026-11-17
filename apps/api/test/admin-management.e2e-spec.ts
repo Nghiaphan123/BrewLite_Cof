@@ -41,7 +41,7 @@ describe('Admin management: users, promotions, topping price', () => {
 
   const http = () => request(app.getHttpServer());
   const asAdmin = (method: 'patch' | 'get', path: string) =>
-    http()[method](`/api/v1/admin${path}`).set('Authorization', `Bearer ${adminToken}`);
+    http()[method](`/api/admin${path}`).set('Authorization', `Bearer ${adminToken}`);
 
   describe('block / open an account', () => {
     it('a blocked user cannot log in; opening the account lets them back in', async () => {
@@ -52,14 +52,14 @@ describe('Admin management: users, promotions, topping price', () => {
       expect(block.body).toMatchObject({ id: user.id, blocked: true });
 
       const login = await http()
-        .post('/api/v1/auth/login')
+        .post('/api/auth/login')
         .send({ email: user.email, password: 'correct-horse-battery-1' });
       expect(login.status).toBe(403);
       expect(login.body.code).toBe('ACCOUNT_BLOCKED');
 
       await asAdmin('patch', `/users/${user.id}/block`).send({ blocked: false }).expect(200);
       const again = await http()
-        .post('/api/v1/auth/login')
+        .post('/api/auth/login')
         .send({ email: user.email, password: 'correct-horse-battery-1' });
       expect(again.status).toBe(200);
     });
@@ -68,7 +68,7 @@ describe('Admin management: users, promotions, topping price', () => {
       const user = await seedUser(prisma, 'mgmt-block-pw@example.com');
       await prisma.user.update({ where: { id: user.id }, data: { blocked: true } });
 
-      const res = await http().post('/api/v1/auth/login').send({ email: user.email, password: 'wrong-password-1' });
+      const res = await http().post('/api/auth/login').send({ email: user.email, password: 'wrong-password-1' });
 
       expect(res.status).toBe(401);
       expect(res.body.code).toBe('AUTH_INVALID');
@@ -77,11 +77,11 @@ describe('Admin management: users, promotions, topping price', () => {
     it('a token issued before the block stops working at once', async () => {
       const user = await seedUser(prisma, 'mgmt-block-token@example.com');
       const token = await loginAs(app, user.email);
-      await http().get('/api/v1/cart').set('Authorization', `Bearer ${token}`).expect(200);
+      await http().get('/api/cart').set('Authorization', `Bearer ${token}`).expect(200);
 
       await asAdmin('patch', `/users/${user.id}/block`).send({ blocked: true }).expect(200);
 
-      const res = await http().get('/api/v1/cart').set('Authorization', `Bearer ${token}`);
+      const res = await http().get('/api/cart').set('Authorization', `Bearer ${token}`);
       expect(res.status).toBe(403);
       expect(res.body.code).toBe('ACCOUNT_BLOCKED');
     });
@@ -132,7 +132,7 @@ describe('Admin management: users, promotions, topping price', () => {
     async function orderWith(token: string, promoCode: string) {
       const product = await seedProduct(prisma, { stock: 10, price: 40000 });
       return http()
-        .post('/api/v1/orders')
+        .post('/api/orders')
         .set('Authorization', `Bearer ${token}`)
         .send({ items: [{ productId: product.id, size: 'S', qty: 1, toppingIds: [] }], promoCode });
     }
@@ -176,7 +176,7 @@ describe('Admin management: users, promotions, topping price', () => {
       const token = await loginAs(app, customer.email);
       const order = () =>
         http()
-          .post('/api/v1/orders')
+          .post('/api/orders')
           .set('Authorization', `Bearer ${token}`)
           .send({ items: [{ productId: product.id, size: 'S', qty: 1, toppingIds: [topping.id] }] });
 
@@ -192,7 +192,7 @@ describe('Admin management: users, promotions, topping price', () => {
       // The first order keeps the price it was created with.
       const old = await prisma.order.findUnique({ where: { id: before.body.id } });
       expect(old?.total).toBe(35000);
-      const detail = await http().get(`/api/v1/products/${product.id}`);
+      const detail = await http().get(`/api/products/${product.id}`);
       expect(detail.body.toppings.find((t: { id: string }) => t.id === topping.id).price).toBe(8000);
     });
 
@@ -222,7 +222,7 @@ describe('Admin management: users, promotions, topping price', () => {
       [`/promotions/${id}/active`, { active: false }],
       [`/toppings/${id}/price`, { price: 1000 }],
     ] as const) {
-      const res = await http().patch(`/api/v1/admin${path}`).set('Authorization', `Bearer ${token}`).send(body);
+      const res = await http().patch(`/api/admin${path}`).set('Authorization', `Bearer ${token}`).send(body);
       expect(res.status).toBe(403);
     }
     expect((await prisma.user.findUnique({ where: { id: other.id } }))?.blocked).toBe(false);

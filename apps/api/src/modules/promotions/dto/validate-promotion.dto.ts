@@ -1,5 +1,5 @@
 /**
- * ValidatePromotionDto — request body for POST /api/v1/promotions/validate.
+ * ValidatePromotionDto — request body for POST /api/promotions/validate.
  *
  * Fields:
  * - code: promotion code (required, non-empty)

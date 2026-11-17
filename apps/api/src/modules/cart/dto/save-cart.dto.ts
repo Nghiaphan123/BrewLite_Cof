@@ -1,5 +1,5 @@
 /**
- * SaveCartDto — request body for PUT /api/v1/cart.
+ * SaveCartDto — request body for PUT /api/cart.
  *
  * Fields:
  * - items: the whole cart, possibly empty

@@ -2,18 +2,18 @@
  * AdminController — HTTP surface for admin operations.
  *
  * Endpoints:
- * - GET /api/v1/admin/products
- * - PATCH /api/v1/admin/products/:id/stock
- * - GET /api/v1/admin/toppings
- * - PATCH /api/v1/admin/toppings/:id/stock
- * - PATCH /api/v1/admin/toppings/:id/price
- * - GET /api/v1/admin/users
- * - PATCH /api/v1/admin/users/:id/block
- * - GET /api/v1/admin/promotions
- * - POST /api/v1/admin/promotions
- * - PATCH /api/v1/admin/promotions/:id/active
- * - GET /api/v1/admin/orders
- * - PATCH /api/v1/admin/orders/:id/status
+ * - GET /api/admin/products
+ * - PATCH /api/admin/products/:id/stock
+ * - GET /api/admin/toppings
+ * - PATCH /api/admin/toppings/:id/stock
+ * - PATCH /api/admin/toppings/:id/price
+ * - GET /api/admin/users
+ * - PATCH /api/admin/users/:id/block
+ * - GET /api/admin/promotions
+ * - POST /api/admin/promotions
+ * - PATCH /api/admin/promotions/:id/active
+ * - GET /api/admin/orders
+ * - PATCH /api/admin/orders/:id/status
  */
 import {
   Controller,

@@ -1,5 +1,5 @@
 /**
- * LoginDto — request body for POST /api/v1/auth/login.
+ * LoginDto — request body for POST /api/auth/login.
  *
  * Validation rules:
  * - email: valid email or username string (e.g. "admin")

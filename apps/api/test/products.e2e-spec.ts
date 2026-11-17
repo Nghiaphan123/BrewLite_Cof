@@ -46,7 +46,7 @@ describe('Products API (e2e)', () => {
   });
 
   it('GET /products returns the item without sizes or toppings', async () => {
-    const res = await request(app.getHttpServer()).get('/api/v1/products');
+    const res = await request(app.getHttpServer()).get('/api/products');
 
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body.items)).toBe(true);
@@ -66,7 +66,7 @@ describe('Products API (e2e)', () => {
 
   it('GET /products/:id returns sizes, toppings, and 404 for a missing id', async () => {
     const found = await request(app.getHttpServer()).get(
-      `/api/v1/products/${productId}`,
+      `/api/products/${productId}`,
     );
 
     expect(found.status).toBe(200);
@@ -80,7 +80,7 @@ describe('Products API (e2e)', () => {
     );
 
     const missing = await request(app.getHttpServer()).get(
-      `/api/v1/products/${randomUUID()}`,
+      `/api/products/${randomUUID()}`,
     );
     expect(missing.status).toBe(404);
     expect(missing.body).toMatchObject({
@@ -89,7 +89,7 @@ describe('Products API (e2e)', () => {
     });
 
     const malformed = await request(app.getHttpServer()).get(
-      '/api/v1/products/not-a-uuid',
+      '/api/products/not-a-uuid',
     );
     expect(malformed.status).toBe(404);
     expect(malformed.body.code).toBe('PRODUCT_NOT_FOUND');

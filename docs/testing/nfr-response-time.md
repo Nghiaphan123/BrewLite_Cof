@@ -8,7 +8,7 @@
 ## 1. Cách đo
 
 - **Endpoint:** `GET /products`, `GET /products/:id`, `POST /auth/login`, `GET /orders/me` (4 endpoint ghi trong task #65).
-- **Môi trường:** stack `docker compose` (db, api, web) chạy trên máy cá nhân; script gọi API qua `http://localhost:3001/api/v1`.
+- **Môi trường:** stack `docker compose` (db, api, web) chạy trên máy cá nhân; script gọi API qua `http://localhost:3001/api`.
   - Máy: Intel Core i5-6300HQ 2,3 GHz, RAM 8 GB, Windows 10, Docker Desktop.
   - Node v24 (máy chạy script); `BCRYPT_ROUNDS` mặc định 10.
 - **Dữ liệu mẫu:** seed của dự án (`npm run db:seed`): 30 món, 5 topping. Tài khoản `customer01@brewlite.test` có 1 đơn.

@@ -10,7 +10,7 @@ This matrix maps every assignment requirement to the artifact that proves it. Th
 
 | #   | Requirement                                   | Owning task               | Evidence (doc / test / commit)                                                          | Status |
 | --- | --------------------------------------------- | ------------------------- | --------------------------------------------------------------------------------------- | ------ |
-| F1  | Menu list with image, name, price             | Task 2 (API), Task 3 (UI) | `api-contract.md` §4; `scenarios.md` S-MAIN-1; `GET /api/v1/products`                   | TBD    |
+| F1  | Menu list with image, name, price             | Task 2 (API), Task 3 (UI) | `api-contract.md` §4; `scenarios.md` S-MAIN-1; `GET /api/products`                   | TBD    |
 | F2  | Product detail, choose size and toppings      | Task 4                    | `api-contract.md` §5; `scenarios.md` S-MAIN-1; `ui-decisions.md` §4.2 (pricing fixture) | TBD    |
 | F3  | Cart add/edit/remove; auto total              | Task 5                    | `scenarios.md` S-CART-1, S-CART-2; `ui-decisions.md` §5.1                               | TBD    |
 | F4  | Register / login (JWT)                        | Task 7                    | `api-contract.md` §6–§7; `scenarios.md` S-AUTH-1..3                                     | TBD    |

@@ -44,14 +44,14 @@ Một kịch bản không có kết quả kiểm thử được không phải l�
 
 | #   | Tác nhân   | Hành động / Phản hồi hệ thống                                                                                                                                                      |
 | --- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Khách hàng | Mở `/`. Hệ thống render lưới menu từ `GET /api/v1/products`.                                                                                                                       |
+| 1   | Khách hàng | Mở `/`. Hệ thống render lưới menu từ `GET /api/products`.                                                                                                                       |
 | 2   | Khách hàng | Click một sản phẩm. Hệ thống điều hướng đến `/products/[id]` và hiển thị tên, ảnh, giá cơ sở.                                                                                      |
 | 3   | Khách hàng | Chọn size M và hai topping. Hệ thống cập nhật giá hiển thị một cách xác định (quy tắc Task 4, `ui-decisions.md` §4.2).                                                             |
 | 4   | Khách hàng | Click "Thêm vào giỏ". Hệ thống thêm dòng vào Zustand cart và tăng huy hiệu header.                                                                                                 |
 | 5   | Khách hàng | Lặp lại bước 2–4 cho sản phẩm thứ hai. Hệ thống hiển thị hai dòng trong giỏ hàng.                                                                                                  |
 | 6   | Khách hàng | Mở `/cart`. Hệ thống liệt kê cả hai dòng với số lượng và tổng; tổng khớp với tổng các `lineTotal`.                                                                                 |
 | 7   | Khách hàng | Click "Thanh toán". Hệ thống route đến `/checkout`, hiển thị cùng tổng và bộ chọn Wallet/Card.                                                                                     |
-| 8   | Khách hàng | Chọn Wallet, xác nhận. Frontend gọi `POST /api/v1/orders` với giỏ hàng, rồi `POST /api/v1/payments` với id đơn hàng, phương thức, và một `Idempotency-Key`.                        |
+| 8   | Khách hàng | Chọn Wallet, xác nhận. Frontend gọi `POST /api/orders` với giỏ hàng, rồi `POST /api/payments` với id đơn hàng, phương thức, và một `Idempotency-Key`.                        |
 | 9   | Hệ thống   | Đơn hàng được tạo `PENDING`; mock thanh toán trả về thành công; đơn hàng chuyển `PENDING → PAID`; stock giảm và `loyaltyPoints` tích lũy trong cùng transaction (ADR 0004 D1, D7). |
 | 10  | Khách hàng | Hệ thống điều hướng đến `/orders/[code]/confirmation`, hiển thị mã đơn hàng và trạng thái `PAID` (route khóa bằng `code`, ADR 0004 D3).                                            |
 | 11  | Khách hàng | Mở `/orders`. Hệ thống liệt kê đơn hàng với mã, ngày, tổng, trạng thái.                                                                                                            |
@@ -59,10 +59,10 @@ Một kịch bản không có kết quả kiểm thử được không phải l�
 **Kết quả:** Đơn hàng được lưu với trạng thái `PAID`; trang xác nhận hiển thị mã; lịch sử liệt kê nó; giỏ hàng trống.
 
 **Khẳng định cho test e2e:**
-- `POST /api/v1/orders` trả về `201` với `id`, `code`, và `status: "PENDING"` của đơn hàng.
-- `POST /api/v1/payments` trả về `200` với `status: "PAID"` và một `paymentId`.
+- `POST /api/orders` trả về `201` với `id`, `code`, và `status: "PENDING"` của đơn hàng.
+- `POST /api/payments` trả về `200` với `status: "PAID"` và một `paymentId`.
 - Route xác nhận chứa chuỗi `code` của đơn hàng.
-- `GET /api/v1/orders/me` bao gồm đơn hàng mới.
+- `GET /api/orders/me` bao gồm đơn hàng mới.
 - Cart store trống sau khi thành công.
 - `User.loyaltyPoints` tăng thêm `floor(order.total / 1000)` (ADR 0004 D7).
 
@@ -80,11 +80,11 @@ Một kịch bản không có kết quả kiểm thử được không phải l�
 | 1   | Khách hàng | Mở `/auth/register`, submit tên, email, và mật khẩu đáp ứng chính sách.            |
 | 2   | Hệ thống   | Hash mật khẩu với bcrypt, tạo người dùng, trả về `201`.                            |
 | 3   | Khách hàng | Submit cùng email trên `/auth/login` với mật khẩu đúng.                            |
-| 4   | Hệ thống   | Xác minh hash, trả về JWT. Frontend lưu token, đính kèm vào `POST /api/v1/orders`. |
+| 4   | Hệ thống   | Xác minh hash, trả về JWT. Frontend lưu token, đính kèm vào `POST /api/orders`. |
 
-**Kết quả:** Phiên đã xác thực; `POST /api/v1/orders` tiếp theo thành công.
+**Kết quả:** Phiên đã xác thực; `POST /api/orders` tiếp theo thành công.
 
-**Khẳng định:** `201` khi đăng ký; `200` + `accessToken` khi đăng nhập; `POST /api/v1/orders` không token trả về `401`, có token trả về `201`.
+**Khẳng định:** `201` khi đăng ký; `200` + `accessToken` khi đăng nhập; `POST /api/orders` không token trả về `401`, có token trả về `201`.
 
 ### S-AUTH-2: Email trùng lặp
 
@@ -160,7 +160,7 @@ Một kịch bản không có kết quả kiểm thử được không phải l�
 
 | #   | Tác nhân    | Hành động / Phản hồi hệ thống                                                                                                |
 | --- | ----------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Kẻ tấn công | Gửi `POST /api/v1/orders` với `lineTotal` và `total` thấp hơn giá thật.                                                      |
+| 1   | Kẻ tấn công | Gửi `POST /api/orders` với `lineTotal` và `total` thấp hơn giá thật.                                                      |
 | 2   | Hệ thống    | Tính lại từ giá sản phẩm; lưu tổng của server; phản hồi phản ánh tổng của server, không phải payload (`api-contract.md` §8). |
 
 **Kết quả:** Tổng đơn hàng bằng giá do server tính. Payload bị giả mạo không có tác dụng.
@@ -174,7 +174,7 @@ Một kịch bản không có kết quả kiểm thử được không phải l�
 
 | #   | Tác nhân   | Hành động / Phản hồi hệ thống                                 |
 | --- | ---------- | ------------------------------------------------------------- |
-| 1   | Khách hàng | `POST /api/v1/orders` với `items: []`.                        |
+| 1   | Khách hàng | `POST /api/orders` với `items: []`.                        |
 | 2   | Hệ thống   | Trả về `400` với `code: "CART_EMPTY"` (`api-contract.md` §8). |
 
 **Kết quả:** Không có đơn hàng được tạo.
@@ -188,7 +188,7 @@ Một kịch bản không có kết quả kiểm thử được không phải l�
 
 | #   | Tác nhân   | Hành động / Phản hồi hệ thống                                                            |
 | --- | ---------- | ---------------------------------------------------------------------------------------- |
-| 1   | Khách hàng | `POST /api/v1/orders` với `size: "XL"` hoặc một `productId` không có trong DB.           |
+| 1   | Khách hàng | `POST /api/orders` với `size: "XL"` hoặc một `productId` không có trong DB.           |
 | 2   | Hệ thống   | Trả về `400` với `code: "INVALID_SIZE"` hoặc `"PRODUCT_NOT_FOUND"`, không bao giờ `500`. |
 
 **Kết quả:** Không có đơn hàng được tạo; phong bì lỗi khớp với `api-contract.md` §8.
@@ -204,7 +204,7 @@ Một kịch bản không có kết quả kiểm thử được không phải l�
 
 **Tiền điều kiện:** Đơn hàng `PENDING`. `PAYMENT_MOCK_MODE=success`.
 
-**Kết quả:** `POST /api/v1/payments` → `200` với `status: "PAID"`; stock giảm; điểm trung thành tích lũy; xác nhận được hiển thị.
+**Kết quả:** `POST /api/payments` → `200` với `status: "PAID"`; stock giảm; điểm trung thành tích lũy; xác nhận được hiển thị.
 
 **Khẳng định:** trạng thái đơn hàng `PAID`; `loyaltyPointsEarned = floor(amount / 1000)` (ADR 0004 D7).
 
@@ -217,7 +217,7 @@ Một kịch bản không có kết quả kiểm thử được không phải l�
 
 | #   | Tác nhân   | Hành động / Phản hồi hệ thống                                                                                                                       |
 | --- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Khách hàng | Xác nhận thanh toán. Hệ thống gọi `POST /api/v1/payments`; mock trả về thất bại.                                                                    |
+| 1   | Khách hàng | Xác nhận thanh toán. Hệ thống gọi `POST /api/payments`; mock trả về thất bại.                                                                    |
 | 2   | Hệ thống   | Đơn hàng → `PAYMENT_FAILED`; trả về **`200`** với body `{ status: "PAYMENT_FAILED", reason, retryable: true }` (ADR 0004 D2, `api-contract.md` §9). |
 | 3   | Khách hàng | Hệ thống giữ nguyên giỏ hàng và hiển thị khả năng thử lại.                                                                                          |
 
@@ -266,7 +266,7 @@ Một kịch bản không có kết quả kiểm thử được không phải l�
 
 | #   | Tác nhân | Hành động / Phản hồi hệ thống                                                                                                  |
 | --- | -------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| 1   | Client   | Gửi `POST /api/v1/payments` hai lần với **cùng** `Idempotency-Key` và cùng body.                                               |
+| 1   | Client   | Gửi `POST /api/payments` hai lần với **cùng** `Idempotency-Key` và cùng body.                                               |
 | 2   | Hệ thống | Yêu cầu đầu tạo một thanh toán; yêu cầu thứ hai trả về **cùng** phản hồi (cùng `paymentId`), không tính hai lần (ADR 0004 D4). |
 
 **Kết quả:** Một thanh toán, một khoản tính, một lần chuyển trạng thái đơn hàng.
@@ -298,9 +298,9 @@ Một kịch bản không có kết quả kiểm thử được không phải l�
 
 | #   | Tác nhân        | Hành động / Phản hồi hệ thống                                                                                                                                                                                    |
 | --- | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | A (đã xác thực) | `GET /api/v1/orders/me` trả về các đơn hàng của A, mới nhất trước.                                                                                                                                               |
+| 1   | A (đã xác thực) | `GET /api/orders/me` trả về các đơn hàng của A, mới nhất trước.                                                                                                                                               |
 | 2   | A               | Cố mở trực tiếp route xác nhận của B `/orders/[code]/confirmation`. Hệ thống trả về `404` với `code: "ORDER_NOT_FOUND"` — cùng phản hồi như một code không tồn tại, để sự tồn tại đơn hàng của B không bị rò rỉ. |
-| 3   | Ẩn danh         | `GET /api/v1/orders/me` → `401`.                                                                                                                                                                                 |
+| 3   | Ẩn danh         | `GET /api/orders/me` → `401`.                                                                                                                                                                                 |
 
 **Kết quả:** A chỉ thấy đơn hàng của A; truy cập chéo người dùng bị từ chối không rò rỉ thông tin.
 

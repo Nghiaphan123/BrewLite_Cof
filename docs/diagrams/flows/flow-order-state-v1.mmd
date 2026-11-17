@@ -13,7 +13,7 @@
 %% staff (admin page) take PREPARING/READY/COMPLETED and the cancel edges.
 
 stateDiagram-v2
-    [*] --> PENDING : POST /api/v1/orders
+    [*] --> PENDING : POST /api/orders
     PENDING --> PAID : thanh toán OK
     PENDING --> PAYMENT_FAILED : thanh toán lỗi
     PAYMENT_FAILED --> PENDING : thử lại (POST /payments, key mới)

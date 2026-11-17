@@ -2,8 +2,8 @@
  * ProductsController — public menu routes.
  *
  * Endpoints (api-contract.md §4–§5):
- * - GET /api/v1/products
- * - GET /api/v1/products/:id
+ * - GET /api/products
+ * - GET /api/products/:id
  *
  * No auth guard. These routes stay public (ADR 0005).
  */

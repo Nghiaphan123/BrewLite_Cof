@@ -5,12 +5,12 @@
  * - Maps routes to OrdersService calls. No business logic, no database access.
  *
  * Endpoints:
- * - POST /api/v1/orders — create a new order (protected, JWT required).
+ * - POST /api/orders — create a new order (protected, JWT required).
  *   Body: { items: [...], promoCode?: string }
  *   Returns { id, code, status, subtotal, discountAmount, total, items }.
- * - GET /api/v1/orders/me — the caller's order history, newest first.
- * - GET /api/v1/orders/:code — owner-scoped detail. Not yours is 404.
- * - POST /api/v1/orders/:id/transition — drive a status change (internal/test).
+ * - GET /api/orders/me — the caller's order history, newest first.
+ * - GET /api/orders/:code — owner-scoped detail. Not yours is 404.
+ * - POST /api/orders/:id/transition — drive a status change (internal/test).
  *   Returns { id, status }.
  *
  * Contract status:

@@ -6,7 +6,7 @@
  *   node scripts/measure-response-time.mjs
  *
  * Biến môi trường (tuỳ chọn):
- *   API_URL        mặc định http://localhost:3001/api/v1
+ *   API_URL        mặc định http://localhost:3001/api
  *   RUNS           số lần đo mỗi endpoint, mặc định 50
  *   WARMUP         số lần gọi bỏ qua trước khi đo, mặc định 5
  *   USER_EMAIL     mặc định customer01@brewlite.test (tài khoản seed)
@@ -17,7 +17,7 @@
  * Thoát với mã 1 nếu có endpoint không đạt hoặc trả mã khác 2xx.
  */
 
-const API_URL = (process.env.API_URL ?? 'http://localhost:3001/api/v1').replace(/\/+$/, '');
+const API_URL = (process.env.API_URL ?? 'http://localhost:3001/api').replace(/\/+$/, '');
 const RUNS = Number(process.env.RUNS ?? 50);
 const WARMUP = Number(process.env.WARMUP ?? 5);
 const EMAIL = process.env.USER_EMAIL ?? 'customer01@brewlite.test';

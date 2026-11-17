@@ -2,7 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 
 /**
- * loginAs — authenticates via the real POST /api/v1/auth/login endpoint.
+ * loginAs — authenticates via the real POST /api/auth/login endpoint.
  *
  * Why it exists:
  * - Replaces the fake token with a real JWT from the auth service.
@@ -18,17 +18,17 @@ export async function loginAs(
 ): Promise<string> {
   // Try login first
   let res = await request(app.getHttpServer())
-    .post('/api/v1/auth/login')
+    .post('/api/auth/login')
     .send({ email, password });
 
   if (res.status === 401 && res.body.code === 'AUTH_INVALID') {
     // User might not be registered; try register then login
     await request(app.getHttpServer())
-      .post('/api/v1/auth/register')
+      .post('/api/auth/register')
       .send({ email, password });
 
     res = await request(app.getHttpServer())
-      .post('/api/v1/auth/login')
+      .post('/api/auth/login')
       .send({ email, password });
   }
 

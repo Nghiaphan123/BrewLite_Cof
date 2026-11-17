@@ -49,7 +49,7 @@ describe('Admin stock and topping stock', () => {
 
   async function createOrder(items: Array<{ productId: string; qty: number; toppingIds: string[] }>) {
     const res = await http()
-      .post('/api/v1/orders')
+      .post('/api/orders')
       .set('Authorization', `Bearer ${customerToken}`)
       .send({ items: items.map((item) => ({ ...item, size: 'S' })) });
     expect(res.status).toBe(201);
@@ -58,7 +58,7 @@ describe('Admin stock and topping stock', () => {
 
   const pay = (orderId: string) =>
     http()
-      .post('/api/v1/payments')
+      .post('/api/payments')
       .set('Authorization', `Bearer ${customerToken}`)
       .set('Idempotency-Key', randomUUID())
       .send({ orderId, method: 'WALLET' });
@@ -72,7 +72,7 @@ describe('Admin stock and topping stock', () => {
     it('lists drinks with their stock for the admin', async () => {
       const product = await seedProduct(prisma, { stock: 7 });
 
-      const res = await http().get('/api/v1/admin/products').set('Authorization', `Bearer ${adminToken}`);
+      const res = await http().get('/api/admin/products').set('Authorization', `Bearer ${adminToken}`);
 
       expect(res.status).toBe(200);
       const row = res.body.find((p: { id: string }) => p.id === product.id);
@@ -83,7 +83,7 @@ describe('Admin stock and topping stock', () => {
       const product = await seedProduct(prisma, { stock: 0 });
 
       const res = await http()
-        .patch(`/api/v1/admin/products/${product.id}/stock`)
+        .patch(`/api/admin/products/${product.id}/stock`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ stock: 25 });
 
@@ -98,7 +98,7 @@ describe('Admin stock and topping stock', () => {
       const product = await seedProduct(prisma, { stock: 3 });
       for (const stock of [-1, 2.5, 'abc']) {
         const res = await http()
-          .patch(`/api/v1/admin/products/${product.id}/stock`)
+          .patch(`/api/admin/products/${product.id}/stock`)
           .set('Authorization', `Bearer ${adminToken}`)
           .send({ stock });
         expect(res.status).toBe(400);
@@ -109,7 +109,7 @@ describe('Admin stock and topping stock', () => {
     it('answers 404 PRODUCT_NOT_FOUND for an unknown or malformed id', async () => {
       for (const id of [randomUUID(), 'not-a-uuid']) {
         const res = await http()
-          .patch(`/api/v1/admin/products/${id}/stock`)
+          .patch(`/api/admin/products/${id}/stock`)
           .set('Authorization', `Bearer ${adminToken}`)
           .send({ stock: 1 });
         expect(res.status).toBe(404);
@@ -120,9 +120,9 @@ describe('Admin stock and topping stock', () => {
     it('does not let a customer read or change drink stock (403)', async () => {
       const product = await seedProduct(prisma, { stock: 4 });
 
-      const list = await http().get('/api/v1/admin/products').set('Authorization', `Bearer ${customerToken}`);
+      const list = await http().get('/api/admin/products').set('Authorization', `Bearer ${customerToken}`);
       const patch = await http()
-        .patch(`/api/v1/admin/products/${product.id}/stock`)
+        .patch(`/api/admin/products/${product.id}/stock`)
         .set('Authorization', `Bearer ${customerToken}`)
         .send({ stock: 99 });
 
@@ -190,7 +190,7 @@ describe('Admin stock and topping stock', () => {
       expect(await toppingStock(topping.id)).toBe(3);
 
       const res = await http()
-        .patch(`/api/v1/admin/orders/${order.id}/status`)
+        .patch(`/api/admin/orders/${order.id}/status`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ status: 'CANCELLED' });
 
@@ -223,7 +223,7 @@ describe('Admin stock and topping stock', () => {
       const product = await seedProduct(prisma, { stock: 4 });
       const topping = await seedTopping(0);
 
-      const res = await http().get(`/api/v1/products/${product.id}`);
+      const res = await http().get(`/api/products/${product.id}`);
 
       expect(res.status).toBe(200);
       expect(res.body.toppings.find((t: { id: string }) => t.id === topping.id)).toMatchObject({ stock: 0 });
@@ -233,7 +233,7 @@ describe('Admin stock and topping stock', () => {
       const product = await seedProduct(prisma, { stock: 9 });
       const topping = await seedTopping(3);
       const put = await http()
-        .put('/api/v1/cart')
+        .put('/api/cart')
         .set('Authorization', `Bearer ${customerToken}`)
         .send({ items: [{ productId: product.id, size: 'M', qty: 2, toppingIds: [topping.id] }] });
       expect(put.status).toBe(200);
@@ -242,7 +242,7 @@ describe('Admin stock and topping stock', () => {
       await prisma.product.update({ where: { id: product.id }, data: { stock: 1 } });
       await prisma.topping.update({ where: { id: topping.id }, data: { stock: 0 } });
 
-      const res = await http().get('/api/v1/cart').set('Authorization', `Bearer ${customerToken}`);
+      const res = await http().get('/api/cart').set('Authorization', `Bearer ${customerToken}`);
 
       expect(res.status).toBe(200);
       const line = res.body.items.find((item: { productId: string }) => item.productId === product.id);

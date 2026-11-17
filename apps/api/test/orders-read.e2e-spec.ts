@@ -32,12 +32,12 @@ describe('Order read API (e2e)', () => {
     orderId = order.id;
 
     const login = await request(app.getHttpServer())
-      .post('/api/v1/auth/login')
+      .post('/api/auth/login')
       .send({ email: user.email, password: 'correct-horse-battery-1' });
     token = login.body.accessToken;
 
     const otherLogin = await request(app.getHttpServer())
-      .post('/api/v1/auth/login')
+      .post('/api/auth/login')
       .send({ email: other.email, password: 'correct-horse-battery-1' });
     otherToken = otherLogin.body.accessToken;
   });
@@ -51,7 +51,7 @@ describe('Order read API (e2e)', () => {
 
   it('GET /orders/me returns the caller history and rejects a missing token', async () => {
     const res = await request(app.getHttpServer())
-      .get('/api/v1/orders/me')
+      .get('/api/orders/me')
       .set('Authorization', `Bearer ${token}`);
 
     expect(res.status).toBe(200);
@@ -67,13 +67,13 @@ describe('Order read API (e2e)', () => {
       ]),
     );
 
-    const missing = await request(app.getHttpServer()).get('/api/v1/orders/me');
+    const missing = await request(app.getHttpServer()).get('/api/orders/me');
     expect(missing.status).toBe(401);
   });
 
   it('GET /orders/:code is owner-scoped and hides other users as 404', async () => {
     const own = await request(app.getHttpServer())
-      .get(`/api/v1/orders/${code}`)
+      .get(`/api/orders/${code}`)
       .set('Authorization', `Bearer ${token}`);
 
     expect(own.status).toBe(200);
@@ -87,7 +87,7 @@ describe('Order read API (e2e)', () => {
     });
 
     const foreign = await request(app.getHttpServer())
-      .get(`/api/v1/orders/${code}`)
+      .get(`/api/orders/${code}`)
       .set('Authorization', `Bearer ${otherToken}`);
     expect(foreign.status).toBe(404);
     expect(foreign.body.code).toBe('ORDER_NOT_FOUND');

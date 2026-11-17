@@ -1,5 +1,5 @@
 /**
- * CreateOrderDto — request body for POST /api/v1/orders.
+ * CreateOrderDto — request body for POST /api/orders.
  *
  * Fields:
  * - items: non-empty array of order items

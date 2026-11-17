@@ -17,7 +17,7 @@ export async function createE2EApp(): Promise<{
   }).compile();
 
   const app = moduleRef.createNestApplication();
-  app.setGlobalPrefix('api/v1');
+  app.setGlobalPrefix('api');
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
   await app.init();

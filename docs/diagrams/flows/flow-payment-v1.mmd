@@ -11,7 +11,7 @@
 %% Retry uses a new Idempotency-Key against the same order (ADR 0004 D5).
 
 flowchart TD
-    A[POST /api/v1/payments<br/>with Idempotency-Key] --> B{Key đã tồn tại?}
+    A[POST /api/payments<br/>with Idempotency-Key] --> B{Key đã tồn tại?}
     B -- Có, cùng body --> C[Trả lại response đã lưu]
     B -- Có, khác body --> D[409 IDEMPOTENCY_CONFLICT]
     B -- Chưa --> E{Order ở PENDING<br/>hoặc PAYMENT_FAILED?}

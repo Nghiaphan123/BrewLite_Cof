@@ -114,7 +114,7 @@ npm run start:dev
 Kỳ vọng: Nest ghi log banner khởi động và lắng nghe trên cổng API từ `apps/api/.env` (xem [Cấu hình](config.md) để biết cổng được gán; `3001` là mặc định tạm thời theo `config.md` §1.2). Kiểm tra endpoint mặc định là:
 
 ```powershell
-curl http://localhost:3001/api/v1/health
+curl http://localhost:3001/api/health
 ```
 
 **Terminal 2 — web:**
@@ -134,7 +134,7 @@ Kỳ vọng: Next.js in ra `Local: http://localhost:3000` (hoặc cổng trống
 | ---------------- | ------------------------------------------------------- | ---------------------------------------------------------- |
 | Web khởi động    | Mở `http://localhost:3000`                              | Trang khởi đầu render không có lỗi console.                |
 | Web gọi được API | Mở tab Network trong devtools trình duyệt khi tải trang | Yêu cầu đến `NEXT_PUBLIC_API_URL` thành công (200).        |
-| API phản hồi     | `curl http://localhost:3001/api/v1/health`              | `{ "status": "ok", "version": "v1" }`                      |
+| API phản hồi     | `curl http://localhost:3001/api/health`              | `{ "status": "ok", "version": "v1" }`                      |
 | DB được kết nối  | `cd apps/api; npx prisma studio`                        | Prisma Studio mở và hiển thị các bảng đã seed với dữ liệu. |
 
 Nếu bất kỳ kiểm tra nào thất bại, hãy dừng lại và dùng [Xử lý sự cố](#xử-lý-sự-cố). Một scaffold xanh là điều kiện thoát cho việc cài đặt Giai đoạn 1.

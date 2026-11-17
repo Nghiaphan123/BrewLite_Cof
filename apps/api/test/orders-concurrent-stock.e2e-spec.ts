@@ -60,12 +60,12 @@ describe('Concurrent stock (graded test c)', () => {
 
     const [resA, resB] = await Promise.all([
       request(app.getHttpServer())
-        .post('/api/v1/payments')
+        .post('/api/payments')
         .set('Authorization', `Bearer ${tokenA}`)
         .set('Idempotency-Key', randomUUID())
         .send({ orderId: orderA.id, method: 'WALLET' }),
       request(app.getHttpServer())
-        .post('/api/v1/payments')
+        .post('/api/payments')
         .set('Authorization', `Bearer ${tokenB}`)
         .set('Idempotency-Key', randomUUID())
         .send({ orderId: orderB.id, method: 'WALLET' }),
@@ -109,7 +109,7 @@ describe('Concurrent stock (graded test c)', () => {
       { token: tokenC, order: orderC },
     ].map(({ token, order }) =>
       request(app.getHttpServer())
-        .post('/api/v1/payments')
+        .post('/api/payments')
         .set('Authorization', `Bearer ${token}`)
         .set('Idempotency-Key', randomUUID())
         .send({ orderId: order.id, method: 'WALLET' }),

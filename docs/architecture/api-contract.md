@@ -10,8 +10,8 @@ Tài liệu này quy định mọi endpoint HTTP trong MVP của BrewLite. Nó l
 
 ## 1. Phạm vi và URL cơ sở
 
-- **Đường dẫn cơ sở:** `/api/v1` (C1). Mọi endpoint dưới đây là tương đối so với nó.
-- **URL cơ sở trong dev:** `http://localhost:3001/api/v1` (cổng API; xem `config.md` §1.2). Frontend đọc `NEXT_PUBLIC_API_URL` bao gồm `/api/v1`.
+- **Đường dẫn cơ sở:** `/api` (C1). Mọi endpoint dưới đây là tương đối so với nó.
+- **URL cơ sở trong dev:** `http://localhost:3001/api` (cổng API; xem `config.md` §1.2). Frontend đọc `NEXT_PUBLIC_API_URL` bao gồm `/api`.
 - **Content type:** `application/json` cho mọi body yêu cầu và phản hồi, trừ `204`.
 - **Mã hóa ký tự:** UTF-8. Văn bản tiếng Việt trong phản hồi là UTF-8, không bị HTML-escape.
 - **Xác thực:** `Authorization: Bearer <jwt>` trên các route được bảo vệ (C4). Các route công khai được ghi chú theo từng endpoint.
@@ -40,7 +40,7 @@ Các endpoint trong bài tập (PDF §12.1): `GET /products`, `GET /products/:id
 
 `/health`, `GET /products`, `GET /products/:id`, `POST /auth/register`, và `POST /auth/login` là công khai. Hồ sơ người dùng và thay đổi mật khẩu, đơn hàng, thanh toán, và giỏ hàng đã lưu yêu cầu JWT.
 
-## 3. `GET /api/v1/health`
+## 3. `GET /api/health`
 
 **Xác thực:** Công khai.
 **Mục đích:** kiểm tra liveness và phiên bản (`setup.md` §8).
@@ -52,7 +52,7 @@ Các endpoint trong bài tập (PDF §12.1): `GET /products`, `GET /products/:id
 
 Không có phản hồi khác. Không cache; không giới hạn tốc độ trong Giai đoạn 1.
 
-## 4. `GET /api/v1/products`
+## 4. `GET /api/products`
 
 **Xác thực:** Công khai.
 **Mục đích:** danh sách menu (`scenarios.md` S-MAIN-1 bước 1; `product-backlog.md` Task 2/3).
@@ -90,7 +90,7 @@ Không có phản hồi khác. Không cache; không giới hạn tốc độ tro
 
 **Lỗi:** không có lỗi kỳ vọng cho một yêu cầu hợp lệ. Lỗi DB trả về `500` (C3) với `requestId` (C10).
 
-## 5. `GET /api/v1/products/:id`
+## 5. `GET /api/products/:id`
 
 **Xác thực:** Công khai.
 **Mục đích:** chi tiết sản phẩm (`scenarios.md` S-MAIN-1 bước 2; `product-backlog.md` Task 4).
@@ -126,7 +126,7 @@ Không có phản hồi khác. Không cache; không giới hạn tốc độ tro
 
 **Lỗi:** `404` cho id không tồn tại; `500` cho lỗi DB. UUID sai định dạng → `404` (xem ở trên).
 
-## 6. `POST /api/v1/auth/register`
+## 6. `POST /api/auth/register`
 
 **Xác thực:** Công khai.
 **Mục đích:** tạo tài khoản (`scenarios.md` S-AUTH-1, S-AUTH-2; `product-backlog.md` Task 7).
@@ -173,7 +173,7 @@ Không có token được trả về ở đây. Client gọi `POST /auth/login` 
 - Email trùng lặp trả về `409`, không bao giờ `200` với body "user exists" (không liệt kê tài khoản ngoài email rõ ràng mà người yêu cầu đã biết).
 - `loyaltyPoints` bắt đầu từ `0`.
 
-## 7. `POST /api/v1/auth/login`
+## 7. `POST /api/auth/login`
 
 **Xác thực:** Công khai.
 **Mục đích:** xác thực và nhận JWT (`scenarios.md` S-AUTH-1, S-AUTH-3; `product-backlog.md` Task 7).
@@ -206,7 +206,7 @@ Không có token được trả về ở đây. Client gọi `POST /auth/login` 
 { "statusCode": 403, "error": "Forbidden", "message": "This account has been blocked", "code": "ACCOUNT_BLOCKED" }
 ```
 
-## 7.1. `GET /api/v1/auth/me`
+## 7.1. `GET /api/auth/me`
 
 **Xác thực:** JWT. Chỉ trả về hồ sơ của người dùng đã xác thực; hash mật khẩu không bao giờ được chọn.
 
@@ -221,7 +221,7 @@ Không có token được trả về ở đây. Client gọi `POST /auth/login` 
 }
 ```
 
-## 7.2. `PATCH /api/v1/auth/password`
+## 7.2. `PATCH /api/auth/password`
 
 **Xác thực:** JWT.
 
@@ -236,7 +236,7 @@ Mật khẩu hiện tại phải được xác minh trước khi lưu một hash
 - Body `401` là **giống hệt** cho "email không tồn tại" và "sai mật khẩu" (`scenarios.md` S-AUTH-3). Không trả về "email not found."
 - Không giới hạn tốc độ trong Giai đoạn 1; một mục Giai đoạn 2+.
 
-## 8. `POST /api/v1/orders`
+## 8. `POST /api/orders`
 
 **Xác thực:** **Yêu cầu JWT** (C4). Token thiếu hoặc không hợp lệ → `401` với `code: "AUTH_REQUIRED"` hoặc `"AUTH_EXPIRED"`.
 **Mục đích:** tạo một đơn hàng `PENDING` từ giỏ hàng (`scenarios.md` S-MAIN-1 bước 8, S-ORD-1..3; `product-backlog.md` Task 6).
@@ -291,7 +291,7 @@ Mật khẩu hiện tại phải được xác minh trước khi lưu một hash
 - `401` thiếu/hết hạn JWT.
 - `500` bất ngờ (C3, C10).
 
-## 9. `POST /api/v1/payments`
+## 9. `POST /api/payments`
 
 **Xác thực:** **Yêu cầu JWT**. Đơn hàng phải thuộc về người gọi; một đơn hàng chéo người dùng trả về `404` (không phải `403`, để tránh rò rỉ sự tồn tại — `scenarios.md` S-ORD-4).
 **Mục đích:** thanh toán một đơn hàng `PENDING` hoặc `PAYMENT_FAILED` (`scenarios.md` S-MAIN-1 bước 8–9, S-PAY-1..6; `product-backlog.md` Task 8, Task 10b).
@@ -359,7 +359,7 @@ Mật khẩu hiện tại phải được xác minh trước khi lưu một hash
 - `409` `INVALID_STATE_TRANSITION`, `OUT_OF_STOCK`, `IDEMPOTENCY_CONFLICT`.
 - `500` bất ngờ.
 
-## 10. `GET /api/v1/orders/me`
+## 10. `GET /api/orders/me`
 
 **Xác thực:** **Yêu cầu JWT**.
 **Mục đích:** lịch sử đơn hàng (`scenarios.md` S-ORD-4; `product-backlog.md` Task 9; `wireframes.md` §11).
@@ -408,7 +408,7 @@ Mật khẩu hiện tại phải được xác minh trước khi lưu một hash
 
 **Lỗi:** `401` thiếu/hết hạn JWT; `500` bất ngờ.
 
-## 11. `GET /api/v1/orders/:code`
+## 11. `GET /api/orders/:code`
 
 **Xác thực:** **Yêu cầu JWT**. Theo phạm vi chủ sở hữu.
 **Mục đích:** xác nhận và chi tiết đơn hàng (`scenarios.md` S-MAIN-1 bước 10, S-ORD-4; `wireframes.md` §8).
@@ -442,7 +442,7 @@ Mật khẩu hiện tại phải được xác minh trước khi lưu một hash
 
 **Lỗi:** `401` thiếu/hết hạn JWT; `404` không tìm thấy hoặc không thuộc; `500` bất ngờ.
 
-## 11.1. `GET` và `PUT /api/v1/cart`
+## 11.1. `GET` và `PUT /api/cart`
 
 **Xác thực:** **Yêu cầu JWT** (C4). Người dùng đến từ token; có một giỏ hàng mỗi người dùng.
 **Mục đích:** giữ giỏ hàng của khách hàng đã đăng nhập qua các thiết bị. Giỏ hàng của khách vãng lai chỉ ở trong trình duyệt. Ứng dụng web gộp nó vào giỏ hàng đã lưu khi đăng nhập và xóa bản sao trong trình duyệt khi đăng xuất.
@@ -551,7 +551,7 @@ Nếu bất kỳ cái nào được thêm, nó tuân theo quy ước ADR 0005 v�
 - **Client:** `apps/web/src/lib/api.ts` có một `request<T>(path, init)` đặt URL cơ sở, đính kèm JWT khi có, đặt `Content-Type`, đính kèm `Idempotency-Key` cho thanh toán, và ánh xạ phong bì lỗi C3 thành một `ApiError` có kiểu. Mọi tính năng gọi hàm này; không tính năng nào gọi `fetch` trực tiếp.
 - **Xử lý thanh toán:** vì thất bại là `200 + status` (ADR 0004 D2), trình xử lý thanh toán kiểm tra `body.status === "PAID"` và không phải `res.ok`. Đây là nơi duy nhất mà phản xạ "kiểm tra `res.ok`" là sai.
 - **Lưu trữ token:** `localStorage` dưới `brewlite.token` (`ui-decisions.md` §5.2). Client xóa nó khi `401` `code: "AUTH_EXPIRED"` và chuyển hướng đến `/auth/login`.
-- **URL cơ sở:** `NEXT_PUBLIC_API_URL` bao gồm `/api/v1` (`config.md` §2.2). Không nối `/api/v1` trong `api.ts`; biến env sở hữu nó.
+- **URL cơ sở:** `NEXT_PUBLIC_API_URL` bao gồm `/api` (`config.md` §2.2). Không nối `/api` trong `api.ts`; biến env sở hữu nó.
 
 ## 15. Mục còn mở
 

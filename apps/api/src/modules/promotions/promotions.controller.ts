@@ -1,5 +1,5 @@
 /**
- * PromotionsController — HTTP surface for POST /api/v1/promotions/validate.
+ * PromotionsController — HTTP surface for POST /api/promotions/validate.
  *
  * Why it exists:
  * - Provides a preview endpoint for the UI to show the discount before

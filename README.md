@@ -63,7 +63,7 @@ docker compose exec api npm run db:seed  # sample menu, users and promotion code
 Then open:
 
 - Web: http://localhost:3000 (starts at sign-in; after signing in you land on `/menu`)
-- API: http://localhost:3001/api/v1 (for example `GET /api/v1/products`)
+- API: http://localhost:3001/api (for example `GET /api/products`)
 
 Notes:
 

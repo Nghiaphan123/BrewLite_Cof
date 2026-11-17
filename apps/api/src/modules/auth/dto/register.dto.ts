@@ -1,5 +1,5 @@
 /**
- * RegisterDto — request body for POST /api/v1/auth/register.
+ * RegisterDto — request body for POST /api/auth/register.
  *
  * Validation rules per api-contract.md §6:
  * - email: valid email format, normalized to lowercase before storage

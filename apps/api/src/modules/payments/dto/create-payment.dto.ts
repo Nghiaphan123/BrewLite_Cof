@@ -1,5 +1,5 @@
 /**
- * CreatePaymentDto — request body for POST /api/v1/payments.
+ * CreatePaymentDto — request body for POST /api/payments.
  *
  * Fields:
  * - orderId: the order being paid, a UUID (orders.id is a UUID column).

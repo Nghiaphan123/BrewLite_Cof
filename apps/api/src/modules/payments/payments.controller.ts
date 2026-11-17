@@ -1,5 +1,5 @@
 /**
- * PaymentsController — HTTP surface for POST /api/v1/payments.
+ * PaymentsController — HTTP surface for POST /api/payments.
  *
  * Why it exists:
  * - Maps the request to PaymentsService.processPayment. No logic here beyond

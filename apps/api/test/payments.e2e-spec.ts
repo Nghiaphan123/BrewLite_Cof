@@ -12,7 +12,7 @@ import { PrismaService } from '../src/common/prisma.service.js';
  * "gửi 2 lần cùng Idempotency-Key chỉ tạo 1 đơn"
  * Scenarios: scenarios.md S-PAY-5 (replay) and S-PAY-6 (conflict).
  */
-describe('POST /api/v1/payments idempotency (graded test b)', () => {
+describe('POST /api/payments idempotency (graded test b)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
   let token: string;
@@ -51,12 +51,12 @@ describe('POST /api/v1/payments idempotency (graded test b)', () => {
 
     const [res1, res2] = await Promise.all([
       request(app.getHttpServer())
-        .post('/api/v1/payments')
+        .post('/api/payments')
         .set('Authorization', `Bearer ${token}`)
         .set('Idempotency-Key', key)
         .send(body),
       request(app.getHttpServer())
-        .post('/api/v1/payments')
+        .post('/api/payments')
         .set('Authorization', `Bearer ${token}`)
         .set('Idempotency-Key', key)
         .send(body),
@@ -92,7 +92,7 @@ describe('POST /api/v1/payments idempotency (graded test b)', () => {
 
     // First request with orderA
     const res1 = await request(app.getHttpServer())
-      .post('/api/v1/payments')
+      .post('/api/payments')
       .set('Authorization', `Bearer ${token}`)
       .set('Idempotency-Key', key)
       .send({ orderId: orderA.id, method: 'WALLET' });
@@ -100,7 +100,7 @@ describe('POST /api/v1/payments idempotency (graded test b)', () => {
 
     // Second request with the same key but orderB
     const res2 = await request(app.getHttpServer())
-      .post('/api/v1/payments')
+      .post('/api/payments')
       .set('Authorization', `Bearer ${token}`)
       .set('Idempotency-Key', key)
       .send({ orderId: orderB.id, method: 'WALLET' });
@@ -122,7 +122,7 @@ describe('POST /api/v1/payments idempotency (graded test b)', () => {
     const order = await seedOrder(prisma, userId, product.id);
 
     const res = await request(app.getHttpServer())
-      .post('/api/v1/payments')
+      .post('/api/payments')
       .set('Authorization', `Bearer ${token}`)
       .send({ orderId: order.id, method: 'WALLET' });
 
@@ -138,7 +138,7 @@ describe('POST /api/v1/payments idempotency (graded test b)', () => {
   it('orderId that is not a UUID -> 400, no payment written', async () => {
     const key = randomUUID();
     const res = await request(app.getHttpServer())
-      .post('/api/v1/payments')
+      .post('/api/payments')
       .set('Authorization', `Bearer ${token}`)
       .set('Idempotency-Key', key)
       .send({ orderId: 'not-a-uuid', method: 'WALLET' });
@@ -163,7 +163,7 @@ describe('POST /api/v1/payments idempotency (graded test b)', () => {
     process.env.PAYMENT_MOCK_MODE = 'failure';
 
     const res = await request(app.getHttpServer())
-      .post('/api/v1/payments')
+      .post('/api/payments')
       .set('Authorization', `Bearer ${token}`)
       .set('Idempotency-Key', key)
       .send({ orderId: order.id, method: 'WALLET' });
@@ -191,7 +191,7 @@ describe('POST /api/v1/payments idempotency (graded test b)', () => {
     const order = await seedOrder(prisma, userId, product.id);
     const pay = (key: string) =>
       request(app.getHttpServer())
-        .post('/api/v1/payments')
+        .post('/api/payments')
         .set('Authorization', `Bearer ${token}`)
         .set('Idempotency-Key', key)
         .send({ orderId: order.id, method: 'WALLET' });
@@ -231,7 +231,7 @@ describe('POST /api/v1/payments idempotency (graded test b)', () => {
     await prisma.order.update({ where: { id: order.id }, data: { status: 'CANCELLED' } });
 
     const res = await request(app.getHttpServer())
-      .post('/api/v1/payments')
+      .post('/api/payments')
       .set('Authorization', `Bearer ${token}`)
       .set('Idempotency-Key', randomUUID())
       .send({ orderId: order.id, method: 'CARD' });

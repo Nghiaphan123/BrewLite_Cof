@@ -57,12 +57,12 @@ describe('Promotions (Task 10d)', () => {
     });
   }
 
-  describe('POST /api/v1/promotions/validate', () => {
+  describe('POST /api/promotions/validate', () => {
     it('valid percent promo -> 200, discountAmount correct', async () => {
       const promo = await createPromo({ code: `PERCENT10-${randomUUID().slice(0, 8)}`, type: 'PERCENT', value: 10 });
 
       const res = await request(app.getHttpServer())
-        .post('/api/v1/promotions/validate')
+        .post('/api/promotions/validate')
         .send({ code: promo.code, subtotal: 100000 });
 
       expect(res.status).toBe(200);
@@ -76,7 +76,7 @@ describe('Promotions (Task 10d)', () => {
       const promo = await createPromo({ code: `FIXED5000-${randomUUID().slice(0, 8)}`, type: 'FIXED', value: 5000 });
 
       const res = await request(app.getHttpServer())
-        .post('/api/v1/promotions/validate')
+        .post('/api/promotions/validate')
         .send({ code: promo.code, subtotal: 100000 });
 
       expect(res.status).toBe(200);
@@ -88,7 +88,7 @@ describe('Promotions (Task 10d)', () => {
 
     it('unknown code -> 404 PROMO_NOT_FOUND', async () => {
       const res = await request(app.getHttpServer())
-        .post('/api/v1/promotions/validate')
+        .post('/api/promotions/validate')
         .send({ code: 'UNKNOWN', subtotal: 100000 });
 
       expect(res.status).toBe(404);
@@ -99,7 +99,7 @@ describe('Promotions (Task 10d)', () => {
       const promo = await createPromo({ code: `INACTIVE-${randomUUID().slice(0, 8)}`, active: false });
 
       const res = await request(app.getHttpServer())
-        .post('/api/v1/promotions/validate')
+        .post('/api/promotions/validate')
         .send({ code: promo.code, subtotal: 100000 });
 
       expect(res.status).toBe(400);
@@ -118,7 +118,7 @@ describe('Promotions (Task 10d)', () => {
       });
 
       const res = await request(app.getHttpServer())
-        .post('/api/v1/promotions/validate')
+        .post('/api/promotions/validate')
         .send({ code: promo.code, subtotal: 100000 });
 
       expect(res.status).toBe(400);
@@ -137,7 +137,7 @@ describe('Promotions (Task 10d)', () => {
       });
 
       const res = await request(app.getHttpServer())
-        .post('/api/v1/promotions/validate')
+        .post('/api/promotions/validate')
         .send({ code: promo.code, subtotal: 100000 });
 
       expect(res.status).toBe(400);
@@ -148,7 +148,7 @@ describe('Promotions (Task 10d)', () => {
       const promo = await createPromo({ code: `MIN50K-${randomUUID().slice(0, 8)}`, minOrderTotal: 50000 });
 
       const res = await request(app.getHttpServer())
-        .post('/api/v1/promotions/validate')
+        .post('/api/promotions/validate')
         .send({ code: promo.code, subtotal: 10000 });
 
       expect(res.status).toBe(400);
@@ -163,7 +163,7 @@ describe('Promotions (Task 10d)', () => {
       });
 
       const res = await request(app.getHttpServer())
-        .post('/api/v1/promotions/validate')
+        .post('/api/promotions/validate')
         .send({ code: promo.code, subtotal: 100000 });
 
       expect(res.status).toBe(400);
@@ -171,12 +171,12 @@ describe('Promotions (Task 10d)', () => {
     });
   });
 
-  describe('POST /api/v1/orders with promo', () => {
+  describe('POST /api/orders with promo', () => {
     it('valid promo: 201, total = subtotal - discount, usedCount incremented', async () => {
       const promo = await createPromo({ code: `ORDER10-${randomUUID().slice(0, 8)}`, type: 'PERCENT', value: 10 });
 
       const res = await request(app.getHttpServer())
-        .post('/api/v1/orders')
+        .post('/api/orders')
         .set('Authorization', `Bearer ${token}`)
         .send({
           items: [
@@ -203,7 +203,7 @@ describe('Promotions (Task 10d)', () => {
 
     it('no promo: 201, discountAmount = 0', async () => {
       const res = await request(app.getHttpServer())
-        .post('/api/v1/orders')
+        .post('/api/orders')
         .set('Authorization', `Bearer ${token}`)
         .send({
           items: [
@@ -219,7 +219,7 @@ describe('Promotions (Task 10d)', () => {
 
     it('unknown promo: 404 PROMO_NOT_FOUND, no order created', async () => {
       const res = await request(app.getHttpServer())
-        .post('/api/v1/orders')
+        .post('/api/orders')
         .set('Authorization', `Bearer ${token}`)
         .send({
           items: [
@@ -240,7 +240,7 @@ describe('Promotions (Task 10d)', () => {
       const promo = await createPromo({ code: `INACTIVE2-${randomUUID().slice(0, 8)}`, active: false });
 
       const res = await request(app.getHttpServer())
-        .post('/api/v1/orders')
+        .post('/api/orders')
         .set('Authorization', `Bearer ${token}`)
         .send({
           items: [
@@ -259,7 +259,7 @@ describe('Promotions (Task 10d)', () => {
       const promo = await createPromo({ code: `CAP100-${randomUUID().slice(0, 8).toUpperCase()}`, type: 'PERCENT', value: 100 });
 
       const res = await request(app.getHttpServer())
-        .post('/api/v1/orders')
+        .post('/api/orders')
         .set('Authorization', `Bearer ${token}`)
         .send({
           items: [
@@ -284,13 +284,13 @@ describe('Promotions (Task 10d)', () => {
 
       const [resA, resB] = await Promise.all([
         request(app.getHttpServer())
-          .post('/api/v1/orders')
+          .post('/api/orders')
           .set('Authorization', `Bearer ${tokenA}`)
           .send({
             items: [{ productId: product.id, size: 'M', qty: 1, toppingIds: [] }],
           }),
         request(app.getHttpServer())
-          .post('/api/v1/orders')
+          .post('/api/orders')
           .set('Authorization', `Bearer ${tokenB}`)
           .send({
             items: [{ productId: product.id, size: 'M', qty: 1, toppingIds: [] }],
