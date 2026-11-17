@@ -46,13 +46,13 @@ export default function OrderHistoryPage() {
         {orders.map((order) => (
           <Link
             key={order.id}
-            href={`/orders/${order.id}`}
+            href={`/orders/${order.code ?? order.id}`}
             data-testid={`history-order-${order.id}`}
             className="flex animate-rise-in flex-col gap-3 rounded-2xl border border-stone-200 bg-white p-3 shadow-sm transition hover:border-emerald-700 hover:bg-emerald-50/30 sm:p-4"
           >
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
-                <p className="break-all font-bold text-stone-900">Mã đơn: #{order.id}</p>
+                <p className="break-all font-bold text-stone-900">Mã đơn: #{order.code ?? order.id}</p>
                 <p className="mt-0.5 text-xs text-stone-500">
                   {order.createdAt ? new Date(order.createdAt).toLocaleString('vi-VN') : ''}
                 </p>

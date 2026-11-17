@@ -110,6 +110,7 @@ describe('Integration Test: Frontend <-> Backend API', () => {
         items: [
           {
             id: 'order-1',
+            code: 'BL-2026-0001',
             status: 'PAID',
             total: 35000,
             createdAt: '2026-10-26T00:00:00.000Z',
@@ -133,6 +134,9 @@ describe('Integration Test: Frontend <-> Backend API', () => {
     await waitFor(() => {
       expect(screen.getByTestId('history-order-order-1')).toBeInTheDocument();
     });
+    // ADR 0004: khách thấy mã đơn, và trang chi tiết GET /orders/:code chỉ nhận mã đơn, không nhận id.
+    expect(screen.getByText('Mã đơn: #BL-2026-0001')).toBeInTheDocument();
+    expect(screen.getByTestId('history-order-order-1')).toHaveAttribute('href', '/orders/BL-2026-0001');
     expect(screen.getByText('Đã thanh toán')).toBeInTheDocument();
     expect(screen.getByText('Cà phê sữa')).toBeInTheDocument();
     expect(screen.getByText('Size: M • SL: 2')).toBeInTheDocument();
